@@ -1,0 +1,54 @@
+{
+  "name": "nomis-reports",
+  "version": "0.0.1",
+  "description": "A frontend web application to provide access to key nomis report views",
+  "private": true,
+  "author": "Ministry of Justice",
+  "license": "MIT",
+  "engines": {
+    "npm": "~3.10.10",
+    "node": "~6.11.5"
+  },
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js | bunyan -o short",
+    "test": "mocha",
+    "validate": "./node_modules/.bin/swagger-tools validate ./api/swagger/swagger.yaml",
+    "test-report": "mocha --reporter mocha-junit-reporter",
+    "docs-test": "dredd ./api/swagger/swagger.yaml http://127.0.0.1:3000",
+    "docs-render": "spectacle -t ./docs ./api/swagger/swagger.yaml",
+    "record-build-info": "node ./bin/record-build-info",
+    "wait-for-deploy": "node ./bin/wait-for-deploy",
+    "snyk": "snyk test"
+  },
+  "dependencies": {
+    "applicationinsights": "^0.21.0",
+    "body-parser": "^1.17.2",
+    "bunyan": "1.8.10",
+    "bunyan-middleware": "^0.8.0",
+    "dotenv": "^4.0.0",
+    "express": "^4.15.3",
+    "helmet": "^3.6.1",
+    "js-yaml": "^3.9.0",
+    "jsonwebtoken": "^8.1.0",
+    "lodash": "^4.17.4",
+    "request": "^2.81.0",
+    "request-promise": "^4.2.1",
+    "require-all": "^2.2.0",
+    "sleep-promise": "^2.0.0",
+    "swagger-ui-express": "^2.0.1",
+    "x-frame-options": "^1.0.0"
+  },
+  "devDependencies": {
+    "chai": "^4.0.2",
+    "date-fns": "^1.28.5",
+    "dredd": "^4.1.1",
+    "mocha": "^3.4.2",
+    "mocha-junit-reporter": "1.13.0",
+    "sinon": "^2.3.7",
+    "snyk": "^1.36.2",
+    "spectacle-docs": "0.8.2",
+    "supertest": "3.0.0",
+    "swagger-tools": "^0.10.1"
+  }
+}

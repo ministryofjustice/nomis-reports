@@ -1,0 +1,96 @@
+---
+  swagger: "2.0"
+  info:
+    title: "NOMIS Web Reports Service"
+    version: "0.0.1"
+    description: "A baisc web application to provide access to NOMIS data reports."
+  basePath: "/"
+  securityDefinitions:
+    ApiKeyAuth:
+      description: API Key obtained from Support team
+      type: apiKey
+      in: header
+      name: X-API-KEY
+  paths:
+    /health:
+      get:
+        summary: "Health Check"
+        description: "Performs a basic application health check"
+        responses:
+          200:
+            description: "Success"
+            examples:
+              application/json:
+                healthy: true
+                checks: {}
+                uptime: 4125.978
+                build:
+                  buildNumber: "901"
+                  gitRef: "83e46a38509309220da19afa630b5354c56da39b"
+                version: "0.0.4"
+            schema:
+              "$ref": "#/definitions/HealthCheckResult"
+          500:
+            description: "Unhealthy"
+            examples:
+              application/json:
+                healthy: false
+                uptime: 3688.422,
+                build.buildNumber: "901"
+                build.gitRef: "83e46a38509309220da19afa630b5354c56da39b"
+                version: "0.8.0"
+            schema:
+              "$ref": "#/definitions/HealthCheckResult"
+        tags:
+          - "Health check"
+        produces:
+          - "application/json; charset=utf-8"
+  definitions:
+    HealthCheckResult:
+      type: "object"
+      properties:
+        healthy:
+          type: "boolean"
+          description: "Are we healthy?"
+          example: true
+        checks:
+          type: "object"
+          properties:
+            calculatorVersion:
+              type: "string"
+              description: "Artifact version of the calculator algorithm"
+              example: "1.2.3"
+        uptime:
+          type: "number"
+          description: "Server uptime in seconds"
+          example: 3688.422
+        build:
+          type: "object"
+          properties:
+            buildNumber:
+              type: "string"
+              description: "CI build number"
+              example: "901"
+            gitRef:
+              type: "string"
+              description: "Git reference"
+              example: "83e46a38509309220da19afa630b5354c56da39b"
+            version:
+              type: "string"
+              description: "Artifact version"
+              example: "0.8.0"
+    InvalidArgumentError:
+      type: "object"
+      properties:
+        code:
+          type: "string"
+          description: "A status code description"
+          example: "Invalid Argument"
+        message:
+          type: "string"
+          description: "A message detailing the error"
+          example: "Request validation failed: Parameter (birthDate) must be a valid timestamp"
+      required:
+        - "message"
+    UnauthorizedError:
+      description: API key is missing or invalid

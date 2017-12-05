@@ -1,0 +1,26 @@
+{
+  "env": {
+    "node": true,
+    "es6": true
+  },
+  "rules": {
+    "no-undef": "error",
+    "block-scoped-var": "error",
+    "brace-style": [ "error", "1tbs", { "allowSingleLine": true } ],
+    "camelcase": ["error", {"properties": "never"}],
+    "curly": ["error", "multi-line"],
+    "eol-last": "error",
+    "eqeqeq": [ "error", "smart" ],
+    "max-depth": [ "error", 3 ],
+    "max-statements": [ "error", 15 ],
+    "max-len": [ "error", 160 ],
+    "new-cap": "error",
+    "no-extend-native": "error",
+    "no-mixed-spaces-and-tabs": "error",
+    "no-trailing-spaces": "error",
+    "no-use-before-define": [ "error", "nofunc" ],
+    "no-unused-vars": "error",
+    "semi": [ "error", "always" ],
+    "space-unary-ops": "error"
+  }
+}
