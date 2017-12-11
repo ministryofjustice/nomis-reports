@@ -1,6 +1,6 @@
 let should = require('chai').should();
 
-const generateApiGatewayToken = require('../../../api/helpers/apiGatewayAuth');
+const generateApiGatewayToken = require('../../../app/helpers/apiGatewayAuth');
 
 describe('API Gateway Token Generation', () => {
   let fakeKey = [
@@ -15,10 +15,10 @@ describe('API Gateway Token Generation', () => {
   let base64FakeKey = new Buffer(fakeKey).toString('base64');
 
   it('should not throw an error if the private key is valid', () =>
-    should.not.throw(() => generateApiGatewayToken('dummy', new Buffer(base64FakeKey, 'base64').toString('ascii')))
+    should.not.throw(() => generateApiGatewayToken('dummy', new Buffer(base64FakeKey, 'base64').toString('ascii'))())
   );
 
   it('should throw an error if the private key is not valid', () =>
-    should.throw(() => generateApiGatewayToken('dummy', base64FakeKey))
+    should.throw(() => generateApiGatewayToken('dummy', base64FakeKey)())
   );
 });

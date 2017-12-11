@@ -1,10 +1,5 @@
-#Risk Calculator Service
-A Restful service to calculate risk on a known set of parameters.
-
-## Swagger documentation
-The details of the API  can found in [the online documentation](https://noms-digital-studio.github.io/rsr-calculator-service/).
-
-The swagger specification can be found on the path ```/api-docs```.
+#NOMIS Reports Application
+A Web service to provide access to operational reports from HMPPS Digital Services.
 
 ## Running with NodeJS
 Start by ensuring you have the most recent version of NodeJS and NPM installed.

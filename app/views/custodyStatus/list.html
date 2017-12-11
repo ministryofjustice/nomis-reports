@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<main id="content" role="main">
+
+	<p style="margin-top:30px;"><a href="/">Back to the homepage</a></p>
+
+		<section class="column-first">
+
+			<h2 class="heading-large">Custody Statuses</h2>
+
+      <ul>
+      {% for custodyStatus in custodyStatuses %}
+        <li>{{ custodyStatus.offenderNo }}, {{ custodyStatus.custodyStatus }}</li>
+      {% endfor %}
+      </ul>
+		</section>
+
+</main>
+
+{% endblock %}

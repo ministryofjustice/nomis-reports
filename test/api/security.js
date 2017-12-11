@@ -4,17 +4,37 @@ const router = express.Router();
 const request = require('supertest');
 
 const app = require('../../server/app');
-
-const config = require('../../server/config');
 const log = require('../../server/log');
 
-describe('api /tests/*', () => {
+let fakeKey = [
+  '-----BEGIN PRIVATE KEY-----',
+  'MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgPGJGAm4X1fvBuC1z',
+  'SpO/4Izx6PXfNMaiKaS5RUkFqEGhRANCAARCBvmeksd3QGTrVs2eMrrfa7CYF+sX',
+  'sjyGg+Bo5mPKGH4Gs8M7oIvoP9pb/I85tdebtKlmiCZHAZE5w4DfJSV6',
+  '-----END PRIVATE KEY-----'
+].join('\n');
+
+describe('API Security', () => {
   let server;
   let paths = [ 'get', 'post', 'put', 'delete' ];
 
   before((done) => {
     paths.forEach((method) =>
       router[ method ](`/${method}`, (req, res) => res.json({ hello: 'world' })));
+
+    let config = {
+      nomis: {
+        apiUrl: '',
+        apiGatewayToken: 'NOMIS-API-TOKEN',
+        apiGatewayPrivateKey: fakeKey,
+      },
+
+      elite2: {
+        apiUrl: '',
+        apiGatewayToken: 'ELITE2-API-TOKEN',
+        apiGatewayPrivateKey: fakeKey,
+      }
+    };
 
     app(config, log, (err, _server) => {
       if (err) return done(err);

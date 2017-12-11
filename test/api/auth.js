@@ -1,9 +1,6 @@
-const _ = require('lodash');
 const request = require('supertest');
 
 const app = require('../../server/app');
-
-const config = require('../../server/config');
 const log = require('../../server/log');
 
 describe('API Key authentication', () => {
@@ -11,10 +8,10 @@ describe('API Key authentication', () => {
     keys: [ '2be60db6-68ad-4b57-aa99-457e6bbdf6c8' ],
     host: 'successful.example.com',
   };
+
   let server;
   before((done) => {
-    const configWithAuth = _.defaults({auth}, config);
-    app(configWithAuth, log, (err, _server) => {
+    app({auth}, log, (err, _server) => {
       if (err) return done(err);
       server = _server;
       done();
@@ -66,12 +63,6 @@ describe('API Key authentication', () => {
   it('should allow /health access even without auth', () =>
     request(server)
       .get('/health')
-      .expect(200)
-  );
-
-  it('should allow / access even without auth', () =>
-    request(server)
-      .get('/')
       .expect(200)
   );
 });
