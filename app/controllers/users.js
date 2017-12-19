@@ -6,18 +6,16 @@ const usersService = require('../services/users');
 const eliteApiAgent = require('../helpers/eliteApiAgent');
 
 const authorizeUser = (req, config) =>
-  req.app.locals.usersService.postLogin({
-    username: config.user,
-    password: config.password
-  });
+  req.app.locals.usersService
+    .postLogin({
+      username: config.user,
+      password: config.password
+    })
+    .then((response) =>  req.app.locals.config.elite2.elite2Jwt = response.body);
 
 const userLogin = (req, res, next) =>
   authorizeUser(req, req.app.locals.config.reports)
-    .then((response) => {
-      req.app.locals.config.elite2.elite2Jwt = response.body;
-      return response.body;
-    })
-    .then((config) => res.json(config))
+    .then(helpers.redirect(res, '/'))
     .catch(helpers.failWithError(res, next));
 
 router.use((req, res, next) => {
@@ -28,7 +26,6 @@ router.use((req, res, next) => {
 
   next();
 });
-
 router.get('/login', userLogin);
 
 module.exports = router;
