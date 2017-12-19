@@ -27,6 +27,11 @@ module.exports = {
 
   port: get('PORT', 3000),
 
+  reports: {
+    user: get('REPORTS_USER', 'REPORTER', { requireInProduction: true }),
+    password: get('REPORTS_PASSWORD', 'PASSOWORD', { requireInProduction: true }),
+  },
+
   nomis: {
     apiUrl: get('NOMIS_API_URL', 'http://localhost:8080/api', { requireInProduction: true }),
     apiGatewayToken: get('NOMIS_GW_TOKEN', '', { requireInProduction: true }),
