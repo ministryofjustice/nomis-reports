@@ -8,7 +8,7 @@
 
 		<section class="column-first">
 
-			<h2 class="heading-large">Custody Statuses</h2>
+			<h2 class="heading-large">Bookings</h2>
 
       <table>
         <thead>
@@ -19,13 +19,13 @@
 					</tr>
 				</thead>
 				<tbody>
-      {% for custodyStatus in custodyStatuses %}
+      {% for booking in bookings %}
         	<tr>
 					{% for columnName in columns %}
 						{% if links[columnName] %}
-						<td><a href="{{ custodyStatus.links[links[columnName]] }}" type="{{ links[columnName] }}">{{ custodyStatus[columnName] }}</a></td>
+						<td><a href="{{ booking.links[links[columnName]] }}" type="{{ links[columnName] }}">{{ booking[columnName] }}</a></td>
 						{% else %}
-						<td>{{ custodyStatus[columnName] }}</td>
+						<td>{{ booking[columnName] }}</td>
 						{% endif %}
 					{% endfor %}
 					</tr>

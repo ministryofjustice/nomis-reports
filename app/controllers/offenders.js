@@ -43,7 +43,7 @@ const retrievePssDetail = (req, res, next) =>
 
 router.use((req, res, next) => {
   let config = req.app.locals.config.nomis;
-  let agent = nomisApiAgent(undefined, config);
+  let agent = nomisApiAgent(undefined, undefined, config);
 
   req.app.locals.offendersService = req.app.locals.offendersService || offendersService(agent, config.apiUrl);
 

@@ -19,7 +19,7 @@ const listLiveRoll = (req, res, next) =>
 
 router.use((req, res, next) => {
   let config = req.app.locals.config.nomis;
-  let agent = nomisApiAgent(undefined, config);
+  let agent = nomisApiAgent(undefined, undefined, config);
 
   req.app.locals.prisonService = req.app.locals.prisonService || prisonService(agent, config.apiUrl);
 

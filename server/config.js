@@ -25,11 +25,11 @@ module.exports = {
   commitId: env.COMMIT_ID,
   buildTag: env.BUILD_TAG,
 
-  port: env.PORT || '3000',
+  port: get('PORT', 3000),
 
   nomis: {
-    apiUrl: get('NOMIS_API_URL', 'http://localhost:8080/api'),
-    apiGatewayToken: get('NOMIS_GW_TOKEN', ''),
+    apiUrl: get('NOMIS_API_URL', 'http://localhost:8080/api', { requireInProduction: true }),
+    apiGatewayToken: get('NOMIS_GW_TOKEN', '', { requireInProduction: true }),
     apiGatewayPrivateKey: new Buffer(get('NOMIS_GW_KEY', ''), 'base64').toString('ascii'),
     timeout: {
       response: 2000,
@@ -38,8 +38,8 @@ module.exports = {
   },
 
   elite2: {
-    apiUrl: get('ELITE2_API_URL', 'http://localhost:8081/api'),
-    apiGatewayToken: get('ELITE2_GW_TOKEN', ''),
+    apiUrl: get('ELITE2_API_URL', 'http://localhost:8081/api', { requireInProduction: true }),
+    apiGatewayToken: get('ELITE2_GW_TOKEN', '', { requireInProduction: true }),
     apiGatewayPrivateKey: new Buffer(get('ELITE2_GW_KEY', ''), 'base64').toString('ascii'),
     timeout: {
       response: 2000,

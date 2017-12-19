@@ -36,8 +36,8 @@ const inspect = (x) => {
 
 const raw = (res, model) => () => res.json(model);
 const rendered = (res, view, model) => () => res.render(view, model);
-const format = (res, view) => (model) => res.format({
-  html: rendered(res, view, model),
+const format = (res, view, transform) => (model) => res.format({
+  html: rendered(res, view, transform ? transform(model) : model),
   json: raw(res, model),
 });
 

@@ -9,7 +9,5 @@ function gatewayAuthTokenPlugin (tokenGenerator = () => 'API-GATEWAY-TOKEN') {
   };
 }
 
-module.exports = (agent, opts = {}) =>
-  apiAgent(agent, [
-    gatewayAuthTokenPlugin(apiGatewayAuth(opts.apiGatewayToken, opts.apiGatewayPrivateKey))
-  ], opts.timeout);
+module.exports = (agent, plugins = [], opts = {}) =>
+  apiAgent(agent, plugins.concat([ gatewayAuthTokenPlugin(apiGatewayAuth(opts.apiGatewayToken, opts.apiGatewayPrivateKey)) ]), opts);

@@ -74,7 +74,7 @@ module.exports = (config, log, callback, includeErrorHandling = true) => {
 function setupBaseMiddleware(app, log) {
   app.use(bunyanMiddleware({
     logger: log,
-    obscureHeaders: ['Authorization'],
+    obscureHeaders: ['Authorization', 'Elite-Authorisation'],
   }));
 
   app.use(function detectAzureSSL(req, res, next) {

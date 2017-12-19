@@ -19,7 +19,7 @@ const buildUrl = (uri, params) => {
 const getRouteAgent = (agent = basicAgent(), uri) =>
   (/\/:[^\/]+/gi.test(uri))
     ? (params, query) => agent.get(buildUrl(uri, params)).query(query)
-    : (query) => agent.get(uri).query(query);
+    : (query) =>agent.get(uri).query(query);
 
 const postRouteAgent = (agent = basicAgent(), uri) =>
   (body) => agent.post(uri).send(body);
@@ -33,12 +33,7 @@ const withInterface = (req) => ({
     put(uri) { return putRouteAgent(req, uri); }
 });
 
-module.exports = (agent, plugins, timeout) => {
-  agent = basicAgent(agent, timeout);
-
-  if (plugins) {
-    agent = plugins.reduce((a, p) => (a.use(p)) && a, agent);
-  }
-
-  return withInterface(agent);
+module.exports = (agent, plugins = [], opts) => {
+  agent = basicAgent(agent, opts.timeout);
+  return withInterface(plugins.reduce((a, p) => (a.use(p)) && a, agent));
 };

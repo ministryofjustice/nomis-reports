@@ -20,10 +20,10 @@ const gatherCheckInfo = (total, x) =>
   Object.assign({}, total, {[ x.name ]: (x => (delete x.name) && x)(x)});
 
 const nomisApiCheck = (config, logger) =>
-  healthCheckAgent(nomisApiAgent(undefined, config), 'nomis-api', config, {logger}).version;
+  healthCheckAgent(nomisApiAgent(undefined, undefined, config), 'nomis-api', config, {logger}).version;
 
 const eliteApiCheck = (config, logger) =>
-  healthCheckAgent(eliteApiAgent(undefined, config), 'elite2-api', config, {logger}).infoHealth;
+  healthCheckAgent(eliteApiAgent(undefined, undefined, config), 'elite2-api', config, {logger}).infoHealth;
 
 module.exports = function healthcheck(config, log) {
   let response = {

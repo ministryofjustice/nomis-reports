@@ -1,3 +1,4 @@
 module.exports = (agent, root) => ({
-  listCustodyStatuses: agent.get(`${root}/custody-status`)
+  list: agent.get(`${root}/custody-statuses`),
+  getCustodyStatus: agent.get(`${root}/custody-statuses/:noms_id`),
 });
