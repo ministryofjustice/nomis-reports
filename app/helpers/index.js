@@ -68,6 +68,9 @@ const errorCheck = (resolve, reject) => (err, data) =>
 const rpcErrorCheck = (url, opts, resolve, reject) => (err, data) =>
   err ? reject(rpcError(url, opts, err)) : resolve(data);
 
+const handleResponse = (x) => (res) =>
+  (res.status >= 200 && res.status <= 299) ? res.body : x;
+
 module.exports = {
   objToList: objToList,
   objToFilteredList: objToFilteredList,
@@ -81,4 +84,5 @@ module.exports = {
   rpcError: rpcError,
   errorCheck: errorCheck,
   rpcErrorCheck: rpcErrorCheck,
+  handleResponse: handleResponse,
 };

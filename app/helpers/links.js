@@ -4,6 +4,7 @@ module.exports.prison = (id) => `/prison/${id}`;
 module.exports.prisonLiveRoll = (id) => `/prison/${id}/live_roll`;
 module.exports.agency = (id) => `/agencies/${id}`;
 module.exports.location = (id) => `/locations/${id}`;
+module.exports.locationInmates = (id) => `/locations/${id}/inmates`;
 module.exports.booking = (id) => `/bookings/${id}`;
 module.exports.sentenceDetail = (id) => `/bookings/${id}/sentenceDetail`;
 module.exports.mainOffence = (id) => `/bookings/${id}/mainOffence`;

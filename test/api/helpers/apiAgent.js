@@ -29,78 +29,81 @@ function authHeaderPlugin (tokenGenerator = () => 'API-GATEWAY-TOKEN') {
 }
 
 describe('API Agent', () => {
-  const apiAgent = require('../../../app/helpers/apiAgent');
-  const simpleApiAgent =  apiAgent(supertest(server));
 
-  let i = 0;
-  const incrementalApiAgent = apiAgent(supertest(server), [authHeaderPlugin(() => ++i)]);
+  describe('for Generic APIs', () => {
+    const apiAgent = require('../../../app/helpers/apiAgent');
+    const simpleApiAgent =  apiAgent(supertest(server));
 
-  it('Should be able to make a simple GET request', () =>
-    simpleApiAgent.get('/fake-api/world')()
-      .then((response) => response.body.hello.should.equal('world')));
+    let i = 0;
+    const incrementalApiAgent = apiAgent(supertest(server), [authHeaderPlugin(() => ++i)]);
 
-  it('Should be able to make a simple GET request to an alternative route', () =>
-    simpleApiAgent.get('/fake-api/universe')()
-      .then((response) => response.body.hello.should.equal('universe')));
+    it('Should be able to make a simple GET request', () =>
+      simpleApiAgent.get('/fake-api/world')()
+        .then((response) => response.body.hello.should.equal('world')));
 
-  it('Should post the body to the endpoint', () =>
-    simpleApiAgent.post('/fake-api/echo')({ foo: 'bar'})
-      .then((response) => response.body.should.eql({ foo: 'bar'})));
+    it('Should be able to make a simple GET request to an alternative route', () =>
+      simpleApiAgent.get('/fake-api/universe')()
+        .then((response) => response.body.hello.should.equal('universe')));
 
-  const authHeaderApiAgent = apiAgent(supertest(server), [ authHeaderPlugin() ]);
-  it('Should include the Authorization header when the gatewayAuthTokenGenerator is used', () =>
-    authHeaderApiAgent.get('/fake-api/header/Authorization')()
-      .then((response) => response.body.Authorization.should.equal('Bearer API-GATEWAY-TOKEN')));
+    it('Should post the body to the endpoint', () =>
+      simpleApiAgent.post('/fake-api/echo')({ foo: 'bar'})
+        .then((response) => response.body.should.eql({ foo: 'bar'})));
 
-  it('Should call the tokenGenerator for each new request', () => {
-    var x;
-    let getIncrementalAuthorizationHeader = incrementalApiAgent.get('/fake-api/header/Authorization');
+    const authHeaderApiAgent = apiAgent(supertest(server), [ authHeaderPlugin() ]);
+    it('Should include the Authorization header when the gatewayAuthTokenGenerator is used', () =>
+      authHeaderApiAgent.get('/fake-api/header/Authorization')()
+        .then((response) => response.body.Authorization.should.equal('Bearer API-GATEWAY-TOKEN')));
 
-    return getIncrementalAuthorizationHeader()
-        .then((response) => x = response.body.Authorization)
-        .then(getIncrementalAuthorizationHeader()
-        .then((response) => x = response.body.Authorization)
-        .then(getIncrementalAuthorizationHeader()
-        .then((response) => x = response.body.Authorization)
-        .then(getIncrementalAuthorizationHeader()
-        .then((response) => x = response.body.Authorization)
-        .then(() => x.should.equal('Bearer 4')))));
+    it('Should call the tokenGenerator for each new request', () => {
+      var x;
+      let getIncrementalAuthorizationHeader = incrementalApiAgent.get('/fake-api/header/Authorization');
+
+      return getIncrementalAuthorizationHeader()
+          .then((response) => x = response.body.Authorization)
+          .then(getIncrementalAuthorizationHeader()
+          .then((response) => x = response.body.Authorization)
+          .then(getIncrementalAuthorizationHeader()
+          .then((response) => x = response.body.Authorization)
+          .then(getIncrementalAuthorizationHeader()
+          .then((response) => x = response.body.Authorization)
+          .then(() => x.should.equal('Bearer 4')))));
+    });
   });
-});
 
-describe('NOMIS API Agent', () => {
-  let config = {
-    apiUrl: '',
-    apiGatewayToken: 'dummy',
-    apiGatewayPrivateKey: fakeKey
-  };
+  describe('for NOMIS API', () => {
+    let config = {
+      apiUrl: '',
+      apiGatewayToken: 'dummy',
+      apiGatewayPrivateKey: fakeKey
+    };
 
-  const nomisApiAgent = require('../../../app/helpers/nomisApiAgent');
-  const jwtAuthApiAgent = nomisApiAgent(supertest(server), undefined, config);
+    const nomisApiAgent = require('../../../app/helpers/nomisApiAgent');
+    const jwtAuthApiAgent = nomisApiAgent(supertest(server), undefined, config);
 
-  it('should not throw an error', () =>
-    should.not.throw(() => jwtAuthApiAgent.get('/')()));
+    it('should not throw an error', () =>
+      should.not.throw(() => jwtAuthApiAgent.get('/')()));
 
-  it('Should include the Authorization header when the gatewayAuthTokenGenerator is used', () =>
-    jwtAuthApiAgent.get('/fake-api/header/Authorization')()
-      .then((response) => response.body.Authorization.should.match(/Bearer\s(.+)/mi)));
-});
+    it('Should include the Authorization header when the gatewayAuthTokenGenerator is used', () =>
+      jwtAuthApiAgent.get('/fake-api/header/Authorization')()
+        .then((response) => response.body.Authorization.should.match(/Bearer\s(.+)/mi)));
+  });
 
-describe('NOMIS Elite2 API Agent', () => {
-  let config = {
-    apiUrl: '',
-    apiGatewayToken: 'dummy',
-    apiGatewayPrivateKey: fakeKey
-  };
+  describe('for NOMIS Elite2 API', () => {
+    let config = {
+      apiUrl: '',
+      apiGatewayToken: 'dummy',
+      apiGatewayPrivateKey: fakeKey
+    };
 
-  const eliteApiAgent = require('../../../app/helpers/eliteApiAgent');
-  const eliteAuthHeaderApiAgent = eliteApiAgent(supertest(server), undefined, config);
+    const eliteApiAgent = require('../../../app/helpers/eliteApiAgent');
+    const eliteAuthHeaderApiAgent = eliteApiAgent(supertest(server), undefined, config);
 
-  it('Should include the Elite-Authorization header', () =>
-    eliteAuthHeaderApiAgent.get('/fake-api/header/Elite-Authorization')()
-      .then((response) => should.exist(response.body['Elite-Authorization'])));
+    it('Should include the Elite-Authorization header', () =>
+      eliteAuthHeaderApiAgent.get('/fake-api/header/Elite-Authorization')()
+        .then((response) => should.exist(response.body['Elite-Authorization'])));
 
-  it('Should still include the Authorization header', () =>
-    eliteAuthHeaderApiAgent.get('/fake-api/header/Authorization')()
-      .then((response) => should.exist(response.body.Authorization)));
+    it('Should still include the Authorization header', () =>
+      eliteAuthHeaderApiAgent.get('/fake-api/header/Authorization')()
+        .then((response) => should.exist(response.body.Authorization)));
+  });
 });
