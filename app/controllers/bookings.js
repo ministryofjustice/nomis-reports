@@ -89,15 +89,13 @@ const createBookingListViewModel = (bookings) =>
     links: {
       offenderNo: 'offender',
       agencyId: 'agency',
-      bookingNo: 'booking',
-      assignedLivingUnitDesc: 'location'
+      bookingNo: 'booking'
     },
     bookings: bookings,
     recordCount: bookings[0].recordCount,
   });
 
 const renderBookingList = (res, transform) => helpers.format(res, 'bookings/list', transform);
-
 
 const allBookings = (req, res, next) =>
   proxy(list, req)

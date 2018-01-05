@@ -8,6 +8,7 @@ const favicon = require('serve-favicon');
 const xFrameOptions = require('x-frame-options');
 const requireAll = require('require-all');
 const moment = require('moment');
+const acceptFileExtensions = require('accepts-ext');
 
 const auth = require('./apiKeyAuth');
 const errors = require('./errors');
@@ -178,6 +179,8 @@ function setupAuthMiddleware(app, log) {
 }
 
 function setupRouters(app, log) {
+  app.use(acceptFileExtensions);
+
   log.info('registering controllers...');
 
   let routes = flatten(requireAll({
