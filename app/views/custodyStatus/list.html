@@ -19,13 +19,13 @@
 					</tr>
 				</thead>
 				<tbody>
-      {% for custodyStatus in custodyStatuses %}
+      {% for row in custodyStatuses %}
         	<tr>
 					{% for columnName in columns %}
 						{% if links[columnName] %}
-						<td><a href="{{ custodyStatus.links[links[columnName]] }}" type="{{ links[columnName] }}">{{ custodyStatus[columnName] }}</a></td>
+						<td><a href="{{ row.links[links[columnName]] }}" type="{{ links[columnName] }}">{{ row[columnName] }}</a></td>
 						{% else %}
-						<td>{{ custodyStatus[columnName] }}</td>
+						<td>{{ row[columnName] }}</td>
 						{% endif %}
 					{% endfor %}
 					</tr>

@@ -17,7 +17,9 @@
     "test-report": "mocha --reporter mocha-junit-reporter",
     "record-build-info": "node ./bin/record-build-info",
     "wait-for-deploy": "node ./bin/wait-for-deploy",
-    "snyk": "snyk test"
+    "snyk": "snyk test",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
   },
   "dependencies": {
     "applicationinsights": "^0.21.0",

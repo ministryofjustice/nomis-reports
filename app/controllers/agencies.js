@@ -1,37 +1,60 @@
 const express = require('express');
-const router = express.Router();
+const router = new express.Router();
 
+const util = require('util');
 const helpers = require('../helpers');
-const eliteApiAgent = require('../helpers/eliteApiAgent');
-const agenciesService = require('../services/agencies');
+const links = require('../helpers/links');
+const AgencyService = require('../services/AgencyService');
 
-const list = (req) =>
-  req.app.locals.agenciesService
-    .list({ query: req.query.search })
-    .set('Page-Limit', 1000);
+const map = (fn) => (x) =>
+  x && (util.isArray(x) ? x.map(fn) : fn(x));
 
-const getDetails = (req) =>
-  req.app.locals.agenciesService.getDetails({ agency_id: req.params.agency_id });
+const expandLink = (p, k, fn) => (x) =>
+  ((x.links = x.links || {})[k] = fn(x[p])) && x;
+
+const addPrisonLiveRoll = (p) => expandLink(p, 'liveRoll', links.prisonLiveRoll);
+
+const services = {};
+const setUpServices = (config) => {
+  services.agency = services.agency || new AgencyService(config);
+};
+
+const proxy = (service, fn, params) =>
+  service[fn].call(service, params)
+    .then(map(addPrisonLiveRoll('agencyId')));
+
+const createAgencyViewModel = (agencies) =>
+  ({
+    columns: [
+      'agencyId',
+      'description',
+      'agencyType',
+    ],
+    links: {
+      agencyId: 'liveRoll',
+    },
+    agencies: agencies,
+    recordCount: agencies[0].recordCount,
+  });
+
+const renderAgencyList = (res, transform) => helpers.format(res, 'agency/list', transform);
 
 const listAgencies = (req, res, next) =>
-  list(req)
-    .then((response) => res.json(response.body))
+  proxy(services.agency, 'list', req.query.search)
+    .then(renderAgencyList(res, createAgencyViewModel))
     .catch(helpers.failWithError(res, next));
 
 const retrieveAgency = (req, res, next) =>
-  getDetails(req)
-    .then((response) => res.json(response.body))
+  proxy(services.agency, 'getDetails', req.params.agencyId)
+    .then((data) => res.json(data))
     .catch(helpers.failWithError(res, next));
 
 router.use((req, res, next) => {
-  let config = req.app.locals.config.elite2;
-  let agent = eliteApiAgent(undefined, undefined, config);
-
-  req.app.locals.agenciesService = req.app.locals.agenciesService || agenciesService(agent, config.apiUrl);
-
+  setUpServices(req.app.locals.config);
   next();
 });
+
 router.get('/', listAgencies);
-router.get('/:agency_id', retrieveAgency);
+router.get('/:agencyId', retrieveAgency);
 
 module.exports = router;

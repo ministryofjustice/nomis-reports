@@ -1,9 +1,9 @@
 const express = require('express');
-const router = express.Router();
+const router = new express.Router();
 
 const helpers = require('../helpers');
-const offendersService = require('../services/offenders');
 const nomisApiAgent = require('../helpers/nomisApiAgent');
+const offendersService = require('../repositories/offenders');
 
 const getDetails = (req) =>
   req.app.locals.offendersService.getDetails({ noms_id: req.params.noms_id });

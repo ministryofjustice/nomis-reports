@@ -1,9 +1,9 @@
 const express = require('express');
-const router = express.Router();
+const router = new express.Router();
 
 const helpers = require('../helpers');
-const usersService = require('../services/users');
 const eliteApiAgent = require('../helpers/eliteApiAgent');
+const usersService = require('../repositories/users');
 
 const authorizeUser = (req, config) =>
   req.app.locals.usersService

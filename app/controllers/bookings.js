@@ -1,11 +1,11 @@
 const express = require('express');
-const router = express.Router();
+const router = new express.Router();
 
 const util = require('util');
 const helpers = require('../helpers');
 const links = require('../helpers/links');
 const eliteApiAgent = require('../helpers/eliteApiAgent');
-const bookingsService = require('../services/bookings');
+const bookingsService = require('../repositories/bookings');
 
 const map = (fn) => (x) =>
   x && (util.isArray(x) ? x.map(fn) : fn(x));
@@ -53,6 +53,14 @@ const getIepSummary = (req) =>
 const proxy = (fn, req) =>
   fn(req)
     .then((response) => response.body)
+    .then(map((data) => {
+      data.assignedLivingUnitId = data.assignedLivingUnit && data.assignedLivingUnit.locationId;
+      return data;
+    }))
+    .then(map((data) => {
+      data.agencyId = data.assignedLivingUnit && data.assignedLivingUnit.agencyId;
+      return data;
+    }))
     .then(map(addAgencyLinks('agencyId')))
     .then(map(addBookingLinks('bookingId')))
     .then(map(addSentenceDetailLinks('bookingId')))

@@ -1,9 +1,9 @@
 const express = require('express');
-const router = express.Router();
+const router = new express.Router();
 
 const helpers = require('../helpers');
-const prisonService = require('../services/prison');
 const nomisApiAgent = require('../helpers/nomisApiAgent');
+const prisonService = require('../repositories/prison');
 
 const getLiveRoll = (req) =>
   req.app.locals.prisonService.liveRoll({ prison_id: req.params.prison_id });

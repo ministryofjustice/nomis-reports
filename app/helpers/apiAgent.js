@@ -34,6 +34,6 @@ const withInterface = (req) => ({
 });
 
 module.exports = (agent, plugins = [], opts) => {
-  agent = basicAgent(agent, opts.timeout);
+  agent = basicAgent(agent, opts && opts.timeout);
   return withInterface(plugins.reduce((a, p) => (a.use(p)) && a, agent));
 };

@@ -69,8 +69,14 @@ describe('API Agent', () => {
 });
 
 describe('NOMIS API Agent', () => {
+  let config = {
+    apiUrl: '',
+    apiGatewayToken: 'dummy',
+    apiGatewayPrivateKey: fakeKey
+  };
+
   const nomisApiAgent = require('../../../app/helpers/nomisApiAgent');
-  const jwtAuthApiAgent = nomisApiAgent(supertest(server), { apiGatewayToken: 'dummy', apiGatewayPrivateKey: fakeKey });
+  const jwtAuthApiAgent = nomisApiAgent(supertest(server), undefined, config);
 
   it('should not throw an error', () =>
     should.not.throw(() => jwtAuthApiAgent.get('/')()));
@@ -81,8 +87,14 @@ describe('NOMIS API Agent', () => {
 });
 
 describe('NOMIS Elite2 API Agent', () => {
+  let config = {
+    apiUrl: '',
+    apiGatewayToken: 'dummy',
+    apiGatewayPrivateKey: fakeKey
+  };
+
   const eliteApiAgent = require('../../../app/helpers/eliteApiAgent');
-  const eliteAuthHeaderApiAgent = eliteApiAgent(supertest(server), { apiGatewayToken: 'dummy', apiGatewayPrivateKey: fakeKey });
+  const eliteAuthHeaderApiAgent = eliteApiAgent(supertest(server), undefined, config);
 
   it('Should include the Elite-Authorization header', () =>
     eliteAuthHeaderApiAgent.get('/fake-api/header/Elite-Authorization')()

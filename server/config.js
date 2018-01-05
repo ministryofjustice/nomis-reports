@@ -6,14 +6,14 @@ const dev = env.NODE_ENV !== 'production';
 
 const get = (name, fallback, options = {}) => {
   if (process.env[name]) {
-      return process.env[name];
+    return process.env[name];
   }
 
   if (fallback !== undefined && (dev || !options.requireInProduction)) {
-        return fallback;
-    }
+    return fallback;
+  }
 
-    throw new Error('Missing env var ' + name);
+  throw new Error('Missing env var ' + name);
 };
 
 module.exports = {
