@@ -1,5 +1,7 @@
 const eliteApiAgent = require('../helpers/eliteApiAgent');
 
+const helpers = require('../helpers');
+
 function CustodyStatusRepository(config, agent) {
   this.config = Object.assign({ limit: 2000 }, config);
   this.agent = eliteApiAgent(agent, undefined, this.config.elite2);
@@ -11,13 +13,11 @@ function CustodyStatusRepository(config, agent) {
 }
 
 CustodyStatusRepository.prototype.list = function (query) {
-  return this.requests.list({ query }).set('Page-Limit', this.config.limit)
-    .then((response) => response.status >= 200 && response.status <= 299 ? response.body : []);
+  return this.requests.list({ query }).set('Page-Limit', this.config.limit).then(helpers.handleResponse([]));
 };
 
 CustodyStatusRepository.prototype.getDetails = function (nomsId) {
-  return this.requests.getDetails({ nomsId })
-    .then((response) => response.status >= 200 && response.status <= 299 ? response.body : undefined);
+  return this.requests.getDetails({ nomsId }).then(helpers.handleResponse());
 };
 
 module.exports = CustodyStatusRepository;
