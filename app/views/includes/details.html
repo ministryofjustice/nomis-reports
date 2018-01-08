@@ -1,0 +1,26 @@
+{% macro render(type, columns = [], model = { links: {} }) %}
+  <section class="column-first">
+    <h2 class="heading-large">{{ type }}</h2>
+
+    <table>
+      <tbody>
+        {% for columnName in columns %}
+        <tr>
+          <th>{{ columnName }}</th>
+          <td>{{ model[columnName] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="column-first">
+    <h2 class="heading-medium">Links</h2>
+
+    <ul style="list-style: initial;margin-left:1.6em">
+      {% for type, uri in model.links %}
+      <li><a href="{{ uri }}" type="{{ type }}">{{ type }}</a></li>
+      {% endfor %}
+    </ul>
+  </section>
+{% endmacro %}

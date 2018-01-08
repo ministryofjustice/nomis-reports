@@ -9,9 +9,15 @@ const AgencyService = require('../services/AgencyService');
 const map = (fn) => (x) =>
   x && (util.isArray(x) ? x.map(fn) : fn(x));
 
-const expandLink = (p, k, fn) => (x) =>
-  ((x.links = x.links || {})[k] = fn(x[p])) && x;
+const expandLink = (p, k, fn) => (x) => {
+  if (x[p]) {
+    (x.links = x.links || {})[k] = fn(x[p]);
+  }
 
+  return x;
+};
+
+const addAgencyLinks = (p) => expandLink(p, 'agency', links.agency);
 const addPrisonLiveRoll = (p) => expandLink(p, 'liveRoll', links.prisonLiveRoll);
 
 const services = {};
@@ -21,9 +27,10 @@ const setUpServices = (config) => {
 
 const proxy = (service, fn, params) =>
   service[fn].call(service, params)
+    .then(map(addAgencyLinks('agencyId')))
     .then(map(addPrisonLiveRoll('agencyId')));
 
-const createAgencyViewModel = (agencies) =>
+const createAgenciesViewModel = (agencies) =>
   ({
     columns: [
       'agencyId',
@@ -31,22 +38,34 @@ const createAgencyViewModel = (agencies) =>
       'agencyType',
     ],
     links: {
-      agencyId: 'liveRoll',
+      agencyId: 'agency',
+    //agencyId: 'liveRoll',
     },
     agencies: agencies,
-    recordCount: agencies[0].recordCount,
+    recordCount: agencies && agencies[0] && agencies[0].recordCount || 0,
   });
 
-const renderAgencyList = (res, transform) => helpers.format(res, 'agency/list', transform);
+const createAgencyViewModel = (agency) =>
+({
+  columns: [
+    'agencyId',
+    'description',
+    'agencyType',
+  ],
+  agency: agency,
+});
+
+const renderAgencyList = (res, transform) => helpers.format(res, 'agencies/list', transform);
+const renderAgency = (res, transform) => helpers.format(res, 'agencies/detail', transform);
 
 const listAgencies = (req, res, next) =>
   proxy(services.agency, 'list', req.query.search)
-    .then(renderAgencyList(res, createAgencyViewModel))
+    .then(renderAgencyList(res, createAgenciesViewModel))
     .catch(helpers.failWithError(res, next));
 
 const retrieveAgency = (req, res, next) =>
   proxy(services.agency, 'getDetails', req.params.agencyId)
-    .then((data) => res.json(data))
+    .then(renderAgency(res, createAgencyViewModel))
     .catch(helpers.failWithError(res, next));
 
 router.use((req, res, next) => {

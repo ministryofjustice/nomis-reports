@@ -10,8 +10,13 @@ const bookingsService = require('../repositories/bookings');
 const map = (fn) => (x) =>
   x && (util.isArray(x) ? x.map(fn) : fn(x));
 
-const expandLink = (p, k, fn) => (x) =>
-  ((x.links = x.links || {})[k] = fn(x[p])) && x;
+const expandLink = (p, k, fn) => (x) => {
+  if (x[p]) {
+    (x.links = x.links || {})[k] = fn(x[p]);
+  }
+
+  return x;
+};
 
 const addBookingLinks = (p) => expandLink(p, 'booking', links.booking);
 const addSentenceDetailLinks = (p) => expandLink(p, 'sentenceDetail', links.sentenceDetail);
@@ -21,7 +26,8 @@ const addContactsLinks = (p) => expandLink(p, 'contacts', links.contacts);
 const addAdjudicationsLinks = (p) => expandLink(p, 'adjudications', links.adjudications);
 const addIepSummaryLinks = (p) => expandLink(p, 'iepSummary', links.iepSummary);
 const addOffenderLinks = (p) => expandLink(p, 'offender', links.offender);
-const addAssignedLivingUnitLinks = (p) => expandLink(p, 'location', links.location);
+const addCustodyStatusLinks = (p) => expandLink(p, 'custodyStatus', links.custodyStatus);
+const addAssignedLivingUnitLinks = (p) => expandLink(p, 'assignedLivingUnit', links.location);
 const addAgencyLinks = (p) => expandLink(p, 'agency', links.agency);
 
 const list = (req) =>
@@ -70,6 +76,7 @@ const proxy = (fn, req) =>
     .then(map(addAdjudicationsLinks('bookingId')))
     .then(map(addIepSummaryLinks('bookingId')))
     .then(map(addOffenderLinks('offenderNo')))
+    .then(map(addCustodyStatusLinks('offednerNo')))
     .then(map(addAssignedLivingUnitLinks('assignedLivingUnitId')));
 
 const createBookingListViewModel = (bookings) =>

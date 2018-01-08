@@ -9,8 +9,13 @@ const CustodyStatusService = require('../services/CustodyStatusService');
 const map = (fn) => (x) =>
   x && (util.isArray(x) ? x.map(fn) : fn(x));
 
-const expandLink = (p, k, fn) => (x) =>
-  ((x.links = x.links || {})[k] = fn(x[p])) && x;
+const expandLink = (p, k, fn) => (x) => {
+  if (x[p]) {
+    (x.links = x.links || {})[k] = fn(x[p]);
+  }
+
+  return x;
+};
 
 const addOffenderLinks = (p) => expandLink(p, 'offender', links.offender);
 
@@ -23,12 +28,12 @@ const proxy = (service, fn, params) =>
   service[fn].call(service, params)
     .then(map(addOffenderLinks('offenderNo')));
 
-const createCustodyStatusViewModel = (custodyStatuses) =>
+const createCustodyStatusListViewModel = (custodyStatuses) =>
   ({
     columns: [
       'offenderNo',
       'custodyStatusCode',
-      'custodyStatusDescription'
+      'custodyStatusDescription',
     ],
     links: {
       offenderNo: 'offender'
@@ -37,16 +42,27 @@ const createCustodyStatusViewModel = (custodyStatuses) =>
     recordCount: custodyStatuses.length,
   });
 
-const renderCustodyStatusList = (res, transform) => helpers.format(res, 'custodyStatus/list', transform);
+  const createCustodyStatusViewModel = (custodyStatus) =>
+  ({
+    columns: [
+      'offenderNo',
+      'custodyStatusCode',
+      'custodyStatusDescription',
+    ],
+    custodyStatus: custodyStatus,
+  });
+
+  const renderCustodyStatusList = (res, transform) => helpers.format(res, 'custodyStatuses/list', transform);
+  const renderCustodyStatus = (res, transform) => helpers.format(res, 'custodyStatuses/detail', transform);
 
 const listCustodyStatuses = (req, res, next) =>
   proxy(services.custodyStatus, 'list', req.query.search)
-    .then(renderCustodyStatusList(res, createCustodyStatusViewModel))
+    .then(renderCustodyStatusList(res, createCustodyStatusListViewModel))
     .catch(helpers.failWithError(res, next));
 
 const retrieveCustodyStatus = (req, res, next) =>
   proxy(services.custodyStatus, 'getDetails', req.params.nomsId)
-    .then((data) => res.json(data))
+    .then(renderCustodyStatus(res, createCustodyStatusViewModel))
     .catch(helpers.failWithError(res, next));
 
 router.use((req, res, next) => {

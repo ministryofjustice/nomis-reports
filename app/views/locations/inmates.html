@@ -1,0 +1,15 @@
+{% extends "layout.html" %}
+{% import "includes/lists.html" as lists %}
+
+{% block content %}
+
+<main id="content" role="main">
+
+		<p style="margin-top:30px;"><a href="/">Home</a> > <a href="/locations">Locations</a> >
+				<a href="/locations/{{ location.locationId }}">{{ location.description }}</a> > Inmates</p>
+
+		{{ lists.render(location.description + "Inmates", columns, inmates, links) }}
+
+</main>
+
+{% endblock %}
