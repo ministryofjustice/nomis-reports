@@ -18,6 +18,8 @@ const healthcheck = require('../app/health/healthcheck');
 const formatDate = (str, format) => moment(str).format(format);
 const slugify = (str) => str.replace(/[.,-\/#!$%\^&\*;:{}=\-_`~()’]/g,"").replace(/ +/g,'_').toLowerCase();
 const htmlLog = (nunjucksSafe) => (a) => nunjucksSafe('<script>console.log(' + JSON.stringify(a, null, '\t') + ');</script>');
+const isObject = (x) => x != null && typeof x === 'object' && Array.isArray(x) === false;
+const isArray = (x) => Array.isArray(x);
 
 const flatten = (data) => {
   let result = {};
@@ -125,6 +127,8 @@ function setupViewEngine (app) {
   nunjucks.env.addFilter('slugify', slugify);
   nunjucks.env.addFilter('formatDate', formatDate);
   nunjucks.env.addFilter('log', htmlLog(nunjucks.env.getFilter('safe')));
+  nunjucks.env.addFilter('isObject', isObject);
+  nunjucks.env.addFilter('isArray', isArray);
 
   return app;
 }

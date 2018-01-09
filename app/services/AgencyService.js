@@ -1,8 +1,9 @@
 const AgencyRepository = require('../repositories/AgencyRepository');
+const CachingRepository = require('../helpers/CachingRepository');
 
 function AgencyService(config, repo) {
   this.config = config;
-  this.repository = repo || new AgencyRepository(config);
+  this.repository = repo || new CachingRepository(AgencyRepository, config);
 }
 
 AgencyService.prototype.list = function (query) {

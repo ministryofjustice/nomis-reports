@@ -1,14 +1,12 @@
 const express = require('express');
 const router = new express.Router();
 
-const util = require('util');
 const helpers = require('../helpers');
 const links = require('../helpers/links');
-const eliteApiAgent = require('../helpers/eliteApiAgent');
-const bookingsService = require('../repositories/bookings');
+const BookingService = require('../services/BookingService');
 
 const map = (fn) => (x) =>
-  x && (util.isArray(x) ? x.map(fn) : fn(x));
+  x && (Array.isArray(x) ? x.map(fn) : fn(x));
 
 const expandLink = (p, k, fn) => (x) => {
   if (x[p]) {
@@ -28,46 +26,20 @@ const addIepSummaryLinks = (p) => expandLink(p, 'iepSummary', links.iepSummary);
 const addOffenderLinks = (p) => expandLink(p, 'offender', links.offender);
 const addCustodyStatusLinks = (p) => expandLink(p, 'custodyStatus', links.custodyStatus);
 const addAssignedLivingUnitLinks = (p) => expandLink(p, 'assignedLivingUnit', links.location);
-const addAgencyLinks = (p) => expandLink(p, 'agency', links.agency);
 
-const list = (req) =>
-  req.app.locals.bookingsService
-    .list({ query: req.query.search })
-    .set('Page-Limit', 1000);
+const services = {};
+const setUpServices = (config) => {
+  services.booking = services.booking || new BookingService(config);
+};
 
-const getDetails = (req) =>
-  req.app.locals.bookingsService.getDetails({ bookingId: req.params.bookingId });
-
-const getSentenceDetail = (req) =>
-  req.app.locals.bookingsService.getSentenceDetail({ bookingId: req.params.bookingId });
-
-const getMainOffence = (req) =>
-  req.app.locals.bookingsService.getMainOffence({ bookingId: req.params.bookingId });
-
-const listAliases = (req) =>
-  req.app.locals.bookingsService.listAliases({ bookingId: req.params.bookingId });
-
-const listContacts = (req) =>
-  req.app.locals.bookingsService.listContacts({ bookingId: req.params.bookingId });
-
-const listAdjudications = (req) =>
-  req.app.locals.bookingsService.listAdjudications({ bookingId: req.params.bookingId });
-
-const getIepSummary = (req) =>
-  req.app.locals.bookingsService.getIepSummary({ bookingId: req.params.bookingId }, { withDetails: true });
-
-const proxy = (fn, req) =>
-  fn(req)
-    .then((response) => response.body)
+const proxy = (service, fn, params) =>
+  service[fn].call(service, params)
     .then(map((data) => {
-      data.assignedLivingUnitId = data.assignedLivingUnit && data.assignedLivingUnit.locationId;
+      if (data.assignedLivingUnit && data.assignedLivingUnit.locationId) {
+        data.assignedLivingUnit = data.assignedLivingUnit.locationId;
+      }
       return data;
     }))
-    .then(map((data) => {
-      data.agencyId = data.assignedLivingUnit && data.assignedLivingUnit.agencyId;
-      return data;
-    }))
-    .then(map(addAgencyLinks('agencyId')))
     .then(map(addBookingLinks('bookingId')))
     .then(map(addSentenceDetailLinks('bookingId')))
     .then(map(addMainOffenceLinks('bookingId')))
@@ -76,10 +48,10 @@ const proxy = (fn, req) =>
     .then(map(addAdjudicationsLinks('bookingId')))
     .then(map(addIepSummaryLinks('bookingId')))
     .then(map(addOffenderLinks('offenderNo')))
-    .then(map(addCustodyStatusLinks('offednerNo')))
-    .then(map(addAssignedLivingUnitLinks('assignedLivingUnitId')));
+    .then(map(addCustodyStatusLinks('offenderNo')))
+    .then(map(addAssignedLivingUnitLinks('assignedLivingUnit')));
 
-const createBookingListViewModel = (bookings) =>
+const createBookingsListViewModel = (bookings) =>
   ({
     columns: [
       'offenderNo',
@@ -96,69 +68,79 @@ const createBookingListViewModel = (bookings) =>
     links: {
       offenderNo: 'offender',
       agencyId: 'agency',
-      bookingNo: 'booking'
+      bookingNo: 'booking',
     },
-    bookings: bookings,
-    recordCount: bookings[0].recordCount,
+    bookings,
+    recordCount: bookings && bookings[0] && bookings[0].recordCount || 0,
   });
 
-const renderBookingList = (res, transform) => helpers.format(res, 'bookings/list', transform);
+const createBookingViewModel = (booking) => ({ booking });
+const createSentenceDetailViewModel = (sentenceDetail) => ({ sentenceDetail });
+const createMainOffenceViewModel = (mainOffence) => ({ mainOffence });
+const createIepSummaryViewModel = (iepSummary) => ({ iepSummary });
 
-const allBookings = (req, res, next) =>
-  proxy(list, req)
-    .then(renderBookingList(res, createBookingListViewModel))
+const renderer = (view) => (res, transform) => helpers.format(res, `bookings/${view}`, transform);
+const renderBookingsList = renderer('list');
+const renderBooking = renderer('detail');
+const renderSentenceDetail = renderer('sentenceDetail');
+const renderMainOffence = renderer('mainOffence');
+const renderIepSummary = renderer('iepSummary');
+
+const listBookings = (req, res, next) =>
+  proxy(services.booking, 'list', req.query.search)
+    .then(renderBookingsList(res, createBookingsListViewModel))
     .catch(helpers.failWithError(res, next));
 
 const retrieveBookingDetails = (req, res, next) =>
-  proxy(getDetails, req)
-    .then((data) => res.json(data))
+  proxy(services.booking, 'getDetails', req.params.bookingId)
+    .then(renderBooking(res, createBookingViewModel))
     .catch(helpers.failWithError(res, next));
 
 const retrieveBookingSentenceDetail = (req, res, next) =>
-  proxy(getSentenceDetail, req)
-    .then((data) => res.json(data))
+  proxy(services.booking, 'getSentenceDetail', req.params.bookingId)
+    .then(renderSentenceDetail(res, createSentenceDetailViewModel))
     .catch(helpers.failWithError(res, next));
 
 const retrieveBookingMainOffence = (req, res, next) =>
-  proxy(getMainOffence, req)
-    .then((data) => res.json(data))
-    .catch(helpers.failWithError(res, next));
-
-const retrieveBookingAliases = (req, res, next) =>
-  proxy(listAliases, req)
-    .then((data) => res.json(data))
-    .catch(helpers.failWithError(res, next));
-
-const retrieveBookingContacts = (req, res, next) =>
-  proxy(listContacts, req)
-    .then((data) => res.json(data))
-    .catch(helpers.failWithError(res, next));
-
-const retrieveBookingAdjudications = (req, res, next) =>
-  proxy(listAdjudications, req)
-    .then((data) => res.json(data))
+  proxy(services.booking, 'getMainOffence', req.params.bookingId)
+    .then(renderMainOffence(res, createMainOffenceViewModel))
     .catch(helpers.failWithError(res, next));
 
 const retrieveBookingIepSummary = (req, res, next) =>
-  proxy(getIepSummary, req)
-    .then((data) => res.json(data))
+  proxy(services.booking, 'getIepSummary', req.params.bookingId, { withDetails: true })
+    .then(renderIepSummary(res, createIepSummaryViewModel))
+    .catch(helpers.failWithError(res, next));
+
+const retrieveBookingAliases = (req, res, next) =>
+  proxy(services.booking, 'listAliases', req.query.search)
+  //.then(renderAliasesList(res, createAliasesListViewModel))
+    .then((response) => res.json(response.body))
+    .catch(helpers.failWithError(res, next));
+
+const retrieveBookingContacts = (req, res, next) =>
+  proxy(services.booking, 'listContacts', req.query.search)
+  //.then(renderContactsList(res, createContactsListViewModel))
+    .then((response) => res.json(response.body))
+    .catch(helpers.failWithError(res, next));
+
+const retrieveBookingAdjudications = (req, res, next) =>
+  proxy(services.booking, 'listAdjudications', req.query.search)
+  //.then(renderAdjudicationsList(res, createAdjudicationsListViewModel))
+    .then((response) => res.json(response.body))
     .catch(helpers.failWithError(res, next));
 
 router.use((req, res, next) => {
-  let config = req.app.locals.config.elite2;
-  let agent = eliteApiAgent(undefined, undefined, config);
-
-  req.app.locals.bookingsService = req.app.locals.bookingsService || bookingsService(agent, config.apiUrl);
-
+  setUpServices(req.app.locals.config);
   next();
 });
-router.get('/', allBookings);
+
+router.get('/', listBookings);
 router.get('/:bookingId', retrieveBookingDetails);
 router.get('/:bookingId/sentenceDetail', retrieveBookingSentenceDetail);
 router.get('/:bookingId/mainOffence', retrieveBookingMainOffence);
+router.get('/:bookingId/iepSummary', retrieveBookingIepSummary);
 router.get('/:bookingId/aliases', retrieveBookingAliases);
 router.get('/:bookingId/contacts', retrieveBookingContacts);
 router.get('/:bookingId/adjudications', retrieveBookingAdjudications);
-router.get('/:bookingId/iepSummary', retrieveBookingIepSummary);
 
 module.exports = router;

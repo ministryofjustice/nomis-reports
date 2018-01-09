@@ -1,8 +1,9 @@
 const LocationRepository = require('../repositories/LocationRepository');
+const CachingRepository = require('../helpers/CachingRepository');
 
 function LocationService(config, repo) {
   this.config = config;
-  this.repository = repo || new LocationRepository(config);
+  this.repository = repo || new CachingRepository(LocationRepository, config);
 }
 
 LocationService.prototype.list = function (query) {

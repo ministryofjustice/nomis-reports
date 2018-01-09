@@ -1,13 +1,12 @@
 const express = require('express');
 const router = new express.Router();
 
-const util = require('util');
 const helpers = require('../helpers');
 const links = require('../helpers/links');
 const LocationService = require('../services/LocationService');
 
 const map = (fn) => (x) =>
-  x && (util.isArray(x) ? x.map(fn) : fn(x));
+  x && (Array.isArray(x) ? x.map(fn) : fn(x));
 
 const expandLink = (p, k, fn) => (x) => {
   if (x[p]) {
@@ -18,7 +17,6 @@ const expandLink = (p, k, fn) => (x) => {
 };
 
 const addAgencyLinks = (p) => expandLink(p, 'agency', links.agency);
-const addPrisonLiveRoll = (p) => expandLink(p, 'liveRoll', links.prisonLiveRoll);
 const addLocation = (p) => expandLink(p, 'location', links.location);
 const addLocationInmates = (p) => expandLink(p, 'inmates', links.locationInmates);
 const addBookingLinks = (p) => expandLink(p, 'booking', links.booking);
@@ -33,7 +31,6 @@ const setUpServices = (config) => {
 const proxy = (service, fn, ...params) =>
   service[fn].apply(service, params)
     .then(map(addAgencyLinks('agencyId')))
-    .then(map(addPrisonLiveRoll('agencyId')))
     .then(map(addLocationInmates('locationId')))
     .then(map(addLocation('locationId')))
     .then(map(addBookingLinks('bookingId')))
@@ -54,27 +51,13 @@ const createLocationsViewModel = (locations) =>
     ],
     links: {
       locationId: 'location',
-    //currentOccupancy: 'liveRoll',
       currentOccupancy: 'inmates',
     },
-    locations: locations,
+    locations,
     recordCount: locations && locations[0] && locations[0].recordCount || 0,
   });
 
-const createLocationViewModel = (location) =>
-({
-  columns: [
-    'locationId',
-    'description',
-    'locationType',
-    'agencyId',
-    'parentLocationId',
-    'currentOccupancy',
-    'locationPrefix',
-    'userDescription',
-  ],
-  location: location,
-});
+const createLocationViewModel = (location) => ({ location });
 
 const createInmatesViewModel = (inmates) =>
   ({
@@ -96,7 +79,7 @@ const createInmatesViewModel = (inmates) =>
       agencyId: 'agency',
       assignedLivingUnitId: 'assignedLivingUnit',
     },
-    inmates: inmates,
+    inmates,
     recordCount: inmates && inmates[0] && inmates[0].recordCount || 0,
   });
 

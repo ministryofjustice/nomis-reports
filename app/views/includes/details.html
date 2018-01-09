@@ -1,14 +1,44 @@
+{% macro prop(key, value) %}
+  {% if key !== 'links' %}
+  <tr>
+    <th>{{ key }}</th>
+    <td>
+    {% if value | isObject %}
+      <table>
+        <tbody>
+          {% for key, value in value %}
+            {{ prop(key, value) }}
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      {% if value | isArray %}
+        {% for value in value %}
+          <table>
+            <tbody>
+              {% for key, value in value %}
+                {{ prop(key, value) }}
+              {% endfor %}
+            </tbody>
+          </table>
+        {% endfor %}
+      {% else %}
+        {{ value }}
+      {% endif %}
+    {% endif %}
+    </td>
+  </tr>
+  {% endif %}
+{% endmacro %}
+
 {% macro render(type, columns = [], model = { links: {} }) %}
   <section class="column-first">
     <h2 class="heading-large">{{ type }}</h2>
 
     <table>
       <tbody>
-        {% for columnName in columns %}
-        <tr>
-          <th>{{ columnName }}</th>
-          <td>{{ model[columnName] }}</td>
-        </tr>
+        {% for key, value in model %}
+          {{ prop(key, value) }}
         {% endfor %}
       </tbody>
     </table>

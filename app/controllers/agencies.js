@@ -1,13 +1,12 @@
 const express = require('express');
 const router = new express.Router();
 
-const util = require('util');
 const helpers = require('../helpers');
 const links = require('../helpers/links');
 const AgencyService = require('../services/AgencyService');
 
 const map = (fn) => (x) =>
-  x && (util.isArray(x) ? x.map(fn) : fn(x));
+  x && (Array.isArray(x) ? x.map(fn) : fn(x));
 
 const expandLink = (p, k, fn) => (x) => {
   if (x[p]) {
@@ -41,19 +40,11 @@ const createAgenciesViewModel = (agencies) =>
       agencyId: 'agency',
     //agencyId: 'liveRoll',
     },
-    agencies: agencies,
+    agencies,
     recordCount: agencies && agencies[0] && agencies[0].recordCount || 0,
   });
 
-const createAgencyViewModel = (agency) =>
-({
-  columns: [
-    'agencyId',
-    'description',
-    'agencyType',
-  ],
-  agency: agency,
-});
+const createAgencyViewModel = (agency) => ({ agency });
 
 const renderAgencyList = (res, transform) => helpers.format(res, 'agencies/list', transform);
 const renderAgency = (res, transform) => helpers.format(res, 'agencies/detail', transform);

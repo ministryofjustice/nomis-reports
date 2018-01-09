@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+{% import "includes/details.html" as details %}
+
+{% block content %}
+
+<main id="content" role="main">
+
+		<p style="margin-top:30px;"><a href="/">Home</a> > <a href="/bookings">Bookings</a> > {{ booking.bookingsNo }}</p>
+
+		{{ details.render(booking.lastName + ", " + booking.firstName + " " + booking.middleName , columns, booking) }}
+
+</main>
+
+{% endblock %}

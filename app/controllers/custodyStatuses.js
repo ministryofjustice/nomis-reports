@@ -1,13 +1,12 @@
 const express = require('express');
 const router = new express.Router();
 
-const util = require('util');
 const helpers = require('../helpers');
 const links = require('../helpers/links');
 const CustodyStatusService = require('../services/CustodyStatusService');
 
 const map = (fn) => (x) =>
-  x && (util.isArray(x) ? x.map(fn) : fn(x));
+  x && (Array.isArray(x) ? x.map(fn) : fn(x));
 
 const expandLink = (p, k, fn) => (x) => {
   if (x[p]) {
@@ -38,19 +37,11 @@ const createCustodyStatusListViewModel = (custodyStatuses) =>
     links: {
       offenderNo: 'offender'
     },
-    custodyStatuses: custodyStatuses,
+    custodyStatuses,
     recordCount: custodyStatuses.length,
   });
 
-  const createCustodyStatusViewModel = (custodyStatus) =>
-  ({
-    columns: [
-      'offenderNo',
-      'custodyStatusCode',
-      'custodyStatusDescription',
-    ],
-    custodyStatus: custodyStatus,
-  });
+  const createCustodyStatusViewModel = (custodyStatus) => ({ custodyStatus });
 
   const renderCustodyStatusList = (res, transform) => helpers.format(res, 'custodyStatuses/list', transform);
   const renderCustodyStatus = (res, transform) => helpers.format(res, 'custodyStatuses/detail', transform);
