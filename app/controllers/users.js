@@ -2,28 +2,24 @@ const express = require('express');
 const router = new express.Router();
 
 const helpers = require('../helpers');
-const eliteApiAgent = require('../helpers/eliteApiAgent');
-const usersService = require('../repositories/users');
+const UserService = require('../services/UserService');
 
-const authorizeUser = (req, config) =>
-  req.app.locals.usersService
-    .postLogin({
-      username: config.user,
-      password: config.password
-    })
-    .then((response) =>  req.app.locals.config.elite2.elite2Jwt = response.body);
+const services = {};
+const setUpServices = (config) => {
+  services.user = services.user || new UserService(config);
+};
 
-const userLogin = (req, res, next) =>
-  authorizeUser(req, req.app.locals.config.reports)
+const userLogin = (req, res, next) => {
+  let username = req.body && req.body.user || req.app.locals.config.reports.user;
+  let password = req.body && req.body.password || req.app.locals.config.reports.password;
+
+  return services.user.login(username, password)
     .then(helpers.redirect(res, '/'))
     .catch(helpers.failWithError(res, next));
+};
 
 router.use((req, res, next) => {
-  let config = req.app.locals.config.elite2;
-  let agent = eliteApiAgent(undefined, undefined, config);
-
-  req.app.locals.usersService = req.app.locals.usersService || usersService(agent, config.apiUrl);
-
+  setUpServices(req.app.locals.config);
   next();
 });
 router.get('/login', userLogin);

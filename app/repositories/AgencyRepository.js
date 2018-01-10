@@ -13,7 +13,7 @@ function AgencyRepository(config, agent) {
 }
 
 AgencyRepository.prototype.list = function (query) {
-  return this.requests.list({ query }).set('Page-Limit', this.config.limit).then(helpers.handleResponse([]));
+  return this.requests.list(query).set('Page-Limit', this.config.limit).then(helpers.handleResponse([]));
 };
 
 AgencyRepository.prototype.getDetails = function (agencyId) {

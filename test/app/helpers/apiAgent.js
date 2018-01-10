@@ -8,7 +8,8 @@ const server = express();
 server.get('/fake-api/world', (req, res) => res.status(200).json({ hello: 'world' }));
 server.get('/fake-api/universe', (req, res) => res.status(200).json({ hello: 'universe' }));
 server.get('/fake-api/header/:name', (req, res) => res.status(200).json({ [req.params.name]: req.get(req.params.name) }));
-server.get('/fake-api/:name', (req, res) => res.status(200).json({ [req.params.name]: req[req.params.name] }));
+server.get('/fake-api/:param', (req, res) => res.status(200).json(req.params));
+server.get('/fake-api/:p1/:p2', (req, res) => res.status(200).json(req.params));
 server.use(bodyParser.json());
 server.post('/fake-api/echo', (req, res) => res.status(200).json(req.body));
 
@@ -40,6 +41,14 @@ describe('API Agent', () => {
     it('Should be able to make a simple GET request', () =>
       simpleApiAgent.get('/fake-api/world')()
         .then((response) => response.body.hello.should.equal('world')));
+
+    it('Should be able to make a paramerised GET request', () =>
+      simpleApiAgent.get('/fake-api/:id')({ id: 'harvard' })
+        .then((response) => response.body.should.eql({ param: 'harvard' })));
+
+    it('Should be able to make a multi paramerised GET request', () =>
+      simpleApiAgent.get('/fake-api/:id/:id2')({ id: 'harvard', id2: 'university' })
+        .then((response) => response.body.should.eql({ p1: 'harvard', p2: 'university' })));
 
     it('Should be able to make a simple GET request to an alternative route', () =>
       simpleApiAgent.get('/fake-api/universe')()

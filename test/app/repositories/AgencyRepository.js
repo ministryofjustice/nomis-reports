@@ -47,5 +47,9 @@ describe('An Agency Repository', () => {
     it('should return nothing if the agencyId is not known', () =>
       agencyRepository.getDetails('VOID')
         .then((data) => should.not.exist(data)));
+
+    it('should return nothing if the agencyId is not included', () =>
+      agencyRepository.getDetails()
+        .then((data) => should.not.exist(data)));
   });
 });

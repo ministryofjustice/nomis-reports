@@ -41,7 +41,7 @@ function BookingRepository(config, agent) {
 }
 
 BookingRepository.prototype.list = function (query) {
-  return this.requests.list({ query }).set('Page-Limit', this.config.limit).then(helpers.handleResponse([]));
+  return this.requests.list(query).set('Page-Limit', this.config.limit).then(helpers.handleResponse([]));
 };
 
 BookingRepository.prototype.getDetails = function (bookingId) {
@@ -61,15 +61,15 @@ BookingRepository.prototype.getIepSummary = function (bookingId) {
 };
 
 BookingRepository.prototype.listAliases = function (bookingId, query) {
-  return this.requests.listAliases({ bookingId }, { query }).set('Page-Limit', this.config.limit).then(helpers.handleResponse([]));
+  return this.requests.listAliases({ bookingId }, query).set('Page-Limit', this.config.limit).then(helpers.handleResponse([]));
 };
 
 BookingRepository.prototype.listContacts = function (bookingId, query) {
-  return this.requests.listContacts({ bookingId }, { query }).set('Page-Limit', this.config.limit).then(helpers.handleResponse([]));
+  return this.requests.listContacts({ bookingId }, query).set('Page-Limit', this.config.limit).then(helpers.handleResponse([]));
 };
 
 BookingRepository.prototype.listAdjudications = function (bookingId, query) {
-  return this.requests.listAdjudications({ bookingId }, { query }).set('Page-Limit', this.config.limit).then(helpers.handleResponse([]));
+  return this.requests.listAdjudications({ bookingId }, query).set('Page-Limit', this.config.limit).then(helpers.handleResponse([]));
 };
 
 module.exports = BookingRepository;

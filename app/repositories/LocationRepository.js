@@ -14,7 +14,7 @@ function LocationRepository(config, agent) {
 }
 
 LocationRepository.prototype.list = function (query) {
-  return this.requests.list({ query }).set('Page-Limit', this.config.limit).then(helpers.handleResponse([]));
+  return this.requests.list(query).set('Page-Limit', this.config.limit).then(helpers.handleResponse([]));
 };
 
 LocationRepository.prototype.getDetails = function (locationId) {

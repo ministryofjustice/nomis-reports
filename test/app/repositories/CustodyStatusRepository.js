@@ -47,5 +47,9 @@ describe('A CustodyStatus Repository', () => {
     it('should return nothing if the nomsId is not known', () =>
       custodyStatusRepository.getDetails('VOID')
         .then((data) => should.not.exist(data)));
+
+    it('should return nothing if the nomsId is not passed', () =>
+      custodyStatusRepository.getDetails()
+        .then((data) => should.not.exist(data)));
   });
 });

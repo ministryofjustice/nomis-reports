@@ -5,7 +5,10 @@ module.exports = (agent, name, config, opts) => {
     return () => req()
         .then((res) => Object.assign({ name, status: res.status === 200 ? 'UP' : res.status }, res.body))
         .catch((error) => {
-          if (opts.logger) opts.logger.error(error, `Error calling ${url}`);
+          if (opts.logger) {
+            opts.logger.error(error, `Error calling ${url}`);
+          }
+
           return { name, status: error.code, error };
         });
   };

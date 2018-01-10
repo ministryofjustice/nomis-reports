@@ -6,15 +6,10 @@ const basicAgent = (agent, timeout) =>
     .accept('json')
     .timeout(Object.assign({ response: 2000, deadline: 2500 }, timeout));
 
-const buildUrl = (uri, params) => {
-  let u = uri;
-
-  for (var key in params) {
-    u = u.replace(new RegExp('/:' + key, 'gi'), '/' + params[key]);
-  }
-
-  return u;
-};
+const buildUrl = (uri, params) =>
+  uri.split('/')
+    .map((key) => (key[0] !== ':') ? key : params[key.replace(':', '')] || key)
+    .join('/');
 
 const getRouteAgent = (agent = basicAgent(), uri) =>
   (/\/:[^\/]+/gi.test(uri))

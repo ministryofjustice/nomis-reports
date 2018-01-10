@@ -2,30 +2,55 @@ const express = require('express');
 const router = new express.Router();
 
 const helpers = require('../helpers');
-const nomisApiAgent = require('../helpers/nomisApiAgent');
-const prisonService = require('../repositories/prison');
+const links = require('../helpers/links');
+const PrisonService = require('../services/PrisonService');
 
-const getLiveRoll = (req) =>
-  req.app.locals.prisonService.liveRoll({ prison_id: req.params.prison_id });
+const map = (fn) => (x) =>
+  x && (Array.isArray(x) ? x.map(fn) : fn(x));
 
-const hyperLinkList = (list) =>
-  list.map((nomsId) => `/offenders/${nomsId}`);
+const expandLink = (p, k, fn) => (x) => {
+  if (x[p]) {
+    (x.links = x.links || {})[k] = fn(x[p]);
+  }
 
-const listLiveRoll = (req, res, next) =>
-  getLiveRoll(req)
-    .then((response) => hyperLinkList(response.body.noms_ids))
-    .then((list) => res.json(list))
+  return x;
+};
+
+const addOffenderLinks = (p) => expandLink(p, 'offender', links.offender);
+
+const services = {};
+const setUpServices = (config) => {
+  services.prison = services.prison || new PrisonService(config);
+};
+
+const proxy = (service, fn, ...params) =>
+  service[fn].apply(service, params)
+    .then(map(addOffenderLinks('offenderNo')));
+
+const createLiveRollViewModel = (liveRoll) =>
+  ({
+    columns: [
+      'offenderNo',
+    ],
+    links: {
+      offenderNo: 'offender',
+    },
+    liveRoll,
+    recordCount: liveRoll.length || 0,
+  });
+
+const renderLiveRollList = (res, transform) => helpers.format(res, 'prisons/liveRoll', transform);
+
+const retrieveLiveRoll = (req, res, next) =>
+  proxy(services.prison, 'liveRoll', req.params.prisonId, req.query.search)
+    .then(renderLiveRollList(res, createLiveRollViewModel))
     .catch(helpers.failWithError(res, next));
 
 router.use((req, res, next) => {
-  let config = req.app.locals.config.nomis;
-  let agent = nomisApiAgent(undefined, undefined, config);
-
-  req.app.locals.prisonService = req.app.locals.prisonService || prisonService(agent, config.apiUrl);
-
+  setUpServices(req.app.locals.config);
   next();
 });
 
-router.get('/:prison_id/live_roll', listLiveRoll);
+router.get('/:prison_id/live_roll', retrieveLiveRoll);
 
 module.exports = router;

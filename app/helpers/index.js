@@ -44,7 +44,7 @@ const format = (res, view, transform) => (model) => res.format({
 const redirect = (res, route) => () => res.redirect(route);
 
 const failWithError = (res, next) => (err) => {
-  var ex = new Error(typeof err === 'string' ? err : err.message);
+  let ex = new Error(typeof err === 'string' ? err : err.message);
   if (err.stack) {
     ex.stack = err.stack;
   }
@@ -52,14 +52,14 @@ const failWithError = (res, next) => (err) => {
   res.status(400) && next(ex);
 };
 
-const rpcError = (url, opts, err) => {
+const rpcError = (url, opts, next) => (err) => {
   err.url = url;
   err.options = opts;
 
   console.error('RPC Error Occured:');
   console.error(err);
 
-  return err;
+  next(err);
 };
 
 const errorCheck = (resolve, reject) => (err, data) =>

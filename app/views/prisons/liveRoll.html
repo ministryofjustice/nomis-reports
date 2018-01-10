@@ -1,0 +1,15 @@
+{% extends "layout.html" %}
+{% import "includes/lists.html" as lists %}
+
+{% block content %}
+
+<main id="content" role="main">
+
+		<p style="margin-top:30px;"><a href="/">Home</a> > <a href="/prisons">Prisons</a> >
+				<a href="/prisons/{{ prison.prisonId }}">{{ prison.description }}</a> > LiveRoll</p>
+
+		{{ lists.render(prison.description + " LiveRoll", columns, liveRoll, links) }}
+
+</main>
+
+{% endblock %}

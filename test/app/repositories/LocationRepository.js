@@ -53,6 +53,10 @@ describe('A Location Repository', () => {
       locationRepository.getDetails('VOID')
         .then((data) => should.not.exist(data)));
 
+    it('should return nothing if the locationId is not passed', () =>
+      locationRepository.getDetails()
+        .then((data) => should.not.exist(data)));
+
     it('should retrieve a list of inmates from the remote for a known locationId', () =>
       locationRepository.listInmates('FOO')
         .then((data) => data.should.eql(exampleInmateList)));
