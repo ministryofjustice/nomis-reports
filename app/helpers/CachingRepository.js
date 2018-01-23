@@ -9,8 +9,8 @@ const readFile = util.promisify(fs.readFile);
 const writeFile = util.promisify(fs.writeFile);
 
 const datastore = {
-  root: `${__dirname}/../../.cache`,
-  timeout: 200,
+  root: `./.cache`,
+  timeout: 20000,
 
   put(cacheKey, data) {
     let path = `${datastore.root}/${cacheKey}`;
@@ -49,6 +49,8 @@ const checkCache = (cacheKey, ds) => {
 const wrap = (repository, method, prefix, ds) => (...args) => {
   let cacheKey = [].concat([prefix, method], args.map((x) => isObject(x) ? JSON.stringify(x) : x)).join(' ').trim().replace(/\s/g, '_');
   let fn = repository[method];
+
+  console.log(cacheKey, args);
 
   return checkCache(cacheKey, ds)
     .catch(callRemote(repository, fn, args, cacheKey, ds));

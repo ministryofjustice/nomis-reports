@@ -10,8 +10,11 @@ function errorResponse(res, status, code, details, more = {}) {
     more
   );
 
-  res.status(status);
-  res.json(response);
+  console.log('status', status);
+  console.log(response);
+
+  //res.status(status);
+  //res.json(response);
 };
 
 function notFound(res, details, more = {}) {

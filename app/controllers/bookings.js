@@ -4,6 +4,7 @@ const router = new express.Router();
 const helpers = require('../helpers');
 const links = require('../helpers/links');
 const BookingService = require('../services/BookingService');
+const extractBookings = require('./extracts');
 
 const map = (fn) => (x) =>
   x && (Array.isArray(x) ? x.map(fn) : fn(x));
@@ -87,7 +88,7 @@ const renderMainOffence = renderer('mainOffence');
 const renderIepSummary = renderer('iepSummary');
 
 const listBookings = (req, res, next) =>
-  proxy(services.booking, 'list', req.query.search)
+  proxy(services.booking, 'list', req.query.query)
     .then(renderBookingsList(res, createBookingsListViewModel))
     .catch(helpers.failWithError(res, next));
 
@@ -142,5 +143,6 @@ router.get('/:bookingId/iepSummary', retrieveBookingIepSummary);
 router.get('/:bookingId/aliases', retrieveBookingAliases);
 router.get('/:bookingId/contacts', retrieveBookingContacts);
 router.get('/:bookingId/adjudications', retrieveBookingAdjudications);
+
 
 module.exports = router;

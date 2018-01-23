@@ -6,8 +6,8 @@ function BookingService(config, repo) {
   this.repository = repo || new CachingRepository(BookingRepository, config);
 }
 
-BookingService.prototype.list = function (query) {
-  return this.repository.list(query);
+BookingService.prototype.list = function (query, pageOffset) {
+  return this.repository.list(query, pageOffset);
 };
 
 BookingService.prototype.getDetails = function (bookingId) {

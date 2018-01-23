@@ -16,8 +16,8 @@ CustodyStatusRepository.prototype.list = function (query) {
   return this.requests.list(query).set('Page-Limit', this.config.limit).then(helpers.handleResponse([]));
 };
 
-CustodyStatusRepository.prototype.getDetails = function (nomsId) {
-  return this.requests.getDetails({ nomsId }).then(helpers.handleResponse());
+CustodyStatusRepository.prototype.getStatus = function (nomsId, query) {
+  return this.requests.getStatus({ nomsId }, query).then(helpers.handleResponse());
 };
 
 module.exports = CustodyStatusRepository;

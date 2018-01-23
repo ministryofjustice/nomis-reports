@@ -10,8 +10,8 @@ CustodyStatusService.prototype.list = function (query) {
   return this.repository.list(query);
 };
 
-CustodyStatusService.prototype.getDetails = function (nomsId) {
-  return this.repository.getDetails(nomsId);
+CustodyStatusService.prototype.getStatus = function (nomsId, query) {
+  return this.repository.getStatus(nomsId, query);
 };
 
 module.exports = CustodyStatusService;

@@ -40,8 +40,11 @@ function BookingRepository(config, agent) {
   };
 }
 
-BookingRepository.prototype.list = function (query) {
-  return this.requests.list(query).set('Page-Limit', this.config.limit).then(helpers.handleResponse([]));
+BookingRepository.prototype.list = function (query, pageOffset) {
+  return this.requests.list({ query })
+    .set('Page-Limit', this.config.limit)
+    .set('Page-Offset', pageOffset || 0)
+    .then(helpers.handleResponse([]));
 };
 
 BookingRepository.prototype.getDetails = function (bookingId) {

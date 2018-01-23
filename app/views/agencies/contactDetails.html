@@ -7,9 +7,10 @@
 
 		<p style="margin-top:30px;"><a href="/">Home</a>
 			> <a href="/agencies">Agencies</a>
-			> {{ agency.description }}</p>
+			> <a href="/agencies{{ agency.agencyId }}">{{ agency.description }}</a>
+			> Contact Details</p>
 
-		{{ details.render(agency.description, columns, agency) }}
+		{{ details.render(agency.description + " Contact Details", columns, contactDetails) }}
 
 </main>
 

@@ -47,12 +47,12 @@ const createCustodyStatusListViewModel = (custodyStatuses) =>
   const renderCustodyStatus = (res, transform) => helpers.format(res, 'custodyStatuses/detail', transform);
 
 const listCustodyStatuses = (req, res, next) =>
-  proxy(services.custodyStatus, 'list', req.query.search)
+  proxy(services.custodyStatus, 'list', req.query)
     .then(renderCustodyStatusList(res, createCustodyStatusListViewModel))
     .catch(helpers.failWithError(res, next));
 
 const retrieveCustodyStatus = (req, res, next) =>
-  proxy(services.custodyStatus, 'getDetails', req.params.nomsId)
+  proxy(services.custodyStatus, 'getStatus', req.params.nomsId, req.query)
     .then(renderCustodyStatus(res, createCustodyStatusViewModel))
     .catch(helpers.failWithError(res, next));
 
