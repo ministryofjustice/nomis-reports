@@ -4,7 +4,6 @@ const router = new express.Router();
 const helpers = require('../helpers');
 const links = require('../helpers/links');
 const BookingService = require('../services/BookingService');
-const extractBookings = require('./extracts');
 
 const map = (fn) => (x) =>
   x && (Array.isArray(x) ? x.map(fn) : fn(x));

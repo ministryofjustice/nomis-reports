@@ -16,7 +16,7 @@ const datastore = {
     let path = `${datastore.root}/${cacheKey}`;
 
     return writeFile(path, data, 'utf8')
-      .then(() => setTimeout(() => unlink(path), datastore.timeout));
+      .then(() => setTimeout(() => unlink(path).catch(() => { /* can't find file */ }), datastore.timeout));
   },
 
   get(cacheKey) {

@@ -1,165 +1,82 @@
 const express = require('express');
 const router = new express.Router();
 
-const fs = require('fs');
 const util = require('util');
+const fs = require('fs');
 const writeFile = util.promisify(fs.writeFile);
 
-const helpers = require('../helpers');
-const links = require('../helpers/links');
 const BookingService = require('../services/BookingService');
+const OffenderService = require('../services/OffenderService');
+const CustodyStatusService = require('../services/CustodyStatusService');
 
-function RequestQueue() {
-  this._queue = [];
-  this._results = [];
-}
+const formatDate = (d) =>
+  `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}T${d.getHours()}:${d.getMinutes()}`;
 
-RequestQueue.prototype.push = function(items) {
-  Array.prototype.push.apply(this._queue, items);
-
-  this._length = this._queue.length;
-
-  return this;
-};
-
-RequestQueue.prototype.next = function() {
-  let item = Array.prototype.shift.apply(this._queue);
-
-  this._length = this._queue.length;
-
-  return item;
-};
-
-RequestQueue.prototype.length = function() {
-  return this._length;
-};
-
-
-const map = (fn) => (x) =>
-  x && (Array.isArray(x) ? x.map(fn) : fn(x));
-
-const expandLink = (p, k, fn) => (x) => {
-  if (x[p]) {
-    (x.links = x.links || {})[k] = fn(x[p]);
-  }
-
-  return x;
-};
-
-const addBookingLinks = (p) => expandLink(p, 'booking', links.booking);
-const addSentenceDetailLinks = (p) => expandLink(p, 'sentenceDetail', links.sentenceDetail);
-const addMainOffenceLinks = (p) => expandLink(p, 'mainOffence', links.mainOffence);
-const addAliasesLinks = (p) => expandLink(p, 'aliases', links.aliases);
-const addContactsLinks = (p) => expandLink(p, 'contacts', links.contacts);
-const addAdjudicationsLinks = (p) => expandLink(p, 'adjudications', links.adjudications);
-const addIepSummaryLinks = (p) => expandLink(p, 'iepSummary', links.iepSummary);
-const addOffenderLinks = (p) => expandLink(p, 'offender', links.offender);
-const addCustodyStatusLinks = (p) => expandLink(p, 'custodyStatus', links.custodyStatus);
-const addAssignedLivingUnitLinks = (p) => expandLink(p, 'assignedLivingUnit', links.location);
+const RequestQueue = require('../helpers/RequestQueue');
 
 const services = {};
-const setUpServices = (config) => {
+let setUpServices = (config) => {
   services.booking = services.booking || new BookingService(config);
+  services.offenders = services.offenders || new OffenderService(config);
+  services.custodyStatuses = services.custodyStatuses || new CustodyStatusService(config);
+
+  setUpServices = () => {};
 };
 
-const proxy = (service, fn, params) =>
-  service[fn].call(service, params)
-    .then(map((data) => {
-      if (data.assignedLivingUnit && data.assignedLivingUnit.locationId) {
-        data.assignedLivingUnit = data.assignedLivingUnit.locationId;
-      }
-      return data;
-    }))
-    .then(map(addBookingLinks('bookingId')))
-    .then(map(addSentenceDetailLinks('bookingId')))
-    .then(map(addMainOffenceLinks('bookingId')))
-    .then(map(addAliasesLinks('bookingId')))
-    .then(map(addContactsLinks('bookingId')))
-    .then(map(addAdjudicationsLinks('bookingId')))
-    .then(map(addIepSummaryLinks('bookingId')))
-    .then(map(addOffenderLinks('offenderNo')))
-    .then(map(addCustodyStatusLinks('offenderNo')))
-    .then(map(addAssignedLivingUnitLinks('assignedLivingUnit')));
+const createDetailRequest = (req, opts, ids, results) => {
+  let x = ids.next();
 
-const createDetailRequest = (service, fn, ids, results) => {
-  let id = ids.next();
-
-  if (id) {
-    console.log('CREATE DETAIL REQUEST', id);
-
-    return proxy(service, fn, id)
-      .then((data) => { console.log(id, 'SUCCESS'); return results.push(data); })
-      .catch(() => { console.log(id, 'FAIL'); })
-      .then(() => {
-        return createDetailRequest(service, 'getDetails', ids, results);
-      });
+  if (x) {
+    return opts.detail(req, x)
+      .then((data) => results.push(data))
+      .then(() => createDetailRequest(req, opts, ids, results));
   }
 };
 
-const populateList = (service, fn, ids, batchSize) => {
-  console.log('POPULATE LIST');
-
+const populateList = (req, opts, ids) => {
   let batch = [];
   let results = [];
 
-  for (let i = 0; i < batchSize; i++) {
-    batch.push(createDetailRequest(service, 'getDetails', ids, results));
+  for (let i = 0; i < opts.batchSize; i++) {
+    batch.push(createDetailRequest(req, opts, ids, results));
   }
 
-  return Promise.all(batch)
-    .then(() => {
-      console.log('POPULATE LIST COMPLETE');
-
-      return results;
-    });
+  return Promise.all(batch).then(() => results);
 };
 
-const buildList = (service, fn, query, batchSize, pageOffset = 0, ids = new RequestQueue(), results) => {
-  console.log('BUILD LIST', pageOffset);
-
-  return service[fn](query, pageOffset)
+const buildList = (req, opts, pageOffset = 0, ids = new RequestQueue()) => {
+  return opts.list(req, pageOffset)
     .then((items = []) => {
-      ids.push(items.map((x) => x.bookingId));
+      ids.push(items);
 
-      if (items.length > 0) {
-        return buildList(service, fn, query, batchSize, ++pageOffset, ids, results);
-      }
-
-      if (!results) {
-        results = populateList(service, 'getDetails', ids, batchSize);
-      }
-
-      return results;
+      return (items.length > 0) ?
+        buildList(req, opts, ++pageOffset, ids) :
+        populateList(req, opts, ids);
     });
 };
 
-const process = (service, fn, query, batchSize) => {
-  let extractDate = (new Date()).toISOString();
-  let location = `bookings/${extractDate}`;
+const createExtract = (opts) => (req, res) => {
+  let extractDate = formatDate(new Date());
+  let location = `/extracts/${opts.type}/${extractDate}`;
+  let filepath = `./.extracts/${opts.type}/${extractDate}.json`;
 
-  buildList(service, fn, query, batchSize)
-    .then((data) => {
-      console.log('WRITING FILE');
+  buildList(req, opts)
+    .then((data) => writeFile(filepath, JSON.stringify(data), 'utf8'))
+    .catch((err) => { console.log(err); });
 
-      return writeFile(`./.extracts/${location}.json`, JSON.stringify(data), 'utf8');
-    });
-
-  return Promise.resolve({ extractDate, location });
+  res.status(202).location(location).json({
+    extractDate,
+    location
+  });
 };
 
-const createExtract = (req, res, next) =>
-  process(services.booking, 'list', req.query.query, 5)
-    .then((meta) => {
-      res.status(202).location('/' + meta.location).json(meta);
-    })
-    .catch(helpers.failWithError(res, next));
-
-const retrieveExtract = (req, res) => {
+const retrieveExtract = (type) => (req, res) => {
   res.status(200).type('json');
 
-  let stream = fs.createReadStream(`./.extracts/bookings/${req.params.date.replace(/\.json/i, '')}.json`);
+  let extractDate = req.params.date.replace(/\.json/i, '');
+  let stream = fs.createReadStream(`./.extracts/${type}/${extractDate}.json`);
 
-  stream.on('error', (err) => { req.log.info(err, 'ARGH'); });
+  stream.on('error', (err) => { req.log.info(err); });
   stream.on('end', () => { res.end(); });
   stream.on('data', (chunk) => { res.write(chunk); });
 };
@@ -169,7 +86,20 @@ router.use((req, res, next) => {
   next();
 });
 
-router.get('/', createExtract);
-router.get('/:date', retrieveExtract);
+router.get('/bookings', createExtract({
+  type: 'bookings',
+  batchSize: 5,
+  list: (req, pageOffset) => services.booking.list(req.query, pageOffset),
+  detail: (req, x) => services.booking.allDetails(x.bookingId),
+}));
+router.get('/bookings/:date', retrieveExtract('bookings'));
+
+router.get('/custodyStatuses', createExtract({
+  type: 'custodyStatuses',
+  batchSize: 5,
+  list: (req, pageOffset) => services.custodyStatuses.list(req.query, pageOffset),
+  detail: (req, x) => services.offenders.allDetails(x.offenderNo),
+}));
+router.get('/custodyStatuses/:date', retrieveExtract('custodyStatuses'));
 
 module.exports = router;

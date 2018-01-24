@@ -37,6 +37,7 @@
     "govuk_template_mustache": "^0.19.2",
     "helmet": "^3.6.1",
     "js-yaml": "^3.9.0",
+    "json2csv": "^3.11.5",
     "jsonwebtoken": "^8.1.0",
     "lodash": "^4.17.4",
     "moment": "^2.18.1",

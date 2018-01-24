@@ -8,7 +8,7 @@ function CustodyStatusRepository(config, agent) {
 
   this.requests = {
     list: this.agent.get(`${this.config.elite2.apiUrl}/custody-statuses`),
-    getDetails: this.agent.get(`${this.config.elite2.apiUrl}/custody-statuses/:nomsId`),
+    getStatus: this.agent.get(`${this.config.elite2.apiUrl}/custody-statuses/:nomsId`),
   };
 }
 
