@@ -2,40 +2,14 @@ const express = require('express');
 const router = new express.Router();
 
 const helpers = require('../helpers');
-const links = require('../helpers/links');
 const LocationService = require('../services/LocationService');
 
-const map = (fn) => (x) =>
-  x && (Array.isArray(x) ? x.map(fn) : fn(x));
-
-const expandLink = (p, k, fn) => (x) => {
-  if (x[p]) {
-    (x.links = x.links || {})[k] = fn(x[p]);
-  }
-
-  return x;
-};
-
-const addAgencyLinks = (p) => expandLink(p, 'agency', links.agency);
-const addLocation = (p) => expandLink(p, 'location', links.location);
-const addLocationInmates = (p) => expandLink(p, 'inmates', links.locationInmates);
-const addBookingLinks = (p) => expandLink(p, 'booking', links.booking);
-const addOffenderLinks = (p) => expandLink(p, 'offender', links.offender);
-const addAssignedLivingUnitLinks = (p) => expandLink(p, 'assignedLivingUnit', links.location);
-
 const services = {};
-const setUpServices = (config) => {
+let setUpServices = (config) => {
   services.location = services.location || new LocationService(config);
-};
 
-const proxy = (service, fn, ...params) =>
-  service[fn].apply(service, params)
-    .then(map(addAgencyLinks('agencyId')))
-    .then(map(addLocationInmates('locationId')))
-    .then(map(addLocation('locationId')))
-    .then(map(addBookingLinks('bookingId')))
-    .then(map(addOffenderLinks('offenderNo')))
-    .then(map(addAssignedLivingUnitLinks('assignedLivingUnitId')));
+  setUpServices = () => {};
+};
 
 const createLocationsViewModel = (locations) =>
   ({
@@ -88,17 +62,22 @@ const renderLocation = (res, transform) => helpers.format(res, 'locations/detail
 const renderInmatesList = (res, transform) => helpers.format(res, 'locations/inmates', transform);
 
 const listLocations = (req, res, next) =>
-  proxy(services.location, 'list', req.query.search)
+  services.location.list(req.query.search)
+    .then(renderLocationsList(res, createLocationsViewModel))
+    .catch(helpers.failWithError(res, next));
+
+const listLocationTypes = (req, res, next) =>
+  services.location.listTypes(req.query.search)
     .then(renderLocationsList(res, createLocationsViewModel))
     .catch(helpers.failWithError(res, next));
 
 const retrieveLocation = (req, res, next) =>
-  proxy(services.location, 'getDetails', req.params.locationId)
+  services.location.getDetails(req.params.locationId)
     .then(renderLocation(res, createLocationViewModel))
     .catch(helpers.failWithError(res, next));
 
 const retrieveInmates = (req, res, next) =>
-  proxy(services.location, 'listInmates', req.params.locationId, req.query.search)
+  services.location.listInmates(req.params.locationId, req.query.search)
     .then(renderInmatesList(res, createInmatesViewModel))
     .catch(helpers.failWithError(res, next));
 
@@ -108,6 +87,7 @@ router.use((req, res, next) => {
 });
 
 router.get('/', listLocations);
+router.get('/types', listLocationTypes);
 router.get('/:locationId', retrieveLocation);
 router.get('/:locationId/inmates', retrieveInmates);
 

@@ -10,7 +10,7 @@ const writeFile = util.promisify(fs.writeFile);
 
 const datastore = {
   root: `./.cache`,
-  timeout: 20000,
+  timeout: 1000 * 60 * 60, // 1sec -> 60secs -> 60mins -> 0hrs -> 0days
 
   put(cacheKey, data) {
     let path = `${datastore.root}/${cacheKey}`;

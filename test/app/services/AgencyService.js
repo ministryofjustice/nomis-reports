@@ -8,15 +8,27 @@ const AgencyService = require('../../../app/services/AgencyService');
 
 describe('An Agency Service', () => {
   let exampleSet = [
-    { agencyId: 'ABC', name: 'ABCabc' },
-    { agencyId: 'DEF', name: 'DEFdef' },
-    { agencyId: 'GHI', name: 'GHIghi' },
+    { agencyId: 'ABC', description: 'ABCabc' },
+    { agencyId: 'DEF', description: 'DEFdef' },
+    { agencyId: 'GHI', description: 'GHIghi' },
   ];
   let exampleRecord = { agencyId: 'TEST', name: 'TESTtest' };
+  let exampleLocations = [
+    { locationId: 'ABC', description: 'ABCabc' },
+    { locationId: 'DEF', description: 'DEFdef' },
+    { locationId: 'GHI', description: 'GHIghi' },
+  ];
+  let exampleContactDetailsRecord = {
+    agencyId: 'TEST',
+    name: 'TESTtest',
+    tel: '0161 999 9999',
+  };
 
   let server = express();
   server.get('/agencies', (req, res) => res.status(200).json(exampleSet));
   server.get('/agencies/TEST', (req, res) => res.status(200).json(exampleRecord));
+  server.get('/agencies/TEST/locations', (req, res) => res.status(200).json(exampleLocations));
+  server.get('/agencies/TEST/contactDetails', (req, res) => res.status(200).json(exampleContactDetailsRecord));
 
   describe('for the Elite 2 API', () => {
     let fakeKey = [
