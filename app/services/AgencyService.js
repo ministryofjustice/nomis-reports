@@ -45,35 +45,35 @@ AgencyService.prototype.getDetails = function (agencyId) {
       label: agency.description,
     },
     agency))
-    .then((agency) => {
-      if (agency.address) {
-        if (agency.address.phones) {
-          agency.phoneNumber = agency.address.phones
-            .map((x) => ({
-              type: x.type,
-              number: x.number,
-              extension: x.ext,
-            }));
+  .then((agency) => {
+    if (agency.address) {
+      if (agency.address.phones) {
+        agency.phoneNumber = agency.address.phones
+          .map((x) => ({
+            type: x.type,
+            number: x.number,
+            extension: x.ext,
+          }));
 
-            delete agency.address.phones;
-        }
-
-        delete agency.address.agencyId;
-
-        agency.address.type = agency.address.addressType;
-        delete agency.address.addressType;
+          delete agency.address.phones;
       }
 
-      delete agency.agencyId;
-      delete agency.agencyType;
-      delete agency.description;
+      delete agency.address.agencyId;
 
-      if (agency.location.length === 0) {
-        delete agency.location;
-      }
+      agency.address.type = agency.address.addressType;
+      delete agency.address.addressType;
+    }
 
-      return agency;
-    });
+    delete agency.agencyId;
+    delete agency.agencyType;
+    delete agency.description;
+
+    if (agency.location.length === 0) {
+      delete agency.location;
+    }
+
+    return agency;
+  });
 };
 
 AgencyService.prototype.listLocations = function (agencyId, query) {

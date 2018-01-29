@@ -23,5 +23,6 @@ router.use((req, res, next) => {
   next();
 });
 router.get('/login', userLogin);
+router.post('/login', userLogin);
 
 module.exports = router;

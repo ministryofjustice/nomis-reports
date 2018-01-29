@@ -75,4 +75,8 @@ BookingRepository.prototype.listAdjudications = function (bookingId, query) {
   return this.requests.listAdjudications({ bookingId }, query).set('Page-Limit', this.config.limit).then(helpers.handleResponse([]));
 };
 
+BookingRepository.prototype.listAlerts = function (bookingId, query) {
+  return this.requests.listAlerts({ bookingId }, query).set('Page-Limit', this.config.limit).then(helpers.handleResponse([]));
+};
+
 module.exports = BookingRepository;

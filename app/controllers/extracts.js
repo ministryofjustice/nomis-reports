@@ -90,7 +90,7 @@ router.get('/bookings', createExtract({
   type: 'bookings',
   batchSize: 5,
   list: (req, pageOffset) => services.booking.list(req.query, pageOffset),
-  detail: (req, x) => services.booking.allDetails(x.bookingId),
+  detail: (req, x) => services.booking.allDetails(x.replace('/bookings/', '')),
 }));
 router.get('/bookings/:date', retrieveExtract('bookings'));
 

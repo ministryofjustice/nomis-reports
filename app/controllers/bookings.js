@@ -34,12 +34,6 @@ const setUpServices = (config) => {
 
 const proxy = (service, fn, params) =>
   service[fn].call(service, params)
-    .then(map((data) => {
-      if (data.assignedLivingUnit && data.assignedLivingUnit.locationId) {
-        data.assignedLivingUnit = data.assignedLivingUnit.locationId;
-      }
-      return data;
-    }))
     .then(map(addBookingLinks('bookingId')))
     .then(map(addSentenceDetailLinks('bookingId')))
     .then(map(addMainOffenceLinks('bookingId')))
@@ -49,7 +43,7 @@ const proxy = (service, fn, params) =>
     .then(map(addIepSummaryLinks('bookingId')))
     .then(map(addOffenderLinks('offenderNo')))
     .then(map(addCustodyStatusLinks('offenderNo')))
-    .then(map(addAssignedLivingUnitLinks('assignedLivingUnit')));
+    .then(map(addAssignedLivingUnitLinks('assignedLivingUnitId')));
 
 const createBookingsListViewModel = (bookings) =>
   ({
@@ -92,7 +86,7 @@ const listBookings = (req, res, next) =>
     .catch(helpers.failWithError(res, next));
 
 const retrieveBookingDetails = (req, res, next) =>
-  proxy(services.booking, 'getDetails', req.params.bookingId)
+  proxy(services.booking, 'allDetails', req.params.bookingId)
     .then(renderBooking(res, createBookingViewModel))
     .catch(helpers.failWithError(res, next));
 
