@@ -85,6 +85,11 @@ const listBookings = (req, res, next) =>
     .then(renderBookingsList(res, createBookingsListViewModel))
     .catch(helpers.failWithError(res, next));
 
+const allBookings = (req, res, next) =>
+  proxy(services.booking, 'all', req.query.query)
+    .then(renderBookingsList(res, createBookingsListViewModel))
+    .catch(helpers.failWithError(res, next));
+
 const retrieveBookingDetails = (req, res, next) =>
   proxy(services.booking, 'allDetails', req.params.bookingId)
     .then(renderBooking(res, createBookingViewModel))
@@ -129,6 +134,7 @@ router.use((req, res, next) => {
 });
 
 router.get('/', listBookings);
+router.get('/all', allBookings);
 router.get('/:bookingId', retrieveBookingDetails);
 router.get('/:bookingId/sentenceDetail', retrieveBookingSentenceDetail);
 router.get('/:bookingId/mainOffence', retrieveBookingMainOffence);

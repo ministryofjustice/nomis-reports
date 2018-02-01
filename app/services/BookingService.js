@@ -1,13 +1,42 @@
 const BookingRepository = require('../repositories/BookingRepository');
 const CachingRepository = require('../helpers/CachingRepository');
+const RetryingRepository = require('../helpers/RetryingRepository');
 
 const describe = (name, promise, alt) =>
   promise.then((data) => ({ [name]: (data || alt) }));
 
+const batchRequest = (func, opts, out) =>
+  func(++opts.page)
+    .then((data) => {
+      if (data.length > 0) {
+        data.forEach((x) => out.push(x));
+        return batchRequest(func, opts, out);
+      }
+    });
+
+const batchProcess = (func, size) => {
+  let opts = { page: 0 };
+  let out = [];
+
+  let batch = [];
+  for (let i = 0; i < size; i++) {
+    batch.push(batchRequest(func, opts, out));
+  }
+
+  return Promise.all(batch)
+    .catch(() => console.log('THERE WERE ERRORS'))
+    .then(() => console.log('DONE', out.length))
+    .then(() => [...new Set(out)]);
+};
+
 function BookingService(config, repo) {
   this.config = config;
-  this.repository = repo || new CachingRepository(BookingRepository, config);
+  this.repository = repo || new CachingRepository(new RetryingRepository(new BookingRepository(config)));
 }
+
+BookingService.prototype.all = function (query) {
+  return batchProcess((pageOffset = 0) => this.list(query || {}, pageOffset), 20);
+};
 
 BookingService.prototype.list = function (query, pageOffset) {
   return this.repository.list(query, pageOffset)

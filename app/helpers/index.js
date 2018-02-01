@@ -73,7 +73,7 @@ const handleResponse = (fallback) => (res) => {
     return res.body;
   }
 
-  console.log(new Error(res));
+  console.log((res.response && res.response.error) || res);
   return fallback;
 };
 

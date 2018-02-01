@@ -28,8 +28,11 @@ const createDetailRequest = (req, opts, ids, results) => {
 
   if (x) {
     return opts.detail(req, x)
-      .then((data) => results.push(data))
-      .then(() => createDetailRequest(req, opts, ids, results));
+      .then((data) => {
+        results.push(data);
+
+        return createDetailRequest(req, opts, ids, results);
+      });
   }
 };
 
@@ -41,18 +44,8 @@ const populateList = (req, opts, ids) => {
     batch.push(createDetailRequest(req, opts, ids, results));
   }
 
-  return Promise.all(batch).then(() => results);
-};
-
-const buildList = (req, opts, pageOffset = 0, ids = new RequestQueue()) => {
-  return opts.list(req, pageOffset)
-    .then((items = []) => {
-      ids.push(items);
-
-      return (items.length > 0) ?
-        buildList(req, opts, ++pageOffset, ids) :
-        populateList(req, opts, ids);
-    });
+  return Promise.all(batch)
+    .then(() => results);
 };
 
 const createExtract = (opts) => (req, res) => {
@@ -60,14 +53,13 @@ const createExtract = (opts) => (req, res) => {
   let location = `/extracts/${opts.type}/${extractDate}`;
   let filepath = `./.extracts/${opts.type}/${extractDate}.json`;
 
-  buildList(req, opts)
+  opts.list(req)
+    .then((ids) => new RequestQueue().push(ids))
+    .then((queue) => populateList(req, opts, queue))
     .then((data) => writeFile(filepath, JSON.stringify(data), 'utf8'))
     .catch((err) => { console.log(err); });
 
-  res.status(202).location(location).json({
-    extractDate,
-    location
-  });
+  res.status(202).location(location).json({ extractDate, location });
 };
 
 const retrieveExtract = (type) => (req, res) => {
@@ -89,7 +81,7 @@ router.use((req, res, next) => {
 router.get('/bookings', createExtract({
   type: 'bookings',
   batchSize: 5,
-  list: (req, pageOffset) => services.booking.list(req.query, pageOffset),
+  list: (req) => services.booking.all(req.query),
   detail: (req, x) => services.booking.allDetails(x.replace('/bookings/', '')),
 }));
 router.get('/bookings/:date', retrieveExtract('bookings'));

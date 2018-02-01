@@ -14,7 +14,7 @@ const buildUrl = (uri, params) =>
 const getRouteAgent = (agent = basicAgent(), uri) =>
   (/\/:[^\/]+/gi.test(uri))
     ? (params, query) => agent.get(buildUrl(uri, params)).query(query)
-    : (query) =>agent.get(uri).query(query);
+    : (query) => agent.get(uri).query(query);
 
 const postRouteAgent = (agent = basicAgent(), uri) =>
   (body) => agent.post(uri).send(body);

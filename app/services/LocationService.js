@@ -1,12 +1,13 @@
 const LocationRepository = require('../repositories/LocationRepository');
 const CachingRepository = require('../helpers/CachingRepository');
+const RetryingRepository = require('../helpers/RetryingRepository');
 
 const describe = (name, promise, alt) =>
   promise.then((data) => ({ [name]: (data || alt) }));
 
 function LocationService(config, repo) {
   this.config = config;
-  this.repository = repo || new CachingRepository(LocationRepository, config);
+  this.repository = repo || new CachingRepository(new RetryingRepository(new LocationRepository(config)));
 }
 
 LocationService.prototype.listTypes = function (query) {

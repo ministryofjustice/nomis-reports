@@ -1,12 +1,13 @@
 const AgencyRepository = require('../repositories/AgencyRepository');
 const CachingRepository = require('../helpers/CachingRepository');
+const RetryingRepository = require('../helpers/RetryingRepository');
 
 const describe = (name, promise, alt) =>
   promise.then((data) => ({ [name]: (data || alt) }));
 
 function AgencyService(config, repo) {
   this.config = config;
-  this.repository = repo || new CachingRepository(AgencyRepository, config);
+  this.repository = repo || new CachingRepository(new RetryingRepository(new AgencyRepository(config)));
 }
 
 AgencyService.prototype.listTypes = function (query) {

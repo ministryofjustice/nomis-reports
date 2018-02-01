@@ -51,6 +51,11 @@ const listCustodyStatuses = (req, res, next) =>
     .then(renderCustodyStatusList(res, createCustodyStatusListViewModel))
     .catch(helpers.failWithError(res, next));
 
+const allCustodyStatuses = (req, res, next) =>
+  proxy(services.custodyStatus, 'all', req.query)
+    .then(renderCustodyStatusList(res, createCustodyStatusListViewModel))
+    .catch(helpers.failWithError(res, next));
+
 const retrieveCustodyStatus = (req, res, next) =>
   proxy(services.custodyStatus, 'getStatus', req.params.nomsId, req.query)
     .then(renderCustodyStatus(res, createCustodyStatusViewModel))
@@ -62,6 +67,7 @@ router.use((req, res, next) => {
 });
 
 router.get('/', listCustodyStatuses);
+router.get('/all', allCustodyStatuses);
 router.get('/:nomsId', retrieveCustodyStatus);
 
 module.exports = router;

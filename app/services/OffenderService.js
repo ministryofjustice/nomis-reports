@@ -1,9 +1,10 @@
 const OffenderRepository = require('../repositories/OffenderRepository');
 const CachingRepository = require('../helpers/CachingRepository');
+const RetryingRepository = require('../helpers/RetryingRepository');
 
 function OffenderService(config, repo) {
   this.config = config;
-  this.repository = repo || new CachingRepository(OffenderRepository, config);
+  this.repository = repo || new CachingRepository(new RetryingRepository(new OffenderRepository(config)));
 }
 
 OffenderService.prototype.getDetails = function (nomsId) {

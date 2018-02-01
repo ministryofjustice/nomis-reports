@@ -37,8 +37,8 @@ module.exports = {
     apiGatewayToken: get('NOMIS_GW_TOKEN', '', { requireInProduction: true }),
     apiGatewayPrivateKey: new Buffer(get('NOMIS_GW_KEY', ''), 'base64').toString('ascii'),
     timeout: {
-      response: 2000,
-      deadline: 2500
+      response: 20000,
+      deadline: 25000
     }
   },
 
@@ -47,8 +47,8 @@ module.exports = {
     apiGatewayToken: get('ELITE2_GW_TOKEN', '', { requireInProduction: true }),
     apiGatewayPrivateKey: new Buffer(get('ELITE2_GW_KEY', ''), 'base64').toString('ascii'),
     timeout: {
-      response: 2000,
-      deadline: 2500
+      response: 20000,
+      deadline: 25000
     }
   }
 };

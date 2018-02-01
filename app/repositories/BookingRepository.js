@@ -3,7 +3,7 @@ const eliteApiAgent = require('../helpers/eliteApiAgent');
 const helpers = require('../helpers');
 
 function BookingRepository(config, agent) {
-  this.config = Object.assign({ limit: 2000 }, config);
+  this.config = Object.assign({ limit: 100 }, config);
   this.agent = eliteApiAgent(agent, undefined, this.config.elite2);
 
   this.requests = {
@@ -40,15 +40,42 @@ function BookingRepository(config, agent) {
   };
 }
 
-BookingRepository.prototype.list = function (query, pageOffset) {
+BookingRepository.prototype.list = function (query, pageOffset, retries = 0) {
+  let next = 1200;
+  let repository = this;
+
   return this.requests.list({ query })
     .set('Page-Limit', this.config.limit)
-    .set('Page-Offset', pageOffset || 0)
+    .set('Page-Offset', (pageOffset || 0) * this.config.limit)
+    .catch((err) => {
+      if (retries < 5) {
+        console.log('RETRYING', retries, query, pageOffset);
+        return new Promise((resolve, reject) => {
+          setTimeout(() => repository.list(query, pageOffset, ++retries).then((data) => resolve(data), (err) => reject(err)), next * retries);
+        });
+      }
+
+      return Promise.reject(err.response.error);
+    })
     .then(helpers.handleResponse([]));
 };
 
-BookingRepository.prototype.getDetails = function (bookingId) {
-  return this.requests.getDetails({ bookingId }).then(helpers.handleResponse());
+BookingRepository.prototype.getDetails = function (bookingId, retries = 0) {
+  let next = 1200;
+  let repository = this;
+
+  return this.requests.getDetails({ bookingId })
+    .catch((err) => {
+      if (retries < 5) {
+        console.log('RETRYING', retries, bookingId);
+        return new Promise((resolve, reject) => {
+          setTimeout(() => repository.getDetails(bookingId, ++retries).then((data) => resolve(data), (err) => reject(err)), next * retries);
+        });
+      }
+
+      return Promise.reject(err.response.error);
+    })
+    .then(helpers.handleResponse());
 };
 
 BookingRepository.prototype.getSentenceDetail = function (bookingId) {
