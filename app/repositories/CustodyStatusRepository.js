@@ -13,7 +13,7 @@ function CustodyStatusRepository(config, agent) {
 }
 
 CustodyStatusRepository.prototype.list = function (query) {
-  return this.requests.list(query).set('Page-Limit', this.config.limit).then(helpers.handleResponse([]));
+  return this.requests.list(query).then(helpers.handleResponse([]));
 };
 
 CustodyStatusRepository.prototype.getStatus = function (nomsId, query) {

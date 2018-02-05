@@ -1,7 +1,6 @@
 
 function RequestQueue() {
   this._queue = [];
-  this._results = [];
 
   this._length = 0;
 }

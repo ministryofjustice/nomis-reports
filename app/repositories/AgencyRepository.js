@@ -14,8 +14,11 @@ function AgencyRepository(config, agent) {
   };
 }
 
-AgencyRepository.prototype.list = function (query) {
-  return this.requests.list(query).set('Page-Limit', this.config.limit).then(helpers.handleResponse([]))
+AgencyRepository.prototype.list = function (query, pageOffset) {
+  return this.requests.list(query)
+    .set('Page-Limit', this.config.limit)
+    .set('Page-Offset', (pageOffset || 0) * this.config.limit)
+    .then(helpers.handleResponse([]))
     .catch((err) => {
       console.log(new Error(err));
       return [];

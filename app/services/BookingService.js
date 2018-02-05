@@ -3,30 +3,53 @@ const CachingRepository = require('../helpers/CachingRepository');
 const RetryingRepository = require('../helpers/RetryingRepository');
 
 const describe = (name, promise, alt) =>
-  promise.then((data) => ({ [name]: (data || alt) }));
+  promise.then((data) => ({ [name]: (data || alt) })).catch(() => alt);
 
-const batchRequest = (func, opts, out) =>
-  func(++opts.page)
+const batchRequest = (func, opts, out, batch) => {
+  let page = ++opts.page;
+
+  return func(page)
     .then((data) => {
       if (data.length > 0) {
-        data.forEach((x) => out.push(x));
-        return batchRequest(func, opts, out);
+        console.log('batchRequest', 'SUCCESS', { size: data.length, page, batch });
+
+        data.forEach((x) => out.add(x));
+
+        return batchRequest(func, opts, out, batch);
       }
+    })
+    .catch((err) => {
+      console.log('batchRequest', 'ERROR', { page, batch });
+      delete err.text;
+      console.log(err);
+
+      if (err.code === 'ENOTFOUND') {
+        // network connection error abort
+        throw err;
+      }
+
+      return batchRequest(func, opts, out, batch);
     });
+};
 
 const batchProcess = (func, size) => {
   let opts = { page: 0 };
-  let out = [];
+  let out = new Set();
 
   let batch = [];
   for (let i = 0; i < size; i++) {
-    batch.push(batchRequest(func, opts, out));
+    batch.push(batchRequest(func, opts, out, i));
   }
 
   return Promise.all(batch)
-    .catch(() => console.log('THERE WERE ERRORS'))
-    .then(() => console.log('DONE', out.length))
-    .then(() => [...new Set(out)]);
+    .catch(() => {
+      console.log('THERE WERE ERRORS');
+    })
+    .then(() => {
+      console.log('DONE', out.size);
+
+      return Array.from(out);
+    });
 };
 
 function BookingService(config, repo) {
@@ -57,10 +80,10 @@ BookingService.prototype.getDetails = function (bookingId) {
 
 BookingService.prototype.allDetails = function (bookingId) {
   return Promise.all([
-    this.getDetails(bookingId),
-    describe('sentenceDetail', this.repository.getSentenceDetail(bookingId)),
-    describe('mainOffence', this.repository.getMainOffence(bookingId)),
-    describe('iepSummary', this.repository.getIepSummary(bookingId)),
+    this.getDetails(bookingId).catch((err) => ({ bookingId: bookingId, error: err })),
+    describe('sentenceDetail', this.repository.getSentenceDetail(bookingId), undefined),
+    describe('mainOffence', this.repository.getMainOffence(bookingId), undefined),
+    describe('iepSummary', this.repository.getIepSummary(bookingId), undefined),
     describe('aliases', this.repository.listAliases(bookingId), []),
     describe('adjudications', this.repository.listAdjudications(bookingId), []),
     describe('alerts', this.repository.listAlerts(bookingId)
@@ -82,15 +105,15 @@ BookingService.prototype.allDetails = function (bookingId) {
     data,
     {
       assignedLivingUnit: data.assignedLivingUnitId ? `/locations/${data.assignedLivingUnitId}` : undefined,
-      assessment: data.assessments.map((x) => ({
+      assessment: data.assessments ? data.assessments.map((x) => ({
         classification: x.classification,
         type: x.assessmentCode,
         label: x.assessmentDescription,
         cellSharingAlert: x.cellSharingAlertFlag, // isCellSharingRisk ??
         assessmentDate: x.assessmentDate,
         nextReviewDate: x.nextReviewDate
-      })),
-      alias: data.aliases.map((x) => {
+      })) : undefined,
+      alias: data.aliases ? data.aliases.map((x) => {
         x.type = x.nameType;
         delete x.nameType;
 
@@ -99,12 +122,12 @@ BookingService.prototype.allDetails = function (bookingId) {
 
         delete x.rnum;
         return x;
-      }),
-      profileInformation: data.profileInformation.map((x) => ({
+      }) : undefined,
+      profileInformation: data.profileInformation ? data.profileInformation.map((x) => ({
         type: x.type,
         label: x.question,
         value: x.resultValue,
-      })),
+      })) : undefined,
     }))
   .then((booking) => {
     delete booking.bookingId;
@@ -115,8 +138,12 @@ BookingService.prototype.allDetails = function (bookingId) {
 
     delete booking.assignedLivingUnitId;
 
-    delete booking.sentenceDetail.bookingId;
-    delete booking.iepSummary.bookingId;
+    if (booking.sentenceDetail) {
+      delete booking.sentenceDetail.bookingId;
+    }
+    if (booking.iepSummary) {
+      delete booking.iepSummary.bookingId;
+    }
 
     delete booking.assessments;
     delete booking.aliases;

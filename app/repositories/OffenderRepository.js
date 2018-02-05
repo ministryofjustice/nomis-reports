@@ -9,6 +9,7 @@ function OffenderRepository(config, agent) {
   let root = this.config.nomis.apiUrl;
 
   this.requests = {
+    fetchEvents: this.agent.get(`${root}/offenders/events`),
     getDetails: this.agent.get(`${root}/offenders/:nomsId`),
     getLocation: this.agent.get(`${root}/offenders/:nomsId/location`),
     getImage: this.agent.get(`${root}/offenders/:nomsId/image`),
@@ -16,6 +17,10 @@ function OffenderRepository(config, agent) {
     getPssDetail: this.agent.get(`${root}/offenders/:nomsId/pss_detail`),
   };
 }
+
+OffenderRepository.prototype.fetchEvents = function (query) {
+  return this.requests.fetchEvents(query).set('Page-Limit', this.config.limit).then(helpers.handleResponse([]));
+};
 
 OffenderRepository.prototype.getDetails = function (nomsId) {
   return this.requests.getDetails({ nomsId }).then(helpers.handleResponse());
