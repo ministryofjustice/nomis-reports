@@ -1,4 +1,5 @@
 
+const log = require('../../server/log');
 // helper methods
 
 const objToList = (obj) => {
@@ -52,28 +53,17 @@ const failWithError = (res, next) => (err) => {
   res.status(400) && next(ex);
 };
 
-const rpcError = (url, opts, next) => (err) => {
-  err.url = url;
-  err.options = opts;
-
-  console.error('RPC Error Occured:');
-  console.error(err);
-
-  next(err);
-};
-
 const errorCheck = (resolve, reject) => (err, data) =>
   err ? reject(err) : resolve(data);
-
-const rpcErrorCheck = (url, opts, resolve, reject) => (err, data) =>
-  err ? reject(rpcError(url, opts, err)) : resolve(data);
 
 const handleResponse = (fallback) => (res) => {
   if (res.status >= 200 && res.status <= 299) {
     return res.body;
   }
 
-  console.log((res.response && res.response.error) || res);
+  let err = (res.response && res.response.error) || res;
+  log.error(err);
+
   return fallback;
 };
 
@@ -87,8 +77,6 @@ module.exports = {
   format: format,
   redirect: redirect,
   failWithError: failWithError,
-  rpcError: rpcError,
   errorCheck: errorCheck,
-  rpcErrorCheck: rpcErrorCheck,
   handleResponse: handleResponse,
 };

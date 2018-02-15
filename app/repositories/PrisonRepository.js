@@ -11,8 +11,11 @@ function PrisonRepository(config, agent) {
   };
 }
 
-PrisonRepository.prototype.liveRoll = function (prisonId, query) {
-  return this.requests.liveRoll({ prisonId }, query).set('Page-Limit', this.config.limit).then(helpers.handleResponse([]));
+PrisonRepository.prototype.liveRoll = function (prisonId, query, pageOffset = 0, pageSize) {
+  return this.requests.liveRoll({ prisonId }, query)
+    .set('Page-Limit', pageSize || this.config.limit)
+    .set('Page-Offset', pageOffset * (pageSize || this.config.limit))
+    .then(helpers.handleResponse([]));
 };
 
 module.exports = PrisonRepository;

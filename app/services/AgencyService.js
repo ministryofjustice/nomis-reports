@@ -1,42 +1,64 @@
-const AgencyRepository = require('../repositories/AgencyRepository');
+const log = require('../../server/log');
+
+const ChildProcessAgent = require('../helpers/ChildProcessAgent');
 const CachingRepository = require('../helpers/CachingRepository');
-const RetryingRepository = require('../helpers/RetryingRepository');
+const BatchProcessor = require('../helpers/BatchProcessor');
 
-const describe = (name, promise, alt) =>
-  promise.then((data) => ({ [name]: (data || alt) }));
+const describe = (name, promise, alt, map) =>
+  promise
+    .then((data) => ({ [name]: (data || alt) }))
+    .then((data) => data.map && map ? data.map(map) : data)
+    .catch((err) => {
+      log.error(err, {name}, 'AgencyService describe ERROR');
 
-function AgencyService(config, repo) {
+      return alt;
+    });
+
+function AgencyService(config, childProcessAgent) {
   this.config = config;
-  this.repository = repo || new CachingRepository(new RetryingRepository(new AgencyRepository(config)));
+  this.agent = childProcessAgent || new CachingRepository(new ChildProcessAgent(this.config));
 }
 
+AgencyService.prototype.list = function (query, pageOffset, pageSize) {
+  return this.agent.request('agency', 'list', query, pageOffset, pageSize)
+    .then((x) => x.map((x) => ({
+      id: `/agencies/${x.agencyId}`,
+      type: `/agencyType/${x.agencyType}`
+    })));
+};
+
+AgencyService.prototype.all = function (query, pageSize = 1000, batchSize = 5) {
+  let batch = new BatchProcessor({ batchSize });
+  return batch.run((pageOffset = 0) => this.list(query || {}, pageOffset, pageSize));
+};
+
 AgencyService.prototype.listTypes = function (query) {
-  return this.repository.list(query)
+  return this.all(query)
       .then((x) => x.reduce((a, b) => {
-        if (!~a.indexOf(b.agencyType)) {
-          a.push(b.agencyType);
+        if (!~a.indexOf(b.type)) {
+          a.push(b.type);
         }
 
         return a;
       }, [])
-      .map((x) => `/agencyType/${x}` ));
-};
-
-AgencyService.prototype.list = function (query) {
-  return this.repository.list(query)
-    .then((x) => x.map((x) => `/agencies/${x.agencyId}`));
+      .map((x) => ({ id: x })));
 };
 
 AgencyService.prototype.listByType = function (type, query) {
-  return this.repository.list(query)
-    .then((x) => x.filter((x) => x.agencyType === type).map((x) => `/agencies/${x.agencyId}`));
+  return this.all(query)
+    .then((x) => x.filter((x) => x.agencyType === type).map((x) => ({ id: `/agencies/${x.agencyId}` })));
 };
 
 AgencyService.prototype.getDetails = function (agencyId) {
   return Promise.all([
-    this.repository.getDetails(agencyId),
-    describe('address', this.repository.getContactDetails(agencyId)),
-    describe('location', this.listLocations(agencyId)),
+    this.agent.request('agency', 'getDetails', agencyId)
+      .catch((err) => {
+        log.error(err, {agencyId}, 'AgencyService getDetails ERROR');
+
+        return { agencyId };
+      }),
+    describe('address', this.agent.request('agency', 'getContactDetails', agencyId), undefined),
+    describe('location', this.listLocations(agencyId), undefined),
   ])
   .then((data) => data.reduce((a, b) => Object.assign(a, b), {}))
   .then((agency) => Object.assign(
@@ -77,9 +99,12 @@ AgencyService.prototype.getDetails = function (agencyId) {
   });
 };
 
-AgencyService.prototype.listLocations = function (agencyId, query) {
-  return this.repository.listLocations(agencyId, query)
-    .then((x) => x.map((x) => `/locations/${x.locationId}` ));
+AgencyService.prototype.listLocations = function (agencyId, query, pageOffset, pageSize) {
+  return this.agent.request('agency', 'listLocations', agencyId, query, pageOffset, pageSize)
+    .then((x) => x.map((x) => ({
+      id: `/locations/${x.locationId}`,
+      type: `/locationType/${x.locationType}`
+    }) ));
 };
 
 module.exports = AgencyService;

@@ -10,6 +10,7 @@ function OffenderRepository(config, agent) {
 
   this.requests = {
     fetchEvents: this.agent.get(`${root}/offenders/events`),
+    fetchCaseNoteEvents: this.agent.get(`${root}/offenders/events/case_notes_for_delius`),
     getDetails: this.agent.get(`${root}/offenders/:nomsId`),
     getLocation: this.agent.get(`${root}/offenders/:nomsId/location`),
     getImage: this.agent.get(`${root}/offenders/:nomsId/image`),
@@ -19,7 +20,11 @@ function OffenderRepository(config, agent) {
 }
 
 OffenderRepository.prototype.fetchEvents = function (query) {
-  return this.requests.fetchEvents(query).set('Page-Limit', this.config.limit).then(helpers.handleResponse([]));
+  return this.requests.fetchEvents(query).then(helpers.handleResponse([]));
+};
+
+OffenderRepository.prototype.fetchCaseNoteEvents = function (query) {
+  return this.requests.fetchCaseNoteEvents(query).then(helpers.handleResponse([]));
 };
 
 OffenderRepository.prototype.getDetails = function (nomsId) {

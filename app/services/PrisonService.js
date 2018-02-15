@@ -1,15 +1,13 @@
-const PrisonRepository = require('../repositories/PrisonRepository');
+const ChildProcessAgent = require('../helpers/ChildProcessAgent');
 const CachingRepository = require('../helpers/CachingRepository');
-const RetryingRepository = require('../helpers/RetryingRepository');
 
-function LocationService(config, repo) {
+function LocationService(config, childProcessAgent) {
   this.config = config;
-  this.repository = repo || new CachingRepository(PrisonRepository, config);
-  this.repository = repo || new CachingRepository(new RetryingRepository(new PrisonRepository(config)));
+  this.agent = childProcessAgent || new CachingRepository(new ChildProcessAgent(this.config));
 }
 
 LocationService.prototype.liveRoll = function (prisonId, query) {
-  return this.repository.liveRoll(prisonId, query);
+  return this.agent.request('prison', 'liveRoll', prisonId, query);
 };
 
 module.exports = LocationService;

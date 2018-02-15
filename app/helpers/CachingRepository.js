@@ -1,4 +1,5 @@
 const Datastore = require('nedb');
+const log = require('../../server/log');
 
 const isObject = (x) => x != null && typeof x === 'object' && Array.isArray(x) === false;
 
@@ -58,7 +59,7 @@ const wrap = (repository, method, prefix, ds) => (...args) => {
   let cacheKey = '_' + args.map((x) => isObject(x) ? JSON.stringify(x) : x).join(' ').trim().replace(/\s/g, '_');
   let fn = repository[method];
 
-  //console.log(cacheKey, args);
+  log.debug(cacheName, cacheKey, args);
 
   return checkCache(cacheName, cacheKey, ds)
     .catch(callRemote(repository, fn, args, cacheName, cacheKey, ds));

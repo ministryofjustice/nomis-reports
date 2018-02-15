@@ -40,16 +40,15 @@ function BookingRepository(config, agent) {
   };
 }
 
-BookingRepository.prototype.list = function (query, pageOffset) {
-  return this.requests.list({ query })
-    .set('Page-Limit', this.config.limit)
-    .set('Page-Offset', (pageOffset || 0) * this.config.limit)
+BookingRepository.prototype.list = function (query, pageOffset = 0, pageSize) {
+  return this.requests.list(query)
+    .set('Page-Limit', pageSize || this.config.limit)
+    .set('Page-Offset', pageOffset * (pageSize || this.config.limit))
     .then(helpers.handleResponse([]));
 };
 
 BookingRepository.prototype.getDetails = function (bookingId) {
-  return this.requests.getDetails({ bookingId })
-    .then(helpers.handleResponse());
+  return this.requests.getDetails({ bookingId }).then(helpers.handleResponse());
 };
 
 BookingRepository.prototype.getSentenceDetail = function (bookingId) {
@@ -64,20 +63,39 @@ BookingRepository.prototype.getIepSummary = function (bookingId) {
   return this.requests.getIepSummary({ bookingId }).then(helpers.handleResponse());
 };
 
-BookingRepository.prototype.listAliases = function (bookingId, query) {
-  return this.requests.listAliases({ bookingId }, query).set('Page-Limit', this.config.limit).then(helpers.handleResponse([]));
+BookingRepository.prototype.listAliases = function (bookingId, query, pageOffset = 0, pageSize) {
+  return this.requests.listAliases({ bookingId }, query)
+    .set('Page-Limit', pageSize || this.config.limit)
+    .set('Page-Offset', pageOffset * (pageSize || this.config.limit))
+    .then(helpers.handleResponse([]));
 };
 
-BookingRepository.prototype.listContacts = function (bookingId, query) {
-  return this.requests.listContacts({ bookingId }, query).set('Page-Limit', this.config.limit).then(helpers.handleResponse([]));
+BookingRepository.prototype.listContacts = function (bookingId, query, pageOffset = 0, pageSize) {
+  return this.requests.listContacts({ bookingId }, query)
+    .set('Page-Limit', pageSize || this.config.limit)
+    .set('Page-Offset', pageOffset * (pageSize || this.config.limit))
+    .then(helpers.handleResponse([]));
 };
 
-BookingRepository.prototype.listAdjudications = function (bookingId, query) {
-  return this.requests.listAdjudications({ bookingId }, query).set('Page-Limit', this.config.limit).then(helpers.handleResponse([]));
+BookingRepository.prototype.listAdjudications = function (bookingId, query, pageOffset = 0, pageSize) {
+  return this.requests.listAdjudications({ bookingId }, query)
+    .set('Page-Limit', pageSize || this.config.limit)
+    .set('Page-Offset', pageOffset * (pageSize || this.config.limit))
+    .then(helpers.handleResponse([]));
 };
 
-BookingRepository.prototype.listAlerts = function (bookingId, query) {
-  return this.requests.listAlerts({ bookingId }, query).set('Page-Limit', this.config.limit).then(helpers.handleResponse([]));
+BookingRepository.prototype.listAlerts = function (bookingId, query, pageOffset = 0, pageSize) {
+  return this.requests.listAlerts({ bookingId }, query)
+    .set('Page-Limit', pageSize || this.config.limit)
+    .set('Page-Offset', pageOffset * (pageSize || this.config.limit))
+    .then(helpers.handleResponse([]));
+};
+
+BookingRepository.prototype.listCaseNotes = function (bookingId, query, pageOffset = 0, pageSize) {
+  return this.requests.listCaseNotes({ bookingId }, query)
+    .set('Page-Limit', pageSize || this.config.limit)
+    .set('Page-Offset', pageOffset * (pageSize || this.config.limit))
+    .then(helpers.handleResponse([]));
 };
 
 module.exports = BookingRepository;

@@ -12,6 +12,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js | bunyan -o short",
+    "stream-test": "node stream-test.js | bunyan -o short",
     "build": "webpack",
     "test": "mocha",
     "test-report": "mocha --reporter mocha-junit-reporter",

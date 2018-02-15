@@ -2,30 +2,17 @@ const express = require('express');
 const router = new express.Router();
 
 const helpers = require('../helpers');
-const links = require('../helpers/links');
 const OffenderService = require('../services/OffenderService');
 
-const map = (fn) => (x) =>
-  x && (Array.isArray(x) ? x.map(fn) : fn(x));
-
-const expandLink = (p, k, fn) => (x) => {
-  if (x[p]) {
-    (x.links = x.links || {})[k] = fn(x[p]);
-  }
-
-  return x;
-};
-
-const addCustodyStatusLinks = (p) => expandLink(p, 'custodyStatus', links.custodyStatus);
-
 const services = {};
-const setUpServices = (config) => {
+let setUpServices = (config) => {
   services.offender = services.offender || new OffenderService(config);
+
+  setUpServices = () => {};
 };
 
 const proxy = (service, fn, params) =>
-  service[fn].call(service, params)
-    .then(map(addCustodyStatusLinks('offenderNo')));
+  service[fn].call(service, params);
 
 const createOffenderViewModel = (offender) => ({ offender });
 
@@ -38,6 +25,16 @@ const renderOffenderLocation = renderer('location');
 
 const retrieveOffenderDetails = (req, res, next) =>
   proxy(services.offender, 'getDetails', req.params.nomsId)
+    .then(renderOffender(res, createOffenderViewModel))
+    .catch(helpers.failWithError(res, next));
+
+const fetchEventList = (req, res, next) =>
+  proxy(services.offender, 'fetchEvents', req.query)
+    .then(renderOffender(res, createOffenderViewModel))
+    .catch(helpers.failWithError(res, next));
+
+const fetchCaseNoteEventList = (req, res, next) =>
+  proxy(services.offender, 'fetchCaseNoteEvents', req.query)
     .then(renderOffender(res, createOffenderViewModel))
     .catch(helpers.failWithError(res, next));
 
@@ -68,6 +65,8 @@ router.use((req, res, next) => {
   next();
 });
 
+router.get('/events', fetchEventList);
+router.get('/events/caseNotes', fetchCaseNoteEventList);
 router.get('/:nomsId', retrieveOffenderDetails);
 /*
 router.get('/:noms_id/location', retrieveOffenderLocation);

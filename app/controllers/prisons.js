@@ -2,30 +2,17 @@ const express = require('express');
 const router = new express.Router();
 
 const helpers = require('../helpers');
-const links = require('../helpers/links');
 const PrisonService = require('../services/PrisonService');
 
-const map = (fn) => (x) =>
-  x && (Array.isArray(x) ? x.map(fn) : fn(x));
-
-const expandLink = (p, k, fn) => (x) => {
-  if (x[p]) {
-    (x.links = x.links || {})[k] = fn(x[p]);
-  }
-
-  return x;
-};
-
-const addOffenderLinks = (p) => expandLink(p, 'offender', links.offender);
-
 const services = {};
-const setUpServices = (config) => {
+let setUpServices = (config) => {
   services.prison = services.prison || new PrisonService(config);
+
+  setUpServices = () => {};
 };
 
 const proxy = (service, fn, ...params) =>
-  service[fn].apply(service, params)
-    .then(map(addOffenderLinks('offenderNo')));
+  service[fn].apply(service, params);
 
 const createLiveRollViewModel = (liveRoll) =>
   ({

@@ -1,6 +1,6 @@
 const healthCheckAgent = require('../services/healthCheck');
-const nomisApiAgent = require('../helpers/nomisApiAgent');
-const eliteApiAgent = require('../helpers/eliteApiAgent');
+const nomisApiAgent = require('../workers/helpers/nomisApiAgent');
+const eliteApiAgent = require('../workers/helpers/eliteApiAgent');
 
 const safely = (fn) => {
   try {

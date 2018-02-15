@@ -13,16 +13,22 @@ function LocationRepository(config, agent) {
   };
 }
 
-LocationRepository.prototype.list = function (query) {
-  return this.requests.list(query).set('Page-Limit', this.config.limit).then(helpers.handleResponse([]));
+LocationRepository.prototype.list = function (query, pageOffset = 0, pageSize) {
+  return this.requests.list({ query })
+    .set('Page-Limit', pageSize || this.config.limit)
+    .set('Page-Offset', pageOffset * (pageSize || this.config.limit))
+    .then(helpers.handleResponse([]));
 };
 
 LocationRepository.prototype.getDetails = function (locationId) {
   return this.requests.getDetails({ locationId }).then(helpers.handleResponse());
 };
 
-LocationRepository.prototype.listInmates = function (locationId, query) {
-  return this.requests.listInmates({ locationId }, query).set('Page-Limit', this.config.limit).then(helpers.handleResponse());
+LocationRepository.prototype.listInmates = function (locationId, query, pageOffset = 0, pageSize) {
+  return this.requests.listInmates({ locationId }, query)
+    .set('Page-Limit', pageSize || this.config.limit)
+    .set('Page-Offset', pageOffset * (pageSize || this.config.limit))
+    .then(helpers.handleResponse([]));
 };
 
 module.exports = LocationRepository;

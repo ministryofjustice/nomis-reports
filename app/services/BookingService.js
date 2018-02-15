@@ -1,73 +1,40 @@
-const BookingRepository = require('../repositories/BookingRepository');
+const log = require('../../server/log');
+
+const ChildProcessAgent = require('../helpers/ChildProcessAgent');
 const CachingRepository = require('../helpers/CachingRepository');
-const RetryingRepository = require('../helpers/RetryingRepository');
+const BatchProcessor = require('../helpers/BatchProcessor');
 
-const describe = (name, promise, alt) =>
-  promise.then((data) => ({ [name]: (data || alt) })).catch(() => alt);
-
-const batchRequest = (func, opts, out, batch) => {
-  let page = ++opts.page;
-
-  return func(page)
-    .then((data) => {
-      if (data.length > 0) {
-        console.log('batchRequest', 'SUCCESS', { size: data.length, page, batch });
-
-        data.forEach((x) => out.add(x));
-
-        return batchRequest(func, opts, out, batch);
-      }
-    })
+const describe = (name, promise, alt, map) =>
+  promise
+    .then((data) => ({ [name]: (data || alt) }))
+    .then((data) => data.map && map ? data.map(map) : data)
     .catch((err) => {
-      console.log('batchRequest', 'ERROR', { page, batch });
-      delete err.text;
-      console.log(err);
+      log.error(err, { name }, 'BookingService describe ERROR');
 
-      if (err.code === 'ENOTFOUND') {
-        // network connection error abort
-        throw err;
-      }
-
-      return batchRequest(func, opts, out, batch);
+      return alt;
     });
-};
 
-const batchProcess = (func, size) => {
-  let opts = { page: 0 };
-  let out = new Set();
-
-  let batch = [];
-  for (let i = 0; i < size; i++) {
-    batch.push(batchRequest(func, opts, out, i));
-  }
-
-  return Promise.all(batch)
-    .catch(() => {
-      console.log('THERE WERE ERRORS');
-    })
-    .then(() => {
-      console.log('DONE', out.size);
-
-      return Array.from(out);
-    });
-};
-
-function BookingService(config, repo) {
+function BookingService(config, childProcessAgent) {
   this.config = config;
-  this.repository = repo || new CachingRepository(new RetryingRepository(new BookingRepository(config)));
+  this.agent = childProcessAgent || new CachingRepository(new ChildProcessAgent(this.config));
 }
 
-BookingService.prototype.all = function (query) {
-  return batchProcess((pageOffset = 0) => this.list(query || {}, pageOffset), 20);
+BookingService.prototype.all = function (query, pageSize, batchSize = 1) {
+  let batch = new BatchProcessor({ batchSize });
+  return batch.run((pageOffset = 0) => this.list(query || {}, pageOffset, pageSize));
 };
 
-BookingService.prototype.list = function (query, pageOffset) {
-  return this.repository.list(query, pageOffset)
-    .then((x) => x.map((x) => `/bookings/${x.bookingId}`));
+BookingService.prototype.list = function (query, pageOffset, pageSize) {
+  return this.agent.request('booking', 'list', query, pageOffset, pageSize)
+    .then((x) => (x || []).map((x) => ({
+        id: `/bookings/${x.bookingId}`,
+        bookingNo: `/bookings/bookingNo/${x.bookingNo}`,
+        offenderNo: `/offenders/${x.offenderNo}`,
+      })));
 };
 
 BookingService.prototype.getDetails = function (bookingId) {
-  return this.repository.getDetails(bookingId)
+  return this.agent.request('booking', 'getDetails', bookingId)
     .then((data) => {
       if (data.assignedLivingUnit && data.assignedLivingUnit.locationId) {
         data.assignedLivingUnitId = data.assignedLivingUnit.locationId;
@@ -80,14 +47,18 @@ BookingService.prototype.getDetails = function (bookingId) {
 
 BookingService.prototype.allDetails = function (bookingId) {
   return Promise.all([
-    this.getDetails(bookingId).catch((err) => ({ bookingId: bookingId, error: err })),
-    describe('sentenceDetail', this.repository.getSentenceDetail(bookingId), undefined),
-    describe('mainOffence', this.repository.getMainOffence(bookingId), undefined),
-    describe('iepSummary', this.repository.getIepSummary(bookingId), undefined),
-    describe('aliases', this.repository.listAliases(bookingId), []),
-    describe('adjudications', this.repository.listAdjudications(bookingId), []),
-    describe('alerts', this.repository.listAlerts(bookingId)
-      .then((x) => x.map((alert) => ({
+    this.getDetails(bookingId)
+      .catch((err) => {
+        log.error(err, { bookingId }, 'BookingService allDetails ERROR');
+
+        return { bookingId };
+      }),
+    describe('sentenceDetail', this.getSentenceDetail(bookingId), undefined),
+    describe('mainOffence', this.getMainOffence(bookingId), undefined),
+    describe('iepSummary', this.getIepSummary(bookingId), undefined),
+    describe('aliases', this.listAliases(bookingId), []),
+    describe('adjudications', this.listAdjudications(bookingId), []),
+    describe('alerts', this.listAlerts(bookingId), [], (alert) => ({
         id: `/bookings/${bookingId}/alerts/${alert.alertId}`,
         code: alert.alertCode,
         type: alert.alertType,
@@ -95,7 +66,7 @@ BookingService.prototype.allDetails = function (bookingId) {
         typeLabel: alert.alertTypeDescription,
         createdDate: alert.dateCreated,
         isExpired: alert.expired,
-      }))), []),
+      })),
   ])
   .then((data) => data.reduce((a, b) => Object.assign(a, b), {}))
   .then((data) => Object.assign(
@@ -163,31 +134,53 @@ BookingService.prototype.allDetails = function (bookingId) {
 };
 
 BookingService.prototype.getSentenceDetail = function (bookingId) {
-  return this.repository.getSentenceDetail(bookingId);
+  return this.agent.request('booking', 'getSentenceDetail', bookingId);
 };
 
 BookingService.prototype.getMainOffence = function (bookingId) {
-  return this.repository.getMainOffence(bookingId);
+  return this.agent.request('booking', 'getMainOffence', bookingId);
 };
 
 BookingService.prototype.getIepSummary = function (bookingId) {
-  return this.repository.getIepSummary(bookingId);
+  return this.agent.request('booking', 'getIepSummary', bookingId);
 };
 
 BookingService.prototype.listAliases = function (bookingId, query) {
-  return this.repository.listAliases(bookingId, query);
+  return this.agent.request('booking', 'listAliases', bookingId, query);
 };
 
 BookingService.prototype.listContacts = function (bookingId, query) {
-  return this.repository.listContacts(bookingId, query);
+  return this.agent.request('booking', 'listContacts', bookingId, query);
 };
 
 BookingService.prototype.listAdjudications = function (bookingId, query) {
-  return this.repository.listAdjudications(bookingId, query);
+  return this.agent.request('booking', 'listAdjudications', bookingId, query);
 };
 
 BookingService.prototype.listAlerts = function (bookingId, query) {
-  return this.repository.listAlerts(bookingId, query);
+  return this.agent.request('booking', 'listAlerts', bookingId, query);
+};
+
+BookingService.prototype.listCaseNotes = function (bookingId, query) {
+  return Promise.all([
+    this.agent.request('booking', 'getDetails', bookingId),
+    this.agent.request('booking', 'listCaseNotes', bookingId, query)
+  ])
+  .then((data) => data[1].map((x) =>({
+      id: `/caseNotes/${x.caseNoteId}`,
+      bookingId: `/bookings/${x.bookingId}`,
+      bookingNo: `/bookings/bookingNo/${data[0].bookingNo}`,
+      offenderNo: `/offenders/${data[0].offenderNo}`,
+
+      noteType: `/caseNoteType/${x.type}/${x.subType}`,
+      typeDescription: x.typeDescription,
+      subtypeDescription: x.subTypeDescription,
+
+      source: x.source,
+      timestamp: x.creationDateTime,
+
+      //src: x
+    })));
 };
 
 module.exports = BookingService;

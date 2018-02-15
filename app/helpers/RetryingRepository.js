@@ -1,28 +1,27 @@
+const log = require('../../server/log');
 
-const maxRetries = 5;
+const retryInterval = (retry) => [ 500, 1000, 3000, 5000, 10000, 60000 ][retry];
 
 const shouldRetry = (err, retries) => {
   // 408 Request timeout
   // 429 Too many requests
   // 5xx Server Error
-  if (retries < maxRetries && (err.code === 'ENOTFOUND' || err.status === 408 || err.status === 429 || err.status === 502)) {
+  if (retryInterval(retries) > 0 && ~['ETIMEDOUT', 'ECONNABORTED', 'ENOTFOUND', 408, 429, 502].indexOf(err.code)) {
     return true;
   }
 
   return false;
 };
 
-const retryInterval = (retry) => [ 100, 1000, 5000, 10000, 60000 ][retry];
-
 const retry = (repository, method, args, retries) =>
   repository[method].apply(repository, args)
     .catch((err) => {
       let error = err.response && err.response.error || err;
+      delete error.text;
+      log.error(error, { method, retries, args }, 'RetryingRepository request ERROR');
 
       if (shouldRetry(error, retries)) {
-        delete error.text;
-        console.log(error);
-        console.log('RETRYING', method, retries, args);
+        log.debug({ method, retries, args }, 'RetryingRepository request RETRY');
 
         return new Promise((resolve, reject) => {
           setTimeout(() =>

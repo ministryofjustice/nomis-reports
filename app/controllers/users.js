@@ -5,8 +5,10 @@ const helpers = require('../helpers');
 const UserService = require('../services/UserService');
 
 const services = {};
-const setUpServices = (config) => {
+let setUpServices = (config) => {
   services.user = services.user || new UserService(config);
+
+  setUpServices = () => {};
 };
 
 const userLogin = (req, res, next) => {

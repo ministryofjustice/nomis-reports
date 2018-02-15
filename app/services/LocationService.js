@@ -1,41 +1,63 @@
-const LocationRepository = require('../repositories/LocationRepository');
+const log = require('../../server/log');
+
+const ChildProcessAgent = require('../helpers/ChildProcessAgent');
 const CachingRepository = require('../helpers/CachingRepository');
-const RetryingRepository = require('../helpers/RetryingRepository');
+const BatchProcessor = require('../helpers/BatchProcessor');
 
-const describe = (name, promise, alt) =>
-  promise.then((data) => ({ [name]: (data || alt) }));
+const describe = (name, promise, alt, map) =>
+  promise
+    .then((data) => ({ [name]: (data || alt) }))
+    .then((data) => data.map && map ? data.map(map) : data)
+    .catch((err) => {
+      log.debug(err, { name }, 'LocationService describe ERROR');
 
-function LocationService(config, repo) {
+      return alt;
+    });
+
+function LocationService(config, childProcessAgent) {
   this.config = config;
-  this.repository = repo || new CachingRepository(new RetryingRepository(new LocationRepository(config)));
+  this.agent = childProcessAgent || new CachingRepository(new ChildProcessAgent(this.config));
 }
 
+LocationService.prototype.list = function (query, pageOffset, pageSize) {
+  return this.agent.request('location', 'list', query, pageOffset, pageSize)
+    .then((x) => x.map((x) => ({
+      id: `/locations/${x.locationId}`,
+      type: `/locationType/${x.locationType}`
+    })));
+};
+
+LocationService.prototype.all = function (query, pageSize = 1000, batchSize = 5) {
+  let batch = new BatchProcessor({ batchSize });
+  return batch.run((pageOffset = 0) => this.list(query || {}, pageOffset, pageSize));
+};
+
 LocationService.prototype.listTypes = function (query) {
-  return this.repository.list(query)
+  return this.all(query)
       .then((x) => x.reduce((a, b) => {
-        if (!~a.indexOf(b.locationType)) {
-          a.push(b.locationType);
+        if (!~a.indexOf(b.type)) {
+          a.push(b.type);
         }
 
         return a;
       }, [])
-      .map((x) => `/locations/types/${x}` ));
-};
-
-LocationService.prototype.list = function (query) {
-  return this.repository.list(query)
-    .then((x) => x.map((x) => `/locations/${x.locationId}`));
+      .map((x) => ({ id: x })));
 };
 
 LocationService.prototype.listByType = function (type, query) {
-  return this.repository.list(query)
-    .then((x) => x.filter((x) => x.locationType === type).map((x) => `/locations/${x.locationId}`));
+  return this.all(query)
+    .then((x) => x.filter((x) => x.locationType === type).map((x) => ({ id: `/locations/${x.locationId}` })));
 };
 
 LocationService.prototype.getDetails = function (locationId) {
   return Promise.all([
-    this.repository.getDetails(locationId),
-    describe('location', this.list({ query: `parentLocationId:eq:${locationId}` })),
+    this.agent.request('location', 'getDetails', locationId)
+      .catch((err) => {
+        log.debug(err, { locationId }, 'LocationService allDetails ERROR');
+
+        return { locationId };
+      }),
+    describe('location', this.all({ query: `parentLocationId:eq:${locationId}` }), []),
   ])
   .then((data) => data.reduce((a, b) => Object.assign(a, b), {}))
   .then((location) => ({
@@ -60,8 +82,8 @@ LocationService.prototype.getDetails = function (locationId) {
 };
 
 LocationService.prototype.listInmates = function (locationId, query) {
-  return this.repository.listInmates(locationId, query)
-    .then((x) => x.map((x) => `/bookings/${x.bookingId}` ));
+  return this.agent.request('location', 'listInmates', locationId, query)
+    .then((x) => x.map((x) => ({ id: `/bookings/${x.bookingId}` }) ));
 };
 
 module.exports = LocationService;

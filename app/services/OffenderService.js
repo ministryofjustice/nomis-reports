@@ -1,30 +1,37 @@
-const OffenderRepository = require('../repositories/OffenderRepository');
+const ChildProcessAgent = require('../helpers/ChildProcessAgent');
 const CachingRepository = require('../helpers/CachingRepository');
-const RetryingRepository = require('../helpers/RetryingRepository');
 
-function OffenderService(config, repo) {
+function OffenderService(config, childProcessAgent) {
   this.config = config;
-  this.repository = repo || new CachingRepository(new RetryingRepository(new OffenderRepository(config)));
+  this.agent = childProcessAgent || new CachingRepository(new ChildProcessAgent(this.config));
 }
 
 OffenderService.prototype.getDetails = function (nomsId) {
-  return this.repository.getDetails(nomsId);
+  return this.agent.request('offender', 'getDetails', nomsId);
+};
+
+OffenderService.prototype.fetchCaseNoteEvents = function(query) {
+  return this.agent.request('offender', 'fetchCaseNoteEvents', query);
+};
+
+OffenderService.prototype.fetchEvents = function (query) {
+  return this.agent.request('offender', 'fetchEvents', query);
 };
 
 OffenderService.prototype.getLocation = function (nomsId) {
-  return this.repository.getLocation(nomsId);
+  return this.agent.request('offender', 'getLocation', nomsId);
 };
 
 OffenderService.prototype.getImage = function (nomsId) {
-  return this.repository.getImage(nomsId);
+  return this.agent.request('offender', 'getImage', nomsId);
 };
 
 OffenderService.prototype.getCharges = function (nomsId) {
-  return this.repository.getCharges(nomsId);
+  return this.agent.request('offender', 'getCharges', nomsId);
 };
 
 OffenderService.prototype.getPssDetail = function (nomsId) {
-  return this.repository.getPssDetail(nomsId);
+  return this.agent.request('offender', 'getPssDetail', nomsId);
 };
 
 module.exports = OffenderService;

@@ -66,6 +66,11 @@ const listLocations = (req, res, next) =>
     .then(renderLocationsList(res, createLocationsViewModel))
     .catch(helpers.failWithError(res, next));
 
+const allLocations = (req, res, next) =>
+  services.location.all(req.query.search)
+    .then(renderLocationsList(res, createLocationsViewModel))
+    .catch(helpers.failWithError(res, next));
+
 const listLocationTypes = (req, res, next) =>
   services.location.listTypes(req.query.search)
     .then(renderLocationsList(res, createLocationsViewModel))
@@ -87,6 +92,7 @@ router.use((req, res, next) => {
 });
 
 router.get('/', listLocations);
+router.get('/all', allLocations);
 router.get('/types', listLocationTypes);
 router.get('/:locationId', retrieveLocation);
 router.get('/:locationId/inmates', retrieveInmates);

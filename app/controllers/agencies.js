@@ -56,6 +56,11 @@ const listAgencies = (req, res, next) =>
     .then(renderAgencyList(res, createAgenciesViewModel))
     .catch(helpers.failWithError(res, next));
 
+const allAgencies = (req, res, next) =>
+  services.agency.all(req.query.search)
+    .then(renderAgencyList(res, createAgenciesViewModel))
+    .catch(helpers.failWithError(res, next));
+
 const listAgencyTypes = (req, res, next) =>
   services.agency.listTypes(req.query.search)
     .then(renderAgencyList(res, createAgenciesViewModel))
@@ -67,7 +72,7 @@ const retrieveAgency = (req, res, next) =>
     .catch(helpers.failWithError(res, next));
 
 const listAgencyLocations = (req, res, next) =>
-  services.agency.listLocations(req.query.search)
+  services.agency.listLocations(req.params.agencyId, req.query)
     .then(renderAgencyLocationsList(res, createAgencyLocationsViewModel))
     .catch(helpers.failWithError(res, next));
 
@@ -77,6 +82,7 @@ router.use((req, res, next) => {
 });
 
 router.get('/', listAgencies);
+router.get('/all', allAgencies);
 router.get('/types', listAgencyTypes);
 router.get('/:agencyId', retrieveAgency);
 router.get('/:agencyId/locations', listAgencyLocations);
