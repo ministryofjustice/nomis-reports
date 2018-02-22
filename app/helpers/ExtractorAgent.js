@@ -1,25 +1,42 @@
+const RequestQueue = require('../helpers/RequestQueue.js');
+
 const log = require('../../server/log');
 
-const util = require('util');
-const fs = require('fs');
-const writeFile = util.promisify(fs.writeFile);
-
 const formatDate = (d) =>
-  `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}T${d.getHours()}:${d.getMinutes()}`;
+  `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}T${d.getHours()}:${('00' + d.getMinutes()).substr(-2)}`;
 
-const RequestQueue = require('../helpers/RequestQueue');
-
-function ExtractorAgent(req, opts) {
-  this.request = req;
-  this.list = opts.list;
+function ExtractorAgent(opts) {
   this.type = opts.type;
-  this.batchSize = opts.batchSize;
-  this.detail = opts.detail;
-
-  this.ids = new RequestQueue();
-  this.extractDate = formatDate(new Date());
-  this.location = `extracts/${this.type}/${this.extractDate}`;
-  this.filepath = `./.${this.location}.json`;
+  this.concurrency = opts.concurrency;
 }
+
+ExtractorAgent.prototype.run = function(opts, cb) {
+  let extractDate = formatDate(new Date());
+  let location = `extracts/${this.type}/${extractDate}`;
+  let extractDetails = { extractDate, location: '/' + location };
+
+  log.info(extractDetails, 'createExtract BEGIN');
+
+  let queue = new RequestQueue({ concurrency: this.concurrency });
+
+  let interval = setInterval(() => {
+    log.info(queue.report(), 'ExtractorAgent run PROGRESS');
+  }, 10000);
+
+  queue.onData(opts.detail);
+  queue.onComplete((error, data) => {
+    clearInterval(interval);
+
+    if (error) {
+      return log.error(error, 'createExtract ERROR');
+    }
+
+    cb(data);
+  });
+
+  opts.list().then(ids => queue.push(ids).finalize());
+
+  return extractDetails;
+};
 
 module.exports = ExtractorAgent;
