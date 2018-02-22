@@ -14,7 +14,8 @@ module.exports = (agent, name, config, opts) => {
   };
 
   return {
-    version: getHealthData(`${config.apiUrl}/version`),
-    infoHealth: getHealthData(`${config.apiUrl}/info/health`)
+    version: getHealthData(`${config.apiUrl.replace('/api', '')}/version`),
+    health: getHealthData(`${config.apiUrl.replace('/api', '')}/health`),
+    info: getHealthData(`${config.apiUrl.replace('/api', '')}/info`)
   };
 };

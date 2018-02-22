@@ -12,8 +12,8 @@ let setUpServices = (config) => {
 };
 
 const userLogin = (req, res, next) => {
-  let username = req.body && req.body.user || req.app.locals.config.reports.user;
-  let password = req.body && req.body.password || req.app.locals.config.reports.password;
+  let username = req.body && req.body.user;
+  let password = req.body && req.body.password;
 
   return services.user.login(username, password)
     .then(helpers.redirect(res, '/'))

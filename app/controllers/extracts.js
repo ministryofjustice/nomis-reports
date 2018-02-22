@@ -45,7 +45,7 @@ router.get('/bookings', (req, res) => {
         .then(() => log.info(extractDetails, 'storeExtract SUCCESS'));
   });
 
-    res.status(202).location(extractDetails.location).json(extractDetails);
+  res.status(202).location(extractDetails.location).json(extractDetails);
 });
 router.get('/bookings/:date', retrieveExtract('bookings'));
 

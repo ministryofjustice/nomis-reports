@@ -7,12 +7,20 @@ function UserRepository(config, agent) {
   this.agent = eliteApiAgent(agent, undefined, this.config.elite2);
 
   this.requests = {
-    login: this.agent.post(`${this.config.elite2.apiUrl}/users/login`),
+    login: this.agent.post(`${this.config.elite2.apiUrl.replace('/api', '')}/oauth/token`),
   };
 }
 
 UserRepository.prototype.login = function (username, password) {
-  return this.requests.login({ username, password }).then(helpers.handleResponse([]));
+  let body = `grant_type=client_credentials`;
+
+  if (username && password) {
+    body = `grant_type=password&username=${username}&password=${password}`;
+  }
+
+  return this.requests.login(body)
+    .set('content-type', 'application/x-www-form-urlencoded')
+    .then(helpers.handleResponse([]));
 };
 
 module.exports = UserRepository;

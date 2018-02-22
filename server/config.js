@@ -27,11 +27,6 @@ module.exports = {
 
   port: get('PORT', 3000),
 
-  reports: {
-    user: get('REPORTS_USER', 'REPORTER', { requireInProduction: true }),
-    password: get('REPORTS_PASSWORD', 'PASSOWORD', { requireInProduction: true }),
-  },
-
   nomis: {
     apiUrl: get('NOMIS_API_URL', 'http://localhost:8080/api', { requireInProduction: true }),
     apiGatewayToken: get('NOMIS_GW_TOKEN', '', { requireInProduction: true }),
@@ -49,6 +44,11 @@ module.exports = {
     timeout: {
       response: 20000,
       deadline: 25000
+    },
+    oauth: {
+      grantType: get('OAUTH_GRANT_TYPE', 'client_credentials', { requireInProduction: true }),
+      username: get('OAUTH_USERNAME', 'x_trusted_client', { requireInProduction: true }),
+      password: get('OAUTH_PASSWORD', 'x_client_password', { requireInProduction: true }),
     }
   }
 };

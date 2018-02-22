@@ -15,14 +15,11 @@ function ChildProcessAgent(config) {
 }
 
 ChildProcessAgent.prototype.login = function() {
-  let username = this.config.reports.user;
-  let password = this.config.reports.password;
-
   log.debug('ChildProcessAgent login BEGIN');
 
   return (this.config.elite2.elite2Jwt) ?
           Promise.resolve() :
-          this.request('user', 'login', username, password)
+          this.request('user', 'login')
             .then(setJwt(this.config))
             .then(() => log.debug('ChildProcessAgent login SUCCESS'))
             .catch((err) => log.error(err, 'ChildProcessAgent Login ERROR'));
@@ -59,4 +56,4 @@ ChildProcessAgent.prototype.request = function(repository, method, ...params) {
   });
 };
 
-module.exports = ChildProcessAgent;
+module.exports = require('./MainProcessAgent'); // ChildProcessAgent;

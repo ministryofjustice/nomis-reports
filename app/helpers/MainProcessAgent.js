@@ -6,7 +6,7 @@ const OffenderRepository = require('../repositories/OffenderRepository');
 const PrisonRepository = require('../repositories/PrisonRepository');
 const UserRepository = require('../repositories/UserRepository');
 
-const RetryingRepository = require('../helpers/RetryingRepository');
+const RetryingRepository = require('./RetryingRepository');
 
 const log = require('../../server/log');
 
@@ -20,7 +20,33 @@ const services = {
   user: (config) => new UserRepository(config),
 };
 
-const makeRequest = (request) => {
+const setJwt = (config) => (token) => {
+  config.elite2.elite2Jwt = token;
+};
+
+const removeJwt = (config) => {
+  delete config.elite2.elite2Jwt;
+};
+
+function MainProcessAgent(config) {
+  this.requestId = 0;
+  this.config = config;
+}
+
+MainProcessAgent.prototype.login = function() {
+  log.debug('MainProcessAgent login BEGIN');
+
+  return (this.config.elite2.elite2Jwt) ?
+          Promise.resolve() :
+          this.request('user', 'login')
+            .then(setJwt(this.config))
+            .then(() => log.debug('MainProcessAgent login SUCCESS'))
+            .catch((err) => log.error(err, 'MainProcessAgent Login ERROR'));
+};
+
+MainProcessAgent.prototype.request = function(repository, method, ...params) {
+  const request = { config: this.config, requestId: ++this.requestId, repository, method, params };
+
   log.debug({
     repository: request.repository,
     method: request.method,
@@ -39,13 +65,19 @@ const makeRequest = (request) => {
   return Promise.resolve(services[request.repository](request.config))
     .then((repository) => repository[request.method].apply(repository, request.params))
     .then((response) => {
-      log.debug({ repository: request.repository, method: request.method }, 'RPC makeRequest SUCCESS');
-      process.send({ request, response });
+      log.debug({repository, method, params}, 'MainProcessAgent message SUCCESS');
+      return response;
     })
     .catch((error) => {
-      log.error(error, { repository: request.repository, method: request.method }, 'RPC makeRequest ERROR');
-      process.send({ request, error });
+      if (error.status === 401) { //unauthorised
+        log.debug(error, 'MainProcessAgent message UNAUTHORISED');
+        removeJwt(this.config);
+        return this.login().then(() => this.request.apply(this, [repository, method].concat(params)));
+      }
+
+      log.error(error, 'MainProcessAgent message ERROR');
+      return Promise.resolve();
     });
 };
 
-process.on('message', makeRequest);
+module.exports = MainProcessAgent;

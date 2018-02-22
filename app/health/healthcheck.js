@@ -23,7 +23,7 @@ const nomisApiCheck = (config, logger) =>
   healthCheckAgent(nomisApiAgent(undefined, undefined, config), 'nomis-api', config, {logger}).version;
 
 const eliteApiCheck = (config, logger) =>
-  healthCheckAgent(eliteApiAgent(undefined, undefined, config), 'elite2-api', config, {logger}).infoHealth;
+  healthCheckAgent(eliteApiAgent(undefined, undefined, config), 'elite2-api', config, {logger}).health;
 
 module.exports = function healthcheck(config, log) {
   let response = {

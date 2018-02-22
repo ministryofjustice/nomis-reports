@@ -1,9 +1,16 @@
 const nomisApiAgent = require('./nomisApiAgent');
+const qs = require('querystring');
 
 function eliteAuthHeaderPlugin (config) {
   return function (request) {
-    request.set('Elite-Authorization', (config.elite2Jwt && config.elite2Jwt.token || 'NO-AUTH'));
-    //request.set('Authorization', (config.elite2Jwt && config.elite2Jwt.token || 'NO-AUTH'));
+    let token = 'Basic ' + (new Buffer(`${qs.escape(config.oauth.username)}:${qs.escape(config.oauth.password)}`)).toString('base64');
+
+    if (config.elite2Jwt && config.elite2Jwt.access_token) {
+      token = 'Bearer ' + config.elite2Jwt.access_token;
+      //token = 'Basic ' + config.elite2Jwt.access_token;
+    }
+
+    request.set('Elite-Authorization', token);
 
     return request;
   };
