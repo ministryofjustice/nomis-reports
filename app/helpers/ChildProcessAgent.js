@@ -56,4 +56,4 @@ ChildProcessAgent.prototype.request = function(repository, method, ...params) {
   });
 };
 
-module.exports = require('./MainProcessAgent'); // ChildProcessAgent;
+module.exports = ChildProcessAgent;

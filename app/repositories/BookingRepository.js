@@ -16,6 +16,7 @@ function BookingRepository(config, agent) {
       listAliases: this.agent.get(`${this.config.elite2.apiUrl}/bookings/:bookingId/aliases`),
       listContacts: this.agent.get(`${this.config.elite2.apiUrl}/bookings/:bookingId/contacts`),
       listAdjudications: this.agent.get(`${this.config.elite2.apiUrl}/bookings/:bookingId/adjudications`),
+      listIdentifiers: this.agent.get(`${this.config.elite2.apiUrl}/bookings/:bookingId/identifiers`),
 
       listScheduledVisits: this.agent.get(`${this.config.elite2.apiUrl}/bookings/:bookingId/visits`),
          listScheduledVisitsToday: this.agent.get(`${this.config.elite2.apiUrl}/bookings/:bookingId/visits/today`),
@@ -47,20 +48,20 @@ BookingRepository.prototype.list = function (query, pageOffset = 0, pageSize) {
     .then(helpers.handleResponse([]));
 };
 
-BookingRepository.prototype.getDetails = function (bookingId) {
-  return this.requests.getDetails({ bookingId }).then(helpers.handleResponse());
+BookingRepository.prototype.getDetails = function (bookingId, query) {
+  return this.requests.getDetails({ bookingId }, query).then(helpers.handleResponse());
 };
 
-BookingRepository.prototype.getSentenceDetail = function (bookingId) {
-  return this.requests.getSentenceDetail({ bookingId }).then(helpers.handleResponse());
+BookingRepository.prototype.getSentenceDetail = function (bookingId, query) {
+  return this.requests.getSentenceDetail({ bookingId }, query).then(helpers.handleResponse());
 };
 
-BookingRepository.prototype.getMainOffence = function (bookingId) {
-  return this.requests.getMainOffence({ bookingId }).then(helpers.handleResponse());
+BookingRepository.prototype.getMainOffence = function (bookingId, query) {
+  return this.requests.getMainOffence({ bookingId }, query).then(helpers.handleResponse());
 };
 
-BookingRepository.prototype.getIepSummary = function (bookingId) {
-  return this.requests.getIepSummary({ bookingId }).then(helpers.handleResponse());
+BookingRepository.prototype.getIepSummary = function (bookingId, query) {
+  return this.requests.getIepSummary({ bookingId }, query).then(helpers.handleResponse());
 };
 
 BookingRepository.prototype.listAliases = function (bookingId, query, pageOffset = 0, pageSize) {
@@ -81,6 +82,11 @@ BookingRepository.prototype.listAdjudications = function (bookingId, query, page
   return this.requests.listAdjudications({ bookingId }, query)
     .set('Page-Limit', pageSize || this.config.limit)
     .set('Page-Offset', pageOffset * (pageSize || this.config.limit))
+    .then(helpers.handleResponse([]));
+};
+
+BookingRepository.prototype.listIdentifiers = function (bookingId, query) {
+  return this.requests.listIdentifiers({ bookingId }, query)
     .then(helpers.handleResponse([]));
 };
 

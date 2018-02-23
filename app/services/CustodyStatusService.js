@@ -1,9 +1,8 @@
-const ChildProcessAgent = require('../helpers/ChildProcessAgent');
-const CachingRepository = require('../helpers/CachingRepository');
+const ProcessAgent = require('../helpers/MainProcessAgent');
 
 function CustodyStatusService(config, childProcessAgent) {
   this.config = config;
-  this.agent = childProcessAgent || new CachingRepository(new ChildProcessAgent(this.config));
+  this.agent = childProcessAgent || new ProcessAgent(this.config);
 }
 
 CustodyStatusService.prototype.all = function (query) {

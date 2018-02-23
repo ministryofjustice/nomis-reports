@@ -1,9 +1,8 @@
-const ChildProcessAgent = require('../helpers/ChildProcessAgent');
-const CachingRepository = require('../helpers/CachingRepository');
+const ProcessAgent = require('../helpers/MainProcessAgent');
 
 function LocationService(config, childProcessAgent) {
   this.config = config;
-  this.agent = childProcessAgent || new CachingRepository(new ChildProcessAgent(this.config));
+  this.agent = childProcessAgent || new ProcessAgent(this.config);
 }
 
 LocationService.prototype.liveRoll = function (prisonId, query) {

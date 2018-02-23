@@ -1,7 +1,6 @@
 const log = require('../../server/log');
 
-const ChildProcessAgent = require('../helpers/ChildProcessAgent');
-const CachingRepository = require('../helpers/CachingRepository');
+const ProcessAgent = require('../helpers/MainProcessAgent');
 const BatchProcessor = require('../helpers/BatchProcessor');
 
 const describe = (name, promise, alt, map) =>
@@ -16,12 +15,12 @@ const describe = (name, promise, alt, map) =>
 
 function BookingService(config, childProcessAgent) {
   this.config = config;
-  this.agent = childProcessAgent || new CachingRepository(new ChildProcessAgent(this.config));
+  this.agent = childProcessAgent || new ProcessAgent(this.config);
 }
 
-BookingService.prototype.all = function (query, pageSize, batchSize = 1) {
+BookingService.prototype.all = function (query, pageSize = 10, batchSize = 1) {
   let batch = new BatchProcessor({ batchSize });
-  return batch.run((pageOffset = 0) => this.list(query || {}, pageOffset, pageSize));
+  return batch.run((pageOffset = 0) => this.listFull(query || {}, pageOffset, pageSize));
 };
 
 BookingService.prototype.list = function (query, pageOffset, pageSize) {
@@ -33,8 +32,18 @@ BookingService.prototype.list = function (query, pageOffset, pageSize) {
       })));
 };
 
-BookingService.prototype.getDetails = function (bookingId) {
-  return this.agent.request('booking', 'getDetails', bookingId)
+BookingService.prototype.listFull = function (query, pageOffset, pageSize) {
+  return this.agent.request('booking', 'list', query, pageOffset, pageSize)
+    .then((x) => (x || []).map((x) => ({
+        id: `/bookings/${x.bookingId}`,
+        bookingNo: `/bookings/bookingNo/${x.bookingNo}`,
+        offenderNo: `/offenders/${x.offenderNo}`,
+        booking: x,
+      })));
+};
+
+BookingService.prototype.getDetails = function (bookingId, query) {
+  return this.agent.request('booking', 'getDetails', bookingId, query)
     .then((data) => {
       if (data.assignedLivingUnit && data.assignedLivingUnit.locationId) {
         data.assignedLivingUnitId = data.assignedLivingUnit.locationId;
@@ -45,20 +54,20 @@ BookingService.prototype.getDetails = function (bookingId) {
     });
 };
 
-BookingService.prototype.allDetails = function (bookingId) {
+BookingService.prototype.allDetails = function (bookingId, query) {
   return Promise.all([
-    this.getDetails(bookingId)
+    this.getDetails(bookingId, Object.assign({ basicInfo: true }, query))
       .catch((err) => {
         log.error(err, { bookingId }, 'BookingService allDetails ERROR');
 
         return { bookingId };
       }),
-    describe('sentenceDetail', this.getSentenceDetail(bookingId), undefined),
-    describe('mainOffence', this.getMainOffence(bookingId), undefined),
-    describe('iepSummary', this.getIepSummary(bookingId), undefined),
-    describe('aliases', this.listAliases(bookingId), []),
-    describe('adjudications', this.listAdjudications(bookingId), []),
-    describe('alerts', this.listAlerts(bookingId), [], (alert) => ({
+    describe('sentenceDetail', this.getSentenceDetail(bookingId, query), undefined),
+    describe('mainOffence', this.getMainOffence(bookingId, query), undefined),
+    describe('iepSummary', this.getIepSummary(bookingId, query), undefined),
+    describe('aliases', this.listAliases(bookingId, query), []),
+    describe('adjudications', this.listAdjudications(bookingId, query), []),
+    describe('alerts', this.listAlerts(bookingId, query), [], (alert) => ({
         id: `/bookings/${bookingId}/alerts/${alert.alertId}`,
         code: alert.alertCode,
         type: alert.alertType,
@@ -133,16 +142,41 @@ BookingService.prototype.allDetails = function (bookingId) {
   });
 };
 
-BookingService.prototype.getSentenceDetail = function (bookingId) {
-  return this.agent.request('booking', 'getSentenceDetail', bookingId);
+BookingService.prototype.additionalDetails = function (bookingId) {
+  return Promise.all([
+    describe('sentenceDetail', this.getSentenceDetail(bookingId), undefined),
+    describe('mainOffence', this.getMainOffence(bookingId), undefined),
+    describe('iepSummary', this.getIepSummary(bookingId), undefined),
+    describe('aliases', this.listAliases(bookingId), []),
+    describe('adjudications', this.listAdjudications(bookingId), []),
+    describe('alerts', this.listAlerts(bookingId), [], (alert) => ({
+        id: `/bookings/${bookingId}/alerts/${alert.alertId}`,
+        code: alert.alertCode,
+        type: alert.alertType,
+        label: alert.alertCodeDescription,
+        typeLabel: alert.alertTypeDescription,
+        createdDate: alert.dateCreated,
+        isExpired: alert.expired,
+      })),
+  ])
+  .then((data) => data.reduce((a, b) => Object.assign(a, b), {}))
+  .then((data) => Object.assign(
+    {
+      id: `/bookings/${bookingId}`,
+    },
+    data));
 };
 
-BookingService.prototype.getMainOffence = function (bookingId) {
-  return this.agent.request('booking', 'getMainOffence', bookingId);
+BookingService.prototype.getSentenceDetail = function (bookingId, query) {
+  return this.agent.request('booking', 'getSentenceDetail', bookingId, query);
 };
 
-BookingService.prototype.getIepSummary = function (bookingId) {
-  return this.agent.request('booking', 'getIepSummary', bookingId);
+BookingService.prototype.getMainOffence = function (bookingId, query) {
+  return this.agent.request('booking', 'getMainOffence', bookingId, query);
+};
+
+BookingService.prototype.getIepSummary = function (bookingId, query) {
+  return this.agent.request('booking', 'getIepSummary', bookingId, query);
 };
 
 BookingService.prototype.listAliases = function (bookingId, query) {
@@ -155,6 +189,10 @@ BookingService.prototype.listContacts = function (bookingId, query) {
 
 BookingService.prototype.listAdjudications = function (bookingId, query) {
   return this.agent.request('booking', 'listAdjudications', bookingId, query);
+};
+
+BookingService.prototype.listIdentifiers = function (bookingId, query) {
+  return this.agent.request('booking', 'listIdentifiers', bookingId, query);
 };
 
 BookingService.prototype.listAlerts = function (bookingId, query) {

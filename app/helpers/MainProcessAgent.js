@@ -6,17 +6,18 @@ const OffenderRepository = require('../repositories/OffenderRepository');
 const PrisonRepository = require('../repositories/PrisonRepository');
 const UserRepository = require('../repositories/UserRepository');
 
+const CachingRepository = require('./CachingRepository');
 const RetryingRepository = require('./RetryingRepository');
 
 const log = require('../../server/log');
 
 const services = {
-  agency: (config) => new RetryingRepository(new AgencyRepository(config)),
-  booking: (config) => new RetryingRepository(new BookingRepository(config)),
-  custodyStatus: (config) => new RetryingRepository(new CustodyStatusRepository(config)),
-  location: (config) => new RetryingRepository(new LocationRepository(config)),
-  offender: (config) => new RetryingRepository(new OffenderRepository(config)),
-  prison: (config) => new RetryingRepository(new PrisonRepository(config)),
+  agency: (config) => new CachingRepository(new RetryingRepository(new AgencyRepository(config))),
+  booking: (config) => new CachingRepository(new RetryingRepository(new BookingRepository(config))),
+  custodyStatus: (config) => new CachingRepository(new RetryingRepository(new CustodyStatusRepository(config))),
+  location: (config) => new CachingRepository(new RetryingRepository(new LocationRepository(config))),
+  offender: (config) => new CachingRepository(new RetryingRepository(new OffenderRepository(config))),
+  prison: (config) => new CachingRepository(new RetryingRepository(new PrisonRepository(config))),
   user: (config) => new UserRepository(config),
 };
 

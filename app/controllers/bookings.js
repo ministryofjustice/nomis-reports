@@ -42,17 +42,17 @@ const allBookings = (req, res, next) =>
     .catch(helpers.failWithError(res, next));
 
 const retrieveBookingDetails = (req, res, next) =>
-  services.booking.allDetails(req.params.bookingId)
+  services.booking.getDetails(req.params.bookingId, req.query)
     .then(renderBooking(res, createBookingViewModel))
     .catch(helpers.failWithError(res, next));
 
 const retrieveBookingSentenceDetail = (req, res, next) =>
-  services.booking.getSentenceDetail(req.params.bookingId)
+  services.booking.getSentenceDetail(req.params.bookingId, req.query)
     .then(renderSentenceDetail(res, createSentenceDetailViewModel))
     .catch(helpers.failWithError(res, next));
 
 const retrieveBookingMainOffence = (req, res, next) =>
-  services.booking.getMainOffence(req.params.bookingId)
+  services.booking.getMainOffence(req.params.bookingId, req.query)
     .then(renderMainOffence(res, createMainOffenceViewModel))
     .catch(helpers.failWithError(res, next));
 
@@ -62,17 +62,22 @@ const retrieveBookingIepSummary = (req, res, next) =>
     .catch(helpers.failWithError(res, next));
 
 const retrieveBookingAliases = (req, res, next) =>
-  services.booking.listAliases(req.query)
+  services.booking.listAliases(req.params.bookingId, req.query)
     .then((data) => res.json(data))
     .catch(helpers.failWithError(res, next));
 
 const retrieveBookingContacts = (req, res, next) =>
-  services.booking.listContacts(req.query)
+  services.booking.listContacts(req.params.bookingId, req.query)
     .then((data) => res.json(data))
     .catch(helpers.failWithError(res, next));
 
 const retrieveBookingAdjudications = (req, res, next) =>
-  services.booking.listAdjudications(req.query)
+  services.booking.listAdjudications(req.params.bookingId, req.query)
+    .then((data) => res.json(data))
+    .catch(helpers.failWithError(res, next));
+
+const retrieveBookingIdentifiers = (req, res, next) =>
+  services.booking.listIdentifiers(req.params.bookingId, req.query)
     .then((data) => res.json(data))
     .catch(helpers.failWithError(res, next));
 
@@ -95,6 +100,7 @@ router.get('/:bookingId/iepSummary', retrieveBookingIepSummary);
 router.get('/:bookingId/aliases', retrieveBookingAliases);
 router.get('/:bookingId/contacts', retrieveBookingContacts);
 router.get('/:bookingId/adjudications', retrieveBookingAdjudications);
+router.get('/:bookingId/identifiers', retrieveBookingIdentifiers);
 router.get('/:bookingId/caseNotes', retrieveBookingCaseNotes);
 
 

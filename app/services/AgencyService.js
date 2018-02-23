@@ -1,7 +1,6 @@
 const log = require('../../server/log');
 
-const ChildProcessAgent = require('../helpers/ChildProcessAgent');
-const CachingRepository = require('../helpers/CachingRepository');
+const ProcessAgent = require('../helpers/MainProcessAgent');
 const BatchProcessor = require('../helpers/BatchProcessor');
 
 const describe = (name, promise, alt, map) =>
@@ -16,7 +15,7 @@ const describe = (name, promise, alt, map) =>
 
 function AgencyService(config, childProcessAgent) {
   this.config = config;
-  this.agent = childProcessAgent || new CachingRepository(new ChildProcessAgent(this.config));
+  this.agent = childProcessAgent || new ProcessAgent(this.config);
 }
 
 AgencyService.prototype.list = function (query, pageOffset, pageSize) {

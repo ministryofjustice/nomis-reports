@@ -94,15 +94,15 @@ RequestQueue.prototype.finish = function() {
 };
 
 RequestQueue.prototype.length = function() {
-  return this._length;
+  return this._length || 0;
 };
 
 RequestQueue.prototype.size = function() {
-  return this._size;
+  return this._size || 0;
 };
 
 RequestQueue.prototype.running = function() {
-  return this._workers;
+  return this._workers || 0;
 };
 
 RequestQueue.prototype.started = function() {
@@ -118,7 +118,7 @@ RequestQueue.prototype.finished = function() {
 };
 
 RequestQueue.prototype.estimation = function() {
-  return (this.size() / this.length()) * 100;
+  return (this.size() / (this.size() + this.length())) * 100;
 };
 
 RequestQueue.prototype.report = function() {
