@@ -3,6 +3,7 @@ const BookingRepository = require('../repositories/BookingRepository');
 const CustodyStatusRepository = require('../repositories/CustodyStatusRepository');
 const LocationRepository = require('../repositories/LocationRepository');
 const OffenderRepository = require('../repositories/OffenderRepository');
+const CaseNoteRepository = require('../repositories/CaseNoteRepository');
 const PrisonRepository = require('../repositories/PrisonRepository');
 const UserRepository = require('../repositories/UserRepository');
 
@@ -17,6 +18,7 @@ const services = {
   custodyStatus: (config) => new CachingRepository(new RetryingRepository(new CustodyStatusRepository(config))),
   location: (config) => new CachingRepository(new RetryingRepository(new LocationRepository(config))),
   offender: (config) => new CachingRepository(new RetryingRepository(new OffenderRepository(config))),
+  caseNote: (config) => new CachingRepository(new RetryingRepository(new CaseNoteRepository(config))),
   prison: (config) => new CachingRepository(new RetryingRepository(new PrisonRepository(config))),
   user: (config) => new UserRepository(config),
 };
@@ -41,8 +43,7 @@ MainProcessAgent.prototype.login = function() {
           Promise.resolve() :
           this.request('user', 'login')
             .then(setJwt(this.config))
-            .then(() => log.debug('MainProcessAgent login SUCCESS'))
-            .catch((err) => log.error(err, 'MainProcessAgent Login ERROR'));
+            .then(() => log.debug('MainProcessAgent login SUCCESS'));
 };
 
 MainProcessAgent.prototype.request = function(repository, method, ...params) {
@@ -76,8 +77,7 @@ MainProcessAgent.prototype.request = function(repository, method, ...params) {
         return this.login().then(() => this.request.apply(this, [repository, method].concat(params)));
       }
 
-      log.error(error, 'MainProcessAgent message ERROR');
-      return Promise.resolve();
+      return Promise.reject(error);
     });
 };
 

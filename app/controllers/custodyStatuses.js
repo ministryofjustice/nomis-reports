@@ -19,7 +19,7 @@ const createCustodyStatusListViewModel = (custodyStatuses) =>
       'custodyStatusDescription',
     ],
     links: {
-      offenderNo: 'offender'
+      offenderNo: 'ref'
     },
     custodyStatuses,
     recordCount: custodyStatuses.length,

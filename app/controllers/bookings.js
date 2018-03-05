@@ -14,7 +14,11 @@ let setUpServices = (config) => {
 const createBookingsListViewModel = (bookings) =>
   ({
     columns: [ 'id', 'offenderNo', 'bookingNo' ],
-    links: {},
+    links: {
+      id: 'ref',
+      offenderNo: 'ref',
+      bookingNo: 'ref',
+    },
     bookings,
     recordCount: bookings && bookings[0] && bookings[0].recordCount || 0,
   });

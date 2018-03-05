@@ -16,7 +16,11 @@
         <tr>
         {% for columnName in columns %}
           {% if links[columnName] %}
-          <td><a href="{{ row.links[links[columnName]] }}" type="{{ links[columnName] }}">{{ row[columnName] }}</a></td>
+            {% if links[columnName] === 'ref' %}
+              <td><a href="{{ row[columnName] }}" type="{{ links[columnName] }}">{{ row[columnName] }}</a></td>
+            {% else %}
+              <td><a href="{{ row.links[links[columnName]] }}" type="{{ links[columnName] }}">{{ row[columnName] }}</a></td>
+            {% endif %}
           {% else %}
           <td>{{ row[columnName] }}</td>
           {% endif %}

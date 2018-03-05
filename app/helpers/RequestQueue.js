@@ -14,6 +14,8 @@ function RequestQueue(config) {
   this._started;
   this._finished;
   this._finalized = false;
+
+  this._heartBeat;
 }
 
 RequestQueue.prototype.push = function(items) {
@@ -26,7 +28,9 @@ RequestQueue.prototype.push = function(items) {
     this._started = new Date();
   }
 
-  return this.heartbeat();
+  this._heartBeat = this._heartBeat || setInterval(() => this.heartbeat(), 100);
+
+  return this;
 };
 
 RequestQueue.prototype.add = function(items) {
@@ -39,6 +43,10 @@ RequestQueue.prototype.add = function(items) {
 };
 
 RequestQueue.prototype.next = function() {
+  if (this._finished) {
+    return this;
+  }
+
   if (this._length === 0 && this._finalized) {
     return this.finish();
   }
@@ -62,24 +70,19 @@ RequestQueue.prototype.next = function() {
 };
 
 RequestQueue.prototype.heartbeat = function() {
-  if (this._finished) {
-    log.debug('RequestQueue FINISHED');
-    return this;
-  }
-
-  process.nextTick(() => {
-    while (this._workers < this._concurrency) {
-      log.debug({
-        workers: this._workers,
-        concurrency: this._concurrency,
-        saturated: this._workers <= this._concurrency
-      }, 'RequestQueue HEARTBEAT');
-
-      this.next();
+  while (this._workers < this._concurrency) {
+    if (this._finished) {
+      break;
     }
 
-    setTimeout(() => this.heartbeat(), 100);
-  });
+    log.debug({
+      workers: this._workers,
+      concurrency: this._concurrency,
+      saturated: this._workers <= this._concurrency
+    }, 'RequestQueue HEARTBEAT');
+
+    this.next();
+  }
 
   return this;
 };
@@ -87,8 +90,12 @@ RequestQueue.prototype.heartbeat = function() {
 RequestQueue.prototype.finish = function() {
   log.debug('RequestQueue FINISH');
 
-  this._finished = new Date();
-  this._onComplete(this._results);
+  clearInterval(this._heartBeat);
+
+  if (!this._finished) {
+    this._finished = new Date();
+    this._onComplete.call({}, this._results);
+  }
 
   return this;
 };
@@ -101,7 +108,7 @@ RequestQueue.prototype.size = function() {
   return this._size || 0;
 };
 
-RequestQueue.prototype.running = function() {
+RequestQueue.prototype.activeWorkers = function() {
   return this._workers || 0;
 };
 
@@ -110,7 +117,7 @@ RequestQueue.prototype.started = function() {
 };
 
 RequestQueue.prototype.runtime = function() {
-  return (new Date() - this.started()) / 1000;
+  return ((new Date()).getTime() - this.started()) / 1000;
 };
 
 RequestQueue.prototype.finished = function() {
@@ -122,13 +129,19 @@ RequestQueue.prototype.estimation = function() {
 };
 
 RequestQueue.prototype.report = function() {
+  let completion;
+  if (this._finalized) {
+    completion = new Date();
+    completion.setTime(Math.round(((this.length() / this.size()) * this.runtime() * 1000) + completion.getTime()));
+  }
   return {
     total: this.size() + this.length(),
     done: this.size(),
     remaining: this.length(),
     percentComplete: this.estimation().toFixed(2) + '%',
-    running: this.running(),
+    activeWorkers: this.activeWorkers(),
     runtime: this.runtime().toFixed(2) + ' sec',
+    estimatedCompletion: completion,
   };
 };
 

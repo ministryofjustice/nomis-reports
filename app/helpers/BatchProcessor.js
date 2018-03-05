@@ -5,7 +5,7 @@ const batchRequest = (func, opts, out, batch) => {
 
   return func(page)
     .then((data) => {
-      if (data.length > 0) {
+      if (data && data.length > 0) {
         log.debug({ batch, page, size: data.length }, 'BatchProcessor batchRequest SUCCESS');
 
         data.forEach((x) => out.add(x));
@@ -21,7 +21,7 @@ const batchRequest = (func, opts, out, batch) => {
 };
 
 function BatchProcessor(config) {
-  this.batchSize = config.batchSize;
+  this.concurrency = config.concurrency;
 }
 
 BatchProcessor.prototype.run = function(func) {
@@ -29,7 +29,7 @@ BatchProcessor.prototype.run = function(func) {
   let out = new Set();
 
   let batch = [];
-  for (let i = 0; i < this.batchSize; i++) {
+  for (let i = 0; i < this.concurrency; i++) {
     batch.push(batchRequest(func, opts, out, i));
   }
 

@@ -14,12 +14,11 @@ let setUpServices = (config) => {
 const createAgenciesViewModel = (agencies) =>
   ({
     columns: [
-      'agencyId',
-      'description',
-      'agencyType',
+      'id',
+      'type',
     ],
     links: {
-      agencyId: 'agency',
+      id: 'ref',
     },
     agencies,
     recordCount: agencies && agencies[0] && agencies[0].recordCount || 0,

@@ -18,9 +18,9 @@ function BookingService(config, childProcessAgent) {
   this.agent = childProcessAgent || new ProcessAgent(this.config);
 }
 
-BookingService.prototype.all = function (query, pageSize = 10, batchSize = 1) {
-  let batch = new BatchProcessor({ batchSize });
-  return batch.run((pageOffset = 0) => this.listFull(query || {}, pageOffset, pageSize));
+BookingService.prototype.all = function (query, pageSize = 10, concurrency = 1) {
+  let batch = new BatchProcessor({ concurrency });
+  return batch.run((pageOffset = 0) => this.list(query || {}, pageOffset, pageSize));
 };
 
 BookingService.prototype.list = function (query, pageOffset, pageSize) {
@@ -140,31 +140,6 @@ BookingService.prototype.allDetails = function (bookingId, query) {
 
     return booking;
   });
-};
-
-BookingService.prototype.additionalDetails = function (bookingId) {
-  return Promise.all([
-    describe('sentenceDetail', this.getSentenceDetail(bookingId), undefined),
-    describe('mainOffence', this.getMainOffence(bookingId), undefined),
-    describe('iepSummary', this.getIepSummary(bookingId), undefined),
-    describe('aliases', this.listAliases(bookingId), []),
-    describe('adjudications', this.listAdjudications(bookingId), []),
-    describe('alerts', this.listAlerts(bookingId), [], (alert) => ({
-        id: `/bookings/${bookingId}/alerts/${alert.alertId}`,
-        code: alert.alertCode,
-        type: alert.alertType,
-        label: alert.alertCodeDescription,
-        typeLabel: alert.alertTypeDescription,
-        createdDate: alert.dateCreated,
-        isExpired: alert.expired,
-      })),
-  ])
-  .then((data) => data.reduce((a, b) => Object.assign(a, b), {}))
-  .then((data) => Object.assign(
-    {
-      id: `/bookings/${bookingId}`,
-    },
-    data));
 };
 
 BookingService.prototype.getSentenceDetail = function (bookingId, query) {
