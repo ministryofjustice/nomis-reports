@@ -1,11 +1,21 @@
 const moment = require('moment');
 const helpers = require('../helpers');
 
+const getFirst = a => a[0] || {};
+const getLast = a => a[a.length - 1] || {};
+
 const getTransfers = o =>
-  (o.movements || []).filter(oem => (oem.movementTypeCode === 'TRN' && oem.offenderBookingId === o.ob.offenderBookingId));
+  (o.movements || []).filter(oem => (
+    oem.movementTypeCode === 'TRN' &&
+    oem.offenderBookingId === o.ob.offenderBookingId
+  ));
 
 const getEmployments = o =>
-  (o.employments || []).filter(oe => (oe.employment_date && !oe.termination_date && oe.bookingId === o.ob.offenderBookingId));
+  (o.employments || []).filter(oe => (
+    oe.employmentDate &&
+    !oe.terminationDate &&
+    oe.bookingId === o.ob.offenderBookingId
+  ));
 /*
 SELECT
   oe.employment_post_code emplmnt_status_discharge_f49
@@ -16,39 +26,46 @@ ORDER BY
 */
 
 const getCharges = o =>
-  (o.charges || []).filter(oc => (oc.bookingId === o.ob.offenderBookingId));
+  (o.charges || []).filter(oc => (
+    oc.bookingId === o.ob.offenderBookingId
+  ));
 
 const getReleaseDetails = o =>
-  (o.releaseDetails || []).filter(ord => (ord.bookingId === o.ob.offenderBookingId));
+  (o.releaseDetails || []).filter(ord => (
+    ord.bookingId === o.ob.offenderBookingId
+  ));
 
 const getSentenceCalculations = o =>
-  (o.sentenceCalculations || []).filter(s => s.bookingId === o.ob.offenderBookingId)
-      .reduce((a, b) => (!a.effectiveSentenceEndDate || moment(b.effectiveSentenceEndDate).diff(a.effectiveSentenceEndDate) > 0 ? b : a), moment(0)) || {};
+  (o.sentenceCalculations || []).filter(s => (
+    s.bookingId === o.ob.offenderBookingId
+  )).reduce((a, b) => (!a.effectiveSentenceEndDate || moment(b.effectiveSentenceEndDate).diff(a.effectiveSentenceEndDate) > 0 ? b : a), moment(0)) || {};
 
 const getSentences = o =>
-  (o.sentences || []).filter(s => s.sentenceStatus === 'A' && s.bookingId === o.ob.offenderBookingId)
-      .reduce((a, b) => (!a.startDate || moment(b.startDate).diff(a.startDate) > 0 ? b : a), moment(0)) || {};
+  (o.sentences || []).filter(s => (
+    s.sentenceStatus === 'A' &&
+    s.bookingId === o.ob.offenderBookingId
+  )).reduce((a, b) => (!a.startDate || moment(b.startDate).diff(a.startDate) > 0 ? b : a), moment(0)) || {};
 
 const getOffenderAddresses = o =>
-  (o.addresses || []).filter(oa => (oa.ownerClass === 'OFF' && !oa.endDate && oa.active));
+  (o.addresses || []).filter(oa => (
+    oa.ownerClass === 'OFF' &&
+    !oa.endDate && oa.active
+  ));
 
-const getFirst = a => a[0] || {};
-const getLast = a => a[a.length - 1] || {};
+const getID = id => o =>
+  getFirst((o.identifiers || []).filter(oi => (
+    oi.identifierType === id
+  )));
 
-const getID = id => o => getFirst((o.identifiers || []).filter(oi => oi.identifierType === id));
-const getCRO = getID('CRO');
-const getPNC = getID('PNC');
+const getIdentifiers = o =>
+  (o.identifiers || []).reduce((x, oi) => { x[oi.identifierType] = oi.identifier; return x; }, {});
 
-const getAge = o => moment().diff(moment(o.dateOfBirth), 'years');
-
-const formatTransferReasonCode = trn =>
-  trn ? [trn.movementType, trn.movementReasonCode].filter(x => !!x).join('-') : undefined;
-
-const formatReleaseName = ord =>
-  ord ? [ord.movementType, ord.movementReasonCode].filter(x => !!x).join('-') : undefined;
-
-const formatAddressLine1 = a =>
-  a ? [a.flat, a.premise, a.street].filter(x => !!x).join(' ') : undefined;
+const getLicense = o =>
+  getFirst((o.sentences || []).filter(s => (
+    s.sentenceStatus === 'A' &&
+    s.bookingId === o.ob.offenderBookingId &&
+    s.sentenceCategory === 'LICENSE'
+  )));
 
 const getMaternityStatus = (o, sysdate) =>
   getFirst((o.healthProblems || []).filter(hp => (
@@ -58,6 +75,77 @@ const getMaternityStatus = (o, sysdate) =>
   //hp.domain === 'HEALTH_PBLM' &&
     (!hp.endDate || moment(hp.endDate).diff(sysdate) > 0)
   )));
+
+const getSecurityCategory = o =>
+  getFirst((o.assessments || []).filter(oa => (
+    oa.offenderBookingId === o.ob.offenderBookingId &&
+    oa.evaluationResultCode === 'APP' &&
+    oa.assessStatus === 'A' &&
+    oa.assessmentType &&
+    oa.assessmentType.assessmentClass === 'TYPE' &&
+    oa.assessmentType.assessmentCode === 'CATEGORY' &&
+    oa.assessmentType.determineSupLevelFlag === 'Y'
+  )));
+
+const lastMovement = o =>
+  getFirst(o.movements);
+
+const firstTransfer = o =>
+  getLast(o.trn);
+
+const lastTransfer = o =>
+  getFirst(o.trn);
+
+const pendingTransfer = o =>
+  getLast((o.trn || []).filter(m => m.active));
+
+const courtEscort = o =>
+  getFirst((o.trn || []).filter(m => (m.movementType === 'CRT' && m.directionCode === 'OUT')));
+
+const firstOutMovement = o =>
+  getLast((o.movements || []).filter(m => (m.directionCode === 'OUT')));
+
+const receptionEmployment = o =>
+  getLast(o.oe);
+
+const dischargeEmployment = o =>
+  getFirst(o.oe);
+
+const highestRankedOffence = o =>
+  getFirst(o.oc);
+
+const getHomeAddress = o =>
+  getFirst((o.oa || []).filter(a => (a.addressUsage === 'HOME')));
+
+const getReceptionAddress = o =>
+  getFirst((o.oa || []).filter(a => (a.addressUsage === 'RECEP')));
+
+const getDischargeAddress = o =>
+  getFirst((o.oa || []).filter(a => (~['RELEASE','DNF','DUT','DST','DPH','DSH','DAP','DBA','DOH','DBH'].indexOf(a.addressUsage))));
+
+const getMainBooking = o =>
+  getFirst(o.bookings);
+
+const getPreviousBookings = o =>
+  (o.bookings || []).reduce((a, b) => { if (!~a.indexOf(b.bookingNo)) a.push(b.bookingNo); return a; }, []);
+
+const getCRO = getID('CRO');
+const getPNC = getID('PNC');
+
+const getAge = o =>
+  moment().diff(moment(o.dateOfBirth), 'years');
+
+const formatTransferReasonCode = trn =>
+  trn ? [trn.movementType, trn.movementReasonCode].filter(x => !!x).join('-') : undefined;
+
+const formatReleaseName = ord =>
+  ord ? [ord.movementType, ord.movementReasonCode].filter(x => !!x).join('-') : undefined;
+
+const formatLicenseType = os =>
+  os ? [os.sentence_category, os.sentence_calc_type].filter(x => !!x).join('-') : undefined;
+
+const formatAddressLine1 = a =>
+  a ? [a.flat, a.premise, a.street].filter(x => !!x).join(' ') : undefined;
 
 const getCustodyStatus = o => {
   let ob = o.ob;
@@ -83,17 +171,6 @@ const getCustodyStatus = o => {
 
   return status.join('-');
 };
-
-const getSecurityCategory = o =>
-  getFirst((o.assessments || []).filter(oa => (
-    oa.offenderBookingId === o.ob.offenderBookingId &&
-    oa.evaluationResultCode === 'APP' &&
-    oa.assessStatus === 'A' &&
-    oa.assessmentType &&
-    oa.assessmentType.assessmentClass === 'TYPE' &&
-    oa.assessmentType.assessmentCode === 'CATEGORY' &&
-    oa.assessmentType.determineSupLevelFlag === 'Y'
-  )));
 
 const earliestReleaseDate =  o =>
   (scd => [
@@ -125,30 +202,6 @@ const sentenceCalculationDates = o =>
     led: moment(osc.ledOverridedDate || osc.ledCalculatedDate)
   }))(o.osc);
 
-const firstTransfer = o =>
-  getLast(o.trn);
-
-const pendingTransfer = o =>
-  getFirst((o.trn || []).filter(m => (m.active_flag === 'Y')));
-
-const receptionEmployment = o =>
-  getLast(o.oe);
-
-const dischargeEmployment = o =>
-  getFirst(o.oe);
-
-const highestRankedOffence = o =>
-  getFirst(o.oc);
-
-const getHomeAddress = o =>
-  getFirst((o.oa || []).filter(a => (a.addressUsage === 'HOME')));
-
-const getReceptionAddress = o =>
-  getFirst((o.oa || []).filter(a => (a.addressUsage === 'RECEP')));
-
-const getDischargeAddress = o =>
-  getFirst((o.oa || []).filter(a => (~['RELEASE','DNF','DUT','DST','DPH','DSH','DAP','DBA','DOH','DBH'].indexOf(a.addressUsage))));
-
 const getNFA = oa => {
   if (~['RELEASE', 'HOME', 'RECEP'].indexOf(oa.addressUsage)) {
     return oa.noFixedAddress ? 'NFA' : undefined;
@@ -157,40 +210,34 @@ const getNFA = oa => {
   return oa.addressUsage;
 };
 
-const getMainBooking = o =>
-  getFirst(o.bookings);
-
-const getPreviousBookings = o =>
-  o.bookings.reduce((a, b) => {
-    if (!~a.indexOf(b.bookingNo)) {
-      a.push(b.bookingNo);
-    }
-
-    return a;
-  }, []);
-
-
 module.exports.build = (data) => {
   let o = [
+    ['sysdate', () => moment()],
     ['ob', getMainBooking],
     ['previousBookingNos', getPreviousBookings],
+    ['offenderIdentifiers', getIdentifiers],
     ['secCat', getSecurityCategory],
     ['osc', getSentenceCalculations],
     ['os', getSentences],
+    ['licence', getLicense],
     ['trn', getTransfers],
     ['ftrn', firstTransfer],
-    ['pt', pendingTransfer],
+    ['ltrn', lastTransfer],
+    ['lmove', lastMovement],
+    ['firstOutMovement', firstOutMovement],
+    ['pendingTransfer', pendingTransfer],
+    ['courtEscort', courtEscort],
     ['scd', sentenceCalculationDates],
     ['oe', getEmployments],
     ['oc', getCharges],
     ['oa', getOffenderAddresses],
     ['homeAddr', getHomeAddress],
     ['recepAddr', getReceptionAddress],
-    ['dischargeAddr', getDischargeAddress]
+    ['dischargeAddr', getDischargeAddress],
   ].reduce((x, p) => { x[p[0]] = p[1](x); return x; }, Object.assign({}, data));
 
   let model = {
-    f1: moment(),                                                               // 1	System Date
+    f1: o.sysdate.format('DD/MM/YYYY'),                                         // 1	System Date
     f2: o.ob.agencyLocationId,                                                  // 2	Establishment
     f3: o.ob.agencyLocationId,                                                  // 3	Prison Code
     f4: o.nomsId,                                                               // 4	NOMS Number
@@ -199,29 +246,29 @@ module.exports.build = (data) => {
     f7: o.surname,                                                              // 7	Last Name
     f8: o.firstName,                                                            // 8	Given Name 1
     f9: o.middleNames,                                                          // 9	Given Name 2
-    f10: getCRO(o).identifier,                                                  // 10	CRO Number
+    f10: o.offenderIdentifiers.CRO,                                             // 10	CRO Number
     // 11	Adult or YP
     f12: getAge(o),                                                             // 12	Age
-    f13: moment(o.dateOfBirth),                                                 // 13	DOB
+    f13: moment(o.dateOfBirth).format('DD/MM/YYYY'),                            // 13	DOB
     // 14	Nationality Description
     f15: o.raceCode,                                                            // 15	Ethnicity Description
     // 16	Religion Description
     // 17	Marital Status Description
-    f18: getMaternityStatus(o, moment()).problem_code,                          // 18	Maternity Status Description
+    f18: getMaternityStatus(o, o.sysdate).problem_code,                          // 18	Maternity Status Description
     f19: o.ob.livingUnitId,                                                     // 19	Cell Location
     // 20	Incentive Level Description
     // 21	Occupation Description
     f22: formatTransferReasonCode(o.ftrn),                                      // 22	Transfer Reason
-    f23: moment(o.ob.startDate),                                                // 23	First Reception Date
+    f23: moment(o.ob.startDate).format('DD/MM/YYYY'),                           // 23	First Reception Date
     f24: getCustodyStatus(o),                                                   // 24	Custody Status
     // 25	Main Legal Status Description
     f26: o.secCat.reviewSupLevelType,                                           // 26	Security Category Description
-    f27: (o.secCat.nextReviewDate && moment(o.secCat.nextReviewDate)),          // 27	Security Category Review Date
+    f27: (o.secCat.nextReviewDate && moment(o.secCat.nextReviewDate).format('DD/MM/YYYY')),// 27	Security Category Review Date
     f28: (o.osc.effectiveSentenceLength || '').split(/\//gmi)[0],               // 28	Sentence Length (Years)
     f29: (o.osc.effectiveSentenceLength || '').split(/\//gmi)[1],               // 29	Sentence Length (Months)
     f30: (o.osc.effectiveSentenceLength || '').split(/\//gmi)[2],               // 30	Sentence Length (Days)
     f31: o.previousBookingNos.join(','),                                        // 31	Previous Booking Number
-    f32: earliestReleaseDate(o),                                                // 32	Earliest Release Date
+    f32: earliestReleaseDate(o).format('DD/MM/YYYY'),                           // 32	Earliest Release Date
     // 33	Check Hold Governor
     // 34	Check Hold General (to be left blank)
     // 35	Check Hold Discipline (to be left blank)
@@ -234,10 +281,10 @@ module.exports.build = (data) => {
     // 42	ACCT Status (F2052)
     f43: highestRankedOffence(o).offenceCode,                                   // 43	Highest Ranked Offence
     // 44	Status Rank (to be left blank)
-    f45: o.pt.to_agy_loc_id,                                                      // 45	Pending Transfers (Full Establishment Name)
-    f46: o.pt.from_agy_loc_id,                                                    // 46	Received From
+    f45: o.pendingTransfer.toAgencyLocationId,                                               // 45	Pending Transfers (Full Establishment Name)
+    f46: o.pendingTransfer.fromAgencyLocationId,                                             // 46	Received From
     // 47	Vulnerable Prisoner Alert
-    f48: getPNC(o).identifier,                                                  // 48	PNC Number
+    f48: o.offenderIdentifiers.PNC,                                             // 48	PNC Number
     f49: dischargeEmployment(o).employmentPostCode,                             // 49	Employment Status at Discharge
     f50: receptionEmployment(o).employmentPostCode,                             // 50	Employment Status at Reception
     // 51	MAPPA Levels (Schedule 1 Sex Offender)
@@ -254,7 +301,7 @@ module.exports.build = (data) => {
     // 62	Physical Mark  Head
     // 63	Physical Mark Body
     f64: moment(o.osc.effectiveSentenceEndDate).diff(moment(o.os.startDate), 'years'),// 64	Effective Sentence Length
-    f55: moment(getReleaseDetails(o).releaseDate),                              // 65	Confirmed Release Date
+    f55: moment(getReleaseDetails(o).releaseDate).format('DD/MM/YYYY'),         // 65	Confirmed Release Date
     f66: formatReleaseName(getReleaseDetails(o)),                               // 66	Release Reason
     f67: o.scd.sed,                                                             // 67	SED
     f68: o.scd.hdced,                                                           // 68	HDCED
@@ -263,7 +310,7 @@ module.exports.build = (data) => {
     f71: o.scd.crd,                                                             // 71	CRD
     f72: o.scd.npd,                                                             // 72	NPD
     f73: o.scd.led,                                                             // 73	LED
-    f74: o.secCat.evaluationDate && moment(o.secCat.evaluationDate),            // 74	Date Security Category Changed
+    f74: o.secCat.evaluationDate && moment(o.secCat.evaluationDate).format('DD/MM/YYYY'),// 74	Date Security Category Changed
     // 75	Rule 45/YOI Rule 49
     // 76	ACCT (Self Harm) Status
     // 77  ACCT (Self Harm) Start Date
@@ -330,16 +377,16 @@ module.exports.build = (data) => {
     // 132	Remark Type Labour
     // 133	Remarks Labour
 
-    // 134	Movement Establishment Name
-    // 135	Transfer Reason
-    // 136	Date Of Movement
-    // 137	Hour of Movement
-    // 138	Minute Of Movement
-    // 139	Second Of Movement
-    // 140	Movement Code
-    // 141	Court Name
-    // 142	Escort Type
-    // 143	Date Of First Movement
+    f134: o.ltrn.fromAgencyLocationId,                                          // 134	Movement Establishment Name
+    f135: o.ltrn.movementReasonCode,                                            // 135	Transfer Reason
+    f136: moment(o.lmove.movementDate).format('DD/MM/YYYY'),                    // 136	Date Of Movement
+    f137: moment(o.lmove.movementTime).format('HH'),                            // 137	Hour of Movement
+    f138: moment(o.lmove.movementTime).format('mm'),                            // 138	Minute Of Movement
+    f139: moment(o.lmove.movementTime).format('ss'),                            // 139	Second Of Movement
+    f140: o.lmove.movementReasonCode,                                           // 140	Movement Code
+    f141: o.courtEscort.toAgencyLocationId,                                     // 141	Court Name
+    f142: o.courtEscort.escortCode,                                             // 142	Escort Type
+    f143: moment(o.firstOutMovement.movementDate).format('DD/MM/YYYY'),         // 143	Date Of First Movement
     // 144	Employed
     // 145	Diary Details
     //     145a	Diary Details - Date (Movement)
@@ -348,7 +395,7 @@ module.exports.build = (data) => {
     //     145d	Diary Details - Movement Comment Text
     //     145e	Diary Details - Escort Type
     //     145f	Diary Details - Not For Release Alert
-    // 146	Licence Type
+    f146: formatLicenseType(o.licence),                                         // 146	Licence Type
     // 147	Other Offences
     // 148 (a&b)	Active Alerts
     // 149	Court Outcome
