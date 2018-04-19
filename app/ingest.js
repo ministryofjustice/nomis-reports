@@ -40,14 +40,6 @@ let extractDetails = bookingExtractor.run({
         return undefined;
       }),
 }, () => {
-  /*
-  let extractpath = `./.${extractDetails.location.substr(1)}.json`;
-
-  let data = results.map((x) => JSON.stringify(x, undefined, '  ')).join(',');
-
-  fs.writeFileSync(extractpath, `[${data}]`, 'utf8');
-  */
-
   writeStream.write(']');
 
   log.info(Object.assign(extractDetails, { size: size }), 'saveExtract SUCCESS');

@@ -20,4 +20,4 @@ npm-debug.log
 .env.*
 build/
 .cache
-.extracts/bookings/*
+.extracts/*

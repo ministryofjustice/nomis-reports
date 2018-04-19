@@ -5,6 +5,7 @@ const LocationRepository = require('../repositories/LocationRepository');
 const OffenderRepository = require('../repositories/OffenderRepository');
 const CaseNoteRepository = require('../repositories/CaseNoteRepository');
 const PrisonRepository = require('../repositories/PrisonRepository');
+const ReportsRepository = require('../repositories/ReportsRepository');
 const UserRepository = require('../repositories/UserRepository');
 
 const CachingRepository = require('./CachingRepository');
@@ -20,6 +21,7 @@ const services = {
   offender: (config) => new CachingRepository(new RetryingRepository(new OffenderRepository(config))),
   caseNote: (config) => new CachingRepository(new RetryingRepository(new CaseNoteRepository(config))),
   prison: (config) => new CachingRepository(new RetryingRepository(new PrisonRepository(config))),
+  reports: (config) => new CachingRepository(new RetryingRepository(new ReportsRepository(config))),
   user: (config) => new UserRepository(config),
 };
 
@@ -47,13 +49,19 @@ MainProcessAgent.prototype.login = function() {
 };
 
 MainProcessAgent.prototype.request = function(repository, method, ...params) {
-  const request = { config: this.config, requestId: ++this.requestId, repository, method, params };
+  const request = {
+    config: this.config,
+    requestId: ++this.requestId,
+    repository,
+    method,
+    params
+  };
 
   log.debug({
     repository: request.repository,
     method: request.method,
     params: request.repository !== 'user' ? request.params : undefined
-  }, 'RPC makeRequest BEGIN');
+  }, 'MainProcessAgent makeRequest BEGIN');
 
   let builder = services[request.repository];
 

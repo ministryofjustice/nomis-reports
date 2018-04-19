@@ -28,9 +28,9 @@ module.exports = {
   port: get('PORT', 3000),
 
   nomis: {
-    apiUrl: get('NOMIS_API_URL', 'http://localhost:8080/api', { requireInProduction: true }),
-    apiGatewayToken: get('NOMIS_GW_TOKEN', '', { requireInProduction: true }),
-    apiGatewayPrivateKey: new Buffer(get('NOMIS_GW_KEY', ''), 'base64').toString('ascii'),
+    apiUrl: get('NOMIS_API_URL', 'http://localhost:8082/api', { requireInProduction: true }),
+    apiGatewayToken: get('GW_TOKEN', '', { requireInProduction: true }),
+    apiGatewayPrivateKey: new Buffer(get('GW_KEY', ''), 'base64').toString('ascii'),
     timeout: {
       response: 20000,
       deadline: 25000
@@ -39,8 +39,8 @@ module.exports = {
 
   elite2: {
     apiUrl: get('ELITE2_API_URL', 'http://localhost:8081/api', { requireInProduction: true }),
-    apiGatewayToken: get('ELITE2_GW_TOKEN', '', { requireInProduction: true }),
-    apiGatewayPrivateKey: new Buffer(get('ELITE2_GW_KEY', ''), 'base64').toString('ascii'),
+    apiGatewayToken: get('GW_TOKEN', '', { requireInProduction: true }),
+    apiGatewayPrivateKey: new Buffer(get('GW_KEY', ''), 'base64').toString('ascii'),
     timeout: {
       response: 20000,
       deadline: 25000
@@ -50,5 +50,13 @@ module.exports = {
       username: get('OAUTH_USERNAME', 'x_trusted_client', { requireInProduction: true }),
       password: get('OAUTH_PASSWORD', 'x_client_password', { requireInProduction: true }),
     }
+  },
+
+  reports: {
+    apiUrl: get('REPORT_API_URL', 'http://localhost:8080', { requireInProduction: true }),
+    timeout: {
+      response: 50000,
+      deadline: 40000
+    },
   }
 };

@@ -13,6 +13,7 @@
   "scripts": {
     "start": "node server.js | bunyan -o short",
     "ingest": "node app/ingest.js | bunyan -o short",
+    "ingest2": "node app/ingest2.js | bunyan -o short",
     "sync": "node app/sync.js | bunyan -o short",
     "build": "webpack",
     "test": "mocha",
@@ -42,7 +43,7 @@
     "json2csv": "^3.11.5",
     "jsonwebtoken": "^8.1.0",
     "lodash": "^4.17.4",
-    "moment": "^2.18.1",
+    "moment": "^2.22.0",
     "nedb": "^1.8.0",
     "node-rest-client": "^3.1.0",
     "node-sass": "^4.5.2",

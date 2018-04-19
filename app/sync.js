@@ -1,77 +1,54 @@
-const BookingService = require('./services/BookingService');
-const CaseNoteService = require('./services/CaseNoteService');
+const ReportsService = require('./services/ReportsService');
 const RequestQueue = require('./helpers/RequestQueue');
 
 const log = require('../server/log');
 const config = require('../server/config');
 
 const services = {
-  booking: new BookingService(config),
-  caseNote: new CaseNoteService(config),
+  reports: new ReportsService(config)
 };
 
-const queue = new RequestQueue({ concurrency: 10 });
+let rq = new RequestQueue((job, done) => {
+    log.info({ offenderId: job.offenderId }, `RequestQueue ON DATA`);
 
-queue.onData((row) => {
-  log.info(row, 'SYNC update BEGIN');
+    services.reports.getAODetails(job.offenderId)
+      .then((data) => {
+        log.info({ job, data }, `RequestQueue ON RESPONSE`);
 
-  services.booking.allDetails(row.bookingId.replace('/bookings/', ''), { basicInfo: true })
-    .then(() => {
-      log.log(row, 'SYNC update SUCCESS');
-    })
-    .catch((error) => {
-      log.debug(row, 'SYNC update FAIL');
-      log.error(error);
-    });
-});
-
-setInterval(() => {
-  log.info(queue.report(), 'cache sync PROGRESS');
-}, 10000);
-
-let lastRequested;
-const getEvents = () => {
-  lastRequested = lastRequested || new Date((new Date()).setTime(new Date().getTime() - 5000000000));
-
-  log.debug({ lastRequested }, 'cache sync REQUESTING EVENTS');
-
-  services.caseNote.list({ from_datetime: lastRequested })
-    .then((data) => {
-      log.info({ lastRequested, updates: data.length }, 'cache sync RECEIVED EVENTS');
-
-      data.forEach((row) => {
-        let nextTS = new Date((new Date()).setTime((new Date(row.notificationTimestamp)).getTime() + 1));;
-        if (lastRequested < nextTS) {
-          lastRequested = nextTS;
-        }
-
-        log.info({ lastRequested , offenderId: row.noms_id }, 'cache sync PUSH EVENT');
-
-        services.booking.all({}, 100, 10)
-          .then((data) => {
-            log.info({ lastRequested, size: data.length, offenderId: row.noms_id }, 'cache sync BOOKINGS LISTED');
-
-            data.forEach((x) => {
-              if (x.offenderNo === `/offenders/${row.noms_id}`) {
-                log.info({ lastRequested, id: x.id, offenderNo: x.offenderNo }, 'cache sync BOOKING FOUND');
-
-                services.booking.allDetails(x.id.replace('/bookings/', ''))
-                  .then(() => {
-                    log.info({ lastRequested, id: x.id, offenderNo: x.offenderNo }, 'cache sync CACHE REFRESHED');
-                  });
-              }
-            });
-          });
-
-        if (data.length > 0 ) {
-          getEvents();
-        } else {
-          setTimeout(getEvents, 500);
-        }
+        done();
+      })
+      .catch((err) => {
+        log.error(err, `RequestQueue ON ERROR`);
+        done();
       });
+  }, { concurrency: 10 });
+
+const getEvents = function getEvents(from, to) {
+  from = from || new Date((new Date()).setTime(new Date().getTime() - 1000));
+  to = to || new Date(from.setTime(from.getTime()));
+
+  log.debug({ from }, 'sync REQUESTING EVENTS');
+
+  services.reports.listMovements({ from }, 0, 1000)
+    .then((data) => {
+      log.info({ from, updates: data.page.size }, 'sync RECEIVED EVENTS');
+
+      data._embedded.externalMovementList
+        .forEach((row) => {
+          let nextTS = new Date(row.movementDateTime);
+          if (from < nextTS) {
+            from = nextTS;
+          }
+
+          log.info({ from, offenderId: row.offenderId }, 'sync PUSH EVENT');
+
+          rq.push(row);
+
+          setTimeout(() => getEvents(from, to), data.length > 0 ? 0 : 1000);
+        });
     })
     .catch((error) => {
-      log.error(error, 'cache sync ERROR');
+      log.error(error, 'sync ON ERROR');
     });
 };
 
