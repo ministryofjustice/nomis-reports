@@ -52,11 +52,6 @@ const getOffenderAddresses = o =>
     !oa.endDate && oa.active
   ));
 
-const getID = id => o =>
-  getFirst((o.identifiers || []).filter(oi => (
-    oi.identifierType === id
-  )));
-
 const getIdentifiers = o =>
   (o.identifiers || []).reduce((x, oi) => { x[oi.identifierType] = oi.identifier; return x; }, {});
 
@@ -114,6 +109,9 @@ const dischargeEmployment = o =>
 const highestRankedOffence = o =>
   getFirst(o.oc);
 
+const otherOffences = o =>
+  (o.oc || []).filter((o, i) => i !== 0);
+
 const getHomeAddress = o =>
   getFirst((o.oa || []).filter(a => (a.addressUsage === 'HOME')));
 
@@ -129,8 +127,14 @@ const getMainBooking = o =>
 const getPreviousBookings = o =>
   (o.bookings || []).reduce((a, b) => { if (!~a.indexOf(b.bookingNo)) a.push(b.bookingNo); return a; }, []);
 
-const getCRO = getID('CRO');
-const getPNC = getID('PNC');
+const getActiveAlerts = o =>
+  ((o.alerts || []).filter(oa => !oa.expired) || []);
+
+const getMAPPAAlerts = o =>
+  getFirst((o.alerts || []).filter(oa => (!oa.expired && oa.alertType === 'P')));
+
+const getNotForReleaseAlerts = o =>
+  getFirst((o.alerts || []).filter(oa => (!oa.expired && oa.alertType === 'X' /*&& oa.alertStatus === 'ACTIVE'*/)));
 
 const getAge = o =>
   moment().diff(moment(o.dateOfBirth), 'years');
@@ -142,10 +146,13 @@ const formatReleaseName = ord =>
   ord ? [ord.movementType, ord.movementReasonCode].filter(x => !!x).join('-') : undefined;
 
 const formatLicenseType = os =>
-  os ? [os.sentence_category, os.sentence_calc_type].filter(x => !!x).join('-') : undefined;
+  os ? [os.sentenceCategory, os.sentenceCalcType].filter(x => !!x).join('-') : undefined;
 
 const formatAddressLine1 = a =>
   a ? [a.flat, a.premise, a.street].filter(x => !!x).join(' ') : undefined;
+
+const formatAlert = oa =>
+  oa ? [oa.alertType, oa.alertCode].filter(x => !!x).join('-') : undefined;
 
 const getCustodyStatus = o => {
   let ob = o.ob;
@@ -199,7 +206,8 @@ const sentenceCalculationDates = o =>
     apd: moment(osc.apdOverridedDate || osc.apdCalculatedDate),
     npd: moment(osc.npdOverridedDate || osc.npdCalculatedDate),
     ard: moment(osc.ardOverridedDate || osc.ardCalculatedDate),
-    led: moment(osc.ledOverridedDate || osc.ledCalculatedDate)
+    led: moment(osc.ledOverridedDate || osc.ledCalculatedDate),
+    tused: moment(osc.tusedOverridedDate || osc.tusedCalculatedDate)
   }))(o.osc);
 
 const getNFA = oa => {
@@ -209,6 +217,36 @@ const getNFA = oa => {
 
   return oa.addressUsage;
 };
+
+const getCheckHoldAlerts = o =>
+  (o.activeAlerts || []).reduce((x, oa) => {
+    let fa = formatAlert(oa);
+    switch (fa) {
+      case 'T-TG': return x.T_TG = fa;
+      case 'T-TAH': return x.T_TAH = fa;
+      case 'T-TSE': return x.T_TSE = fa;
+      case 'T-TM': return x.T_TM = fa;
+      case 'T-TPR': return x.T_TPR = fa;
+      case 'H-HA': return x.H_HA = fa;
+    }
+
+    if (oa.alertType === 'V') {
+      if (~['V45','VOP','V46','V49G','V49P'].indexOf(oa.alertCode)) {
+        x.V_45_46 = 'Y';
+      } else {
+        x.VUL = 'Y';
+      }
+    }
+
+    if (fa === 'H-HA') {
+      x.SH_STS = 'Y';
+      x.SH_Date = oa.alertDate;
+    }
+
+    return x;
+  }, { VUL: 'N', V_45_46: 'N', SH_STS: 'N' });
+
+
 
 module.exports.build = (data) => {
   let o = [
@@ -234,6 +272,10 @@ module.exports.build = (data) => {
     ['homeAddr', getHomeAddress],
     ['recepAddr', getReceptionAddress],
     ['dischargeAddr', getDischargeAddress],
+    ['activeAlerts', getActiveAlerts],
+    ['notForRelease', getNotForReleaseAlerts],
+    ['MAPPA', getMAPPAAlerts],
+    ['checkHoldAlerts', getCheckHoldAlerts],
   ].reduce((x, p) => { x[p[0]] = p[1](x); return x; }, Object.assign({}, data));
 
   let model = {
@@ -269,25 +311,25 @@ module.exports.build = (data) => {
     f30: (o.osc.effectiveSentenceLength || '').split(/\//gmi)[2],               // 30	Sentence Length (Days)
     f31: o.previousBookingNos.join(','),                                        // 31	Previous Booking Number
     f32: earliestReleaseDate(o).format('DD/MM/YYYY'),                           // 32	Earliest Release Date
-    // 33	Check Hold Governor
+    f33: o.checkHoldAlerts.T_TG,                                                // 33	Check Hold Governor
     // 34	Check Hold General (to be left blank)
     // 35	Check Hold Discipline (to be left blank)
-    // 36	Check Hold Allocation
-    // 37	Check Hold Security
-    // 38	Check Hold Medical
-    // 39	Check Hold Parole
+    f36: o.checkHoldAlerts.T_TAH,                                               // 36	Check Hold Allocation
+    f37: o.checkHoldAlerts.T_TSE,                                               // 37	Check Hold Security
+    f38: o.checkHoldAlerts.T_TM,                                                // 38	Check Hold Medical
+    f39: o.checkHoldAlerts.T_TPR,                                               // 39	Check Hold Parole
     // 40	Date Of First Conviction
     // 41	Date First Sentenced
-    // 42	ACCT Status (F2052)
+    f37: o.checkHoldAlerts.H_HA,                                                // 42	ACCT Status (F2052)
     f43: highestRankedOffence(o).offenceCode,                                   // 43	Highest Ranked Offence
     // 44	Status Rank (to be left blank)
     f45: o.pendingTransfer.toAgencyLocationId,                                               // 45	Pending Transfers (Full Establishment Name)
     f46: o.pendingTransfer.fromAgencyLocationId,                                             // 46	Received From
-    // 47	Vulnerable Prisoner Alert
+    f47: o.checkHoldAlerts.VUL,                                                 // 47	Vulnerable Prisoner Alert
     f48: o.offenderIdentifiers.PNC,                                             // 48	PNC Number
     f49: dischargeEmployment(o).employmentPostCode,                             // 49	Employment Status at Discharge
     f50: receptionEmployment(o).employmentPostCode,                             // 50	Employment Status at Reception
-    // 51	MAPPA Levels (Schedule 1 Sex Offender)
+    f51: formatAlert(o.MAPPA),                                                  // 51	MAPPA Levels (Schedule 1 Sex Offender)
     // 52	Sex Offender
     // 53	Supervising Service
     // 54	Height (metres)
@@ -311,9 +353,9 @@ module.exports.build = (data) => {
     f72: o.scd.npd,                                                             // 72	NPD
     f73: o.scd.led,                                                             // 73	LED
     f74: o.secCat.evaluationDate && moment(o.secCat.evaluationDate).format('DD/MM/YYYY'),// 74	Date Security Category Changed
-    // 75	Rule 45/YOI Rule 49
-    // 76	ACCT (Self Harm) Status
-    // 77  ACCT (Self Harm) Start Date
+    f75: o.checkHoldAlerts.V_45_46,                                             // 75	Rule 45/YOI Rule 49
+    f76: o.checkHoldAlerts.SH_STS,                                              // 76	ACCT (Self Harm) Status
+    f77: o.checkHoldAlerts.SH_Date,                                             // 77  ACCT (Self Harm) Start Date
 
     f78: getNFA(o.dischargeAddr),                                               // 78	Discharge Address Relationship
     f79: formatAddressLine1(o.dischargeAddr),                                   // 79	Discharge Address Line 1
@@ -394,10 +436,10 @@ module.exports.build = (data) => {
     //     145c	Diary Details - Movement Reason Code
     //     145d	Diary Details - Movement Comment Text
     //     145e	Diary Details - Escort Type
-    //     145f	Diary Details - Not For Release Alert
+    f145f: formatAlert(o.notForRelease),                                        // 145f	Diary Details - Not For Release Alert
     f146: formatLicenseType(o.licence),                                         // 146	Licence Type
-    // 147	Other Offences
-    // 148 (a&b)	Active Alerts
+    f147: otherOffences(o).map(c => c.offenceCode).join(','),                   // 147	Other Offences
+    f148: o.activeAlerts.map(formatAlert).join(','),                            // 148 (a&b)	Active Alerts
     // 149	Court Outcome
     // 150	Court Code
     // 151	Court Name
@@ -408,7 +450,7 @@ module.exports.build = (data) => {
     //     152d	Activity Start Min
     //     152e	Activity End Hour
     //     152f	Activity End Min
-    // 153	Top Up Supervision Expiry Date
+    f153: o.scd.tused,                                                          // 153	Top Up Supervision Expiry Date
   };
 
   return model;
