@@ -1,4 +1,162 @@
 # Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
 version: v1.7.1
-ignore: {}
-patch: {}
+# ignores vulnerabilities until expiry date; change duration by modifying expiry date
+ignore:
+  'npm:braces:20180219':
+    - nunjucks > chokidar > anymatch > micromatch > braces:
+        reason: None given
+        expires: '2018-05-24T08:49:20.540Z'
+    - express-nunjucks > nunjucks-async-loader > chokidar > anymatch > micromatch > braces:
+        reason: None given
+        expires: '2018-05-24T08:49:20.540Z'
+  'npm:hoek:20180212':
+    - chokidar > fsevents > node-pre-gyp > hawk > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.540Z'
+    - nunjucks > chokidar > fsevents > node-pre-gyp > hawk > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.540Z'
+    - webpack > watchpack > chokidar > fsevents > node-pre-gyp > hawk > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.540Z'
+    - express-nunjucks > nunjucks-async-loader > chokidar > fsevents > node-pre-gyp > hawk > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.540Z'
+    - chokidar > fsevents > node-pre-gyp > request > hawk > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.540Z'
+    - nunjucks > chokidar > fsevents > node-pre-gyp > request > hawk > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.541Z'
+    - webpack > watchpack > chokidar > fsevents > node-pre-gyp > request > hawk > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.541Z'
+    - express-nunjucks > nunjucks-async-loader > chokidar > fsevents > node-pre-gyp > request > hawk > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.541Z'
+    - node-sass > request > hawk > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.541Z'
+    - chokidar > fsevents > node-pre-gyp > hawk > boom > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.541Z'
+    - nunjucks > chokidar > fsevents > node-pre-gyp > hawk > boom > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.542Z'
+    - webpack > watchpack > chokidar > fsevents > node-pre-gyp > hawk > boom > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.542Z'
+    - express-nunjucks > nunjucks-async-loader > chokidar > fsevents > node-pre-gyp > hawk > boom > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.542Z'
+    - chokidar > fsevents > node-pre-gyp > request > hawk > boom > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.542Z'
+    - nunjucks > chokidar > fsevents > node-pre-gyp > request > hawk > boom > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.542Z'
+    - webpack > watchpack > chokidar > fsevents > node-pre-gyp > request > hawk > boom > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.542Z'
+    - express-nunjucks > nunjucks-async-loader > chokidar > fsevents > node-pre-gyp > request > hawk > boom > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.542Z'
+    - node-sass > request > hawk > boom > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.542Z'
+    - chokidar > fsevents > node-pre-gyp > hawk > cryptiles > boom > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.542Z'
+    - nunjucks > chokidar > fsevents > node-pre-gyp > hawk > cryptiles > boom > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.542Z'
+    - webpack > watchpack > chokidar > fsevents > node-pre-gyp > hawk > cryptiles > boom > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.542Z'
+    - express-nunjucks > nunjucks-async-loader > chokidar > fsevents > node-pre-gyp > hawk > cryptiles > boom > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.543Z'
+    - chokidar > fsevents > node-pre-gyp > request > hawk > cryptiles > boom > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.543Z'
+    - nunjucks > chokidar > fsevents > node-pre-gyp > request > hawk > cryptiles > boom > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.543Z'
+    - webpack > watchpack > chokidar > fsevents > node-pre-gyp > request > hawk > cryptiles > boom > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.543Z'
+    - express-nunjucks > nunjucks-async-loader > chokidar > fsevents > node-pre-gyp > request > hawk > cryptiles > boom > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.543Z'
+    - node-sass > request > hawk > cryptiles > boom > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.543Z'
+    - chokidar > fsevents > node-pre-gyp > hawk > sntp > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.543Z'
+    - nunjucks > chokidar > fsevents > node-pre-gyp > hawk > sntp > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.543Z'
+    - webpack > watchpack > chokidar > fsevents > node-pre-gyp > hawk > sntp > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.543Z'
+    - express-nunjucks > nunjucks-async-loader > chokidar > fsevents > node-pre-gyp > hawk > sntp > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.543Z'
+    - chokidar > fsevents > node-pre-gyp > request > hawk > sntp > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.543Z'
+    - nunjucks > chokidar > fsevents > node-pre-gyp > request > hawk > sntp > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.543Z'
+    - webpack > watchpack > chokidar > fsevents > node-pre-gyp > request > hawk > sntp > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.543Z'
+    - express-nunjucks > nunjucks-async-loader > chokidar > fsevents > node-pre-gyp > request > hawk > sntp > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.543Z'
+    - node-sass > request > hawk > sntp > hoek:
+        reason: None given
+        expires: '2018-05-24T08:49:20.543Z'
+  'npm:sshpk:20180409':
+    - chokidar > fsevents > node-pre-gyp > request > http-signature > sshpk:
+        reason: None given
+        expires: '2018-05-24T08:49:20.543Z'
+    - nunjucks > chokidar > fsevents > node-pre-gyp > request > http-signature > sshpk:
+        reason: None given
+        expires: '2018-05-24T08:49:20.543Z'
+    - webpack > watchpack > chokidar > fsevents > node-pre-gyp > request > http-signature > sshpk:
+        reason: None given
+        expires: '2018-05-24T08:49:20.543Z'
+    - express-nunjucks > nunjucks-async-loader > chokidar > fsevents > node-pre-gyp > request > http-signature > sshpk:
+        reason: None given
+        expires: '2018-05-24T08:49:20.543Z'
+  'npm:tunnel-agent:20170305':
+    - node-sass > request > tunnel-agent:
+        reason: None given
+        expires: '2018-05-24T08:49:20.543Z'
+# patches apply the minimum changes required to fix a vulnerability
+patch:
+  'npm:debug:20170905':
+    - nunjucks > chokidar > fsevents > node-pre-gyp > tar-pack > debug:
+        patched: '2018-04-24T08:48:37.640Z'
+    - webpack > watchpack > chokidar > fsevents > node-pre-gyp > tar-pack > debug:
+        patched: '2018-04-24T08:48:37.640Z'
+    - express-nunjucks > nunjucks-async-loader > chokidar > fsevents > node-pre-gyp > tar-pack > debug:
+        patched: '2018-04-24T08:48:37.640Z'
+    - chokidar > fsevents > node-pre-gyp > tar-pack > debug:
+        patched: '2018-04-24T08:48:37.640Z'
+    - node-rest-client > debug:
+        patched: '2018-04-24T08:48:37.640Z'
+  'npm:ms:20170412':
+    - node-rest-client > debug > ms:
+        patched: '2018-04-24T08:48:37.640Z'
+  'npm:tough-cookie:20170905':
+    - webpack > watchpack > chokidar > fsevents > node-pre-gyp > request > tough-cookie:
+        patched: '2018-04-24T08:48:37.640Z'
+    - express-nunjucks > nunjucks-async-loader > chokidar > fsevents > node-pre-gyp > request > tough-cookie:
+        patched: '2018-04-24T08:48:37.640Z'
+    - chokidar > fsevents > node-pre-gyp > request > tough-cookie:
+        patched: '2018-04-24T08:48:37.640Z'
+    - nunjucks > chokidar > fsevents > node-pre-gyp > request > tough-cookie:
+        patched: '2018-04-24T08:48:37.640Z'

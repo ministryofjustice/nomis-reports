@@ -17,6 +17,11 @@ let setUpServices = (config) => {
 
 const listAlerts = (data) =>
   services.booking.listAlerts(data.bookings[0].offenderBookingId)
+    .catch(err => {
+      if (err.status === 404) {
+        return Promise.resolve([]);
+      }
+    })
     .then(alerts => data.alerts = alerts)
     .then(() => data);
 

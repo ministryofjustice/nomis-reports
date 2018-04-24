@@ -29,6 +29,7 @@ const getEvents = function getEvents(from, to) {
 
   log.debug({ from }, 'sync REQUESTING EVENTS');
 
+  // TODO: work off case notes
   services.reports.listMovements({ from }, 0, 1000)
     .then((data) => {
       log.info({ from, updates: data.page.size }, 'sync RECEIVED EVENTS');
