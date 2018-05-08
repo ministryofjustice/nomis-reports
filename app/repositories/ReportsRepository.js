@@ -4,7 +4,13 @@ const helpers = require('../helpers');
 
 function ReportsRepository(config, agent) {
   this.config = Object.assign({ limit: 2000 }, config);
-  this.agent = apiAgent(agent, undefined, this.config.reports);
+  this.agent = apiAgent(agent, [
+      (request) => {
+        request.set('Authorization', `Bearer ${this.config.reports.bearerToken}`);
+
+        return request;
+      }
+  ], this.config.reports);
 
   let root = this.config.reports.apiUrl;
 
@@ -13,6 +19,7 @@ function ReportsRepository(config, agent) {
     getOffender: this.agent.get(`${root}/offenders/offenderId/:offenderId`),
     getOffenderAddresses: this.agent.get(`${root}/offenders/offenderId/:offenderId/addresses`),
     getOffenderCharges: this.agent.get(`${root}/offenders/offenderId/:offenderId/charges`),
+    getOffenderEmployments: this.agent.get(`${root}/offenders/offenderId/:offenderId/employments`),
     getOffenderMovements: this.agent.get(`${root}/offenders/offenderId/:offenderId/movements`),
     getOffenderSentences: this.agent.get(`${root}/offenders/offenderId/:offenderId/sentences`),
     getOffenderAssessments: this.agent.get(`${root}/offenders/offenderId/:offenderId/assessments`),
@@ -20,6 +27,8 @@ function ReportsRepository(config, agent) {
     getOffenderImprisonmentStatuses: this.agent.get(`${root}/offenders/offenderId/:offenderId/imprisonmentStatuses`),
     getOffenderReleaseDetails: this.agent.get(`${root}/offenders/offenderId/:offenderId/releaseDetails`),
     getOffenderSentenceCalculations: this.agent.get(`${root}/offenders/offenderId/:offenderId/sentenceCalculations`),
+    getOffenderPhysicals: this.agent.get(`${root}/offenders/offenderId/:offenderId/physicals`),
+    getOffenderIEPs: this.agent.get(`${root}/offenders/offenderId/:offenderId/ieps`),
     listAddresses: this.agent.get(`${root}/addresses`),
     listCharges: this.agent.get(`${root}/charges`),
     listMovements: this.agent.get(`${root}/movements`),
@@ -41,6 +50,10 @@ ReportsRepository.prototype.getOffenderAddresses = function (offenderId) {
 
 ReportsRepository.prototype.getOffenderCharges = function (offenderId) {
   return this.requests.getOffenderCharges({ offenderId }).then(helpers.handleResponse([]));
+};
+
+ReportsRepository.prototype.getOffenderEmployments = function (offenderId) {
+  return this.requests.getOffenderEmployments({ offenderId }).then(helpers.handleResponse([]));
 };
 
 ReportsRepository.prototype.getOffenderMovements = function (offenderId) {
@@ -69,6 +82,14 @@ ReportsRepository.prototype.getOffenderReleaseDetails = function (offenderId) {
 
 ReportsRepository.prototype.getOffenderSentenceCalculations = function (offenderId) {
   return this.requests.getOffenderSentenceCalculations({ offenderId }).then(helpers.handleResponse([]));
+};
+
+ReportsRepository.prototype.getOffenderPhysicals = function (offenderId) {
+  return this.requests.getOffenderPhysicals({ offenderId }).then(helpers.handleResponse([]));
+};
+
+ReportsRepository.prototype.getOffenderIEPs = function (offenderId) {
+  return this.requests.getOffenderIEPs({ offenderId }).then(helpers.handleResponse([]));
 };
 
 ReportsRepository.prototype.listAddresses = function (query, page, size) {

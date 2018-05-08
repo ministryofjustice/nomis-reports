@@ -34,13 +34,15 @@ ReportsService.prototype.getDetails = function (offenderId) {
     describe('addresses', this.getOffenderAddresses(offenderId), []),
     describe('movements', this.getOffenderMovements(offenderId), []),
     describe('charges', this.getOffenderCharges(offenderId), []),
+    describe('employments', this.getOffenderEmployments(offenderId), []),
     describe('sentences', this.getOffenderSentences(offenderId), []),
     describe('assessments', this.getOffenderAssessments(offenderId), []),
     describe('healthProblems', this.getOffenderHealthProblems(offenderId), []),
     describe('imprisonmentStatuses', this.getOffenderImprisonmentStatuses(offenderId), []),
     describe('releaseDetails', this.getOffenderReleaseDetails(offenderId), []),
     describe('sentenceCalculations', this.getOffenderSentenceCalculations(offenderId), []),
-    //describe('employments', this.getOffenderEmployments(offenderId), []),
+    describe('physicals', this.getOffenderPhysicals(offenderId), []),
+    describe('ieps', this.getOffenderIEPs(offenderId), []),
   ])
   .then((data) => data.reduce((a, b) => Object.assign(a, b), {}));
 };
@@ -59,6 +61,10 @@ ReportsService.prototype.getOffenderMovements = function (offenderId) {
 
 ReportsService.prototype.getOffenderCharges = function (offenderId) {
   return this.agent.request('reports', 'getOffenderCharges', offenderId);
+};
+
+ReportsService.prototype.getOffenderEmployments = function (offenderId) {
+  return this.agent.request('reports', 'getOffenderEmployments', offenderId);
 };
 
 ReportsService.prototype.getOffenderSentences = function (offenderId) {
@@ -83,6 +89,14 @@ ReportsService.prototype.getOffenderReleaseDetails = function (offenderId) {
 
 ReportsService.prototype.getOffenderSentenceCalculations = function (offenderId) {
   return this.agent.request('reports', 'getOffenderSentenceCalculations', offenderId);
+};
+
+ReportsService.prototype.getOffenderPhysicals = function (offenderId) {
+  return this.agent.request('reports', 'getOffenderPhysicals', offenderId);
+};
+
+ReportsService.prototype.getOffenderIEPs = function (offenderId) {
+  return this.agent.request('reports', 'getOffenderIEPs', offenderId);
 };
 
 ReportsService.prototype.listAddresses = function (query, page, size) {
