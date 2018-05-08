@@ -1,4 +1,5 @@
 const healthCheckAgent = require('../services/healthCheck');
+const apiAgent = require('../helpers/apiAgent');
 const nomisApiAgent = require('../helpers/nomisApiAgent');
 const eliteApiAgent = require('../helpers/eliteApiAgent');
 
@@ -25,6 +26,15 @@ const nomisApiCheck = (config, logger) =>
 const eliteApiCheck = (config, logger) =>
   healthCheckAgent(eliteApiAgent(undefined, undefined, config), 'elite2-api', config, {logger}).health;
 
+const reportsApiCheck = (config, logger) =>
+  healthCheckAgent(apiAgent(undefined, [
+      (request) => {
+        request.set('Authorization', `Bearer ${config.bearerToken}`);
+
+        return request;
+      }
+  ], config), 'reports-api', config, {logger}).health;
+
 module.exports = function healthcheck(config, log) {
   let response = {
     healthy: true,
@@ -35,6 +45,7 @@ module.exports = function healthcheck(config, log) {
   const checks = [];
   if (config.nomis) checks.push(nomisApiCheck(config.nomis, log));
   if (config.elite2) checks.push(eliteApiCheck(config.elite2, log));
+  if (config.reports) checks.push(reportsApiCheck(config.reports, log));
 
   if (!checks.length) return new Promise(res => res(addAppInfo(response)));
 

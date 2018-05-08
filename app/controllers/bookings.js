@@ -90,6 +90,11 @@ const retrieveBookingCaseNotes = (req, res, next) =>
     .then((data) => res.json(data))
     .catch(helpers.failWithError(res, next));
 
+const retrieveBookingAlerts = (req, res, next) =>
+  services.booking.listAlerts(req.params.bookingId, req.query)
+    .then((data) => res.json(data))
+    .catch(helpers.failWithError(res, next));
+
 router.use((req, res, next) => {
   setUpServices(req.app.locals.config);
   next();
@@ -106,6 +111,7 @@ router.get('/:bookingId/contacts', retrieveBookingContacts);
 router.get('/:bookingId/adjudications', retrieveBookingAdjudications);
 router.get('/:bookingId/identifiers', retrieveBookingIdentifiers);
 router.get('/:bookingId/caseNotes', retrieveBookingCaseNotes);
+router.get('/:bookingId/alerts', retrieveBookingAlerts);
 
 
 module.exports = router;

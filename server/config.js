@@ -54,6 +54,7 @@ module.exports = {
 
   reports: {
     apiUrl: get('REPORT_API_URL', 'http://localhost:8080', { requireInProduction: true }),
+    bearerToken: get('OAUTH_BEARER_TOKEN', '', { requireInProduction: true }),
     timeout: {
       response: 50000,
       deadline: 40000
