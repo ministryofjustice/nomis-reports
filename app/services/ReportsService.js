@@ -33,7 +33,8 @@ ReportsService.prototype.getDetails = function (offenderId) {
     this.getOffender(offenderId),
     describe('addresses', this.getOffenderAddresses(offenderId), []),
     describe('movements', this.getOffenderMovements(offenderId), []),
-    describe('charges', this.getOffenderCharges(offenderId), []),
+    describe('charges', this.getOffenderContactPersons(offenderId), []),
+    describe('contactPersons', this.getOffenderEmployments(offenderId), []),
     describe('employments', this.getOffenderEmployments(offenderId), []),
     describe('sentences', this.getOffenderSentences(offenderId), []),
     describe('assessments', this.getOffenderAssessments(offenderId), []),
@@ -61,6 +62,10 @@ ReportsService.prototype.getOffenderMovements = function (offenderId) {
 
 ReportsService.prototype.getOffenderCharges = function (offenderId) {
   return this.agent.request('reports', 'getOffenderCharges', offenderId);
+};
+
+ReportsService.prototype.getOffenderContactPersons = function (offenderId) {
+  return this.agent.request('reports', 'getOffenderContactPersons', offenderId);
 };
 
 ReportsService.prototype.getOffenderEmployments = function (offenderId) {

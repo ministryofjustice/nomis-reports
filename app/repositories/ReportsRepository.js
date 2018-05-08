@@ -19,6 +19,7 @@ function ReportsRepository(config, agent) {
     getOffender: this.agent.get(`${root}/offenders/offenderId/:offenderId`),
     getOffenderAddresses: this.agent.get(`${root}/offenders/offenderId/:offenderId/addresses`),
     getOffenderCharges: this.agent.get(`${root}/offenders/offenderId/:offenderId/charges`),
+    getOffenderContactPersons: this.agent.get(`${root}/offenders/offenderId/:offenderId/contactPersons`),
     getOffenderEmployments: this.agent.get(`${root}/offenders/offenderId/:offenderId/employments`),
     getOffenderMovements: this.agent.get(`${root}/offenders/offenderId/:offenderId/movements`),
     getOffenderSentences: this.agent.get(`${root}/offenders/offenderId/:offenderId/sentences`),
@@ -50,6 +51,10 @@ ReportsRepository.prototype.getOffenderAddresses = function (offenderId) {
 
 ReportsRepository.prototype.getOffenderCharges = function (offenderId) {
   return this.requests.getOffenderCharges({ offenderId }).then(helpers.handleResponse([]));
+};
+
+ReportsRepository.prototype.getOffenderContactPersons = function (offenderId) {
+  return this.requests.getOffenderContactPersons({ offenderId }).then(helpers.handleResponse([]));
 };
 
 ReportsRepository.prototype.getOffenderEmployments = function (offenderId) {
