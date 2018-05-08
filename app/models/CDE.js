@@ -242,12 +242,16 @@ const getCheckHoldAlerts = o =>
   }, { VUL: 'N', V_45_46: 'N', SH_STS: 'N' });
 
 const getPhysicals = o => {
-  let physicals = getFirst((o.physicals || []).filter(op => (op.bookingId === o.ob.offenderBookingId)));
+  let physicals = getFirst((o.physicals || []).filter(op => (op.bookingId === o.mainBooking.offenderBookingId)));
 
   return {
     profileDetails: (physicals.profileDetails || [])
         .reduce((x, opd) => { x[opd.profileType] = opd.profileCode; return x; }, {}),
-    identifyingMarks: (x => ({ HEAD: [...x.HEAD || []], BODY: [...x.BODY || []]}))((physicals.identifyingMarks || [])
+    identifyingMarks: (x => {
+      x.BODY = [...x.BODY];
+      x.HEAD = [...x.HEAD];
+      return x;
+    })((physicals.identifyingMarks || [])
         .reduce((x, oim) => {
           let area = (~[ 'EAR', 'FACE', 'HEAD', 'LIP', 'NECK', 'NOSE' ].indexOf(oim.bodyPartCode)) ? 'HEAD' : 'BODY';
           // area = (~[ 'ANKLE', 'ARM', 'ELBOW', 'FINGER', 'FOOT', 'HAND', 'KNEE', 'LEG', 'SHOULDER', 'THIGH', 'TOE', 'TORSO' ].indexOf(oim.bodyPartCode)) ? 'BODY' : 'HEAD';
@@ -328,9 +332,9 @@ module.exports.build = (data) => {
     f13: moment(o.dateOfBirth).format('DD/MM/YYYY'),                            // 13	DOB
     f14: o.physicals.profileDetails.NAT,                                        // 14	Nationality Description
     f15: o.raceCode,                                                            // 15	Ethnicity Description
-    f11: o.physicals.profileDetails.RELF,                                       // 16	Religion Description
-    f11: o.physicals.profileDetails.MARITAL,                                    // 17	Marital Status Description
-    f18: getMaternityStatus(o, o.sysdate).problem_code,                         // 18	Maternity Status Description
+    f16: o.physicals.profileDetails.RELF,                                       // 16	Religion Description
+    f17: o.physicals.profileDetails.MARITAL,                                    // 17	Marital Status Description
+    f18: getMaternityStatus(o, o.sysdate).problemCode,                          // 18	Maternity Status Description
     f19: o.ob.livingUnitId,                                                     // 19	Cell Location
     f20: o.IEPLevel.iepLevel,                                                   // 20	Incentive Level Description
     f21: o.employments.occupationsCode,                                         // 21	Occupation Description

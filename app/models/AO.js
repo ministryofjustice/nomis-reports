@@ -314,14 +314,18 @@ const getPhysicals = o => {
   return {
     profileDetails: (physicals.profileDetails || [])
         .reduce((x, opd) => { x[opd.profileType] = opd.profileCode; return x; }, {}),
-    identifyingMarks: (physicals.identifyingMarks || [])
+    identifyingMarks: (x => {
+      x.BODY = [...x.BODY];
+      x.HEAD = [...x.HEAD];
+      return x;
+    })((physicals.identifyingMarks || [])
         .reduce((x, oim) => {
           let area = (~[ 'EAR', 'FACE', 'HEAD', 'LIP', 'NECK', 'NOSE' ].indexOf(oim.bodyPartCode)) ? 'HEAD' : 'BODY';
 
           (x[area] = x[area] || new Set()).add(formatIdentifyingMark(oim));
 
-          return [...x];
-        }, {}),
+          return x;
+        }, {})),
     physicalAttributes: (physicals.physicalAttributes || [])
         .reduce((x, opa) => (x || opa), false),
   };
@@ -431,6 +435,8 @@ module.exports.build = (data) => {
     ['offenderImprisonmentStatus', getImprisonmentStatus2],
     ['releaseDetails', getReleaseDetails],
     ['earliestReleaseDate', earliestReleaseDate],
+    ['physicals', getPhysicals],
+    ['IEPLevel', getIEPLevel],
   ].reduce((x, p) => { x[p[0]] = p[1](x); return x; }, Object.assign({}, data));
 
   o.maternityStatus = getMaternityStatus(o, o.sysdate);
@@ -456,25 +462,24 @@ module.exports.build = (data) => {
     agy_loc_id: o.mainBooking.agencyLocationId,
     in_out_status: o.mainBooking.inOutStatus,
 
-/*
 //pivoted_profiles_q
-    ppd.adult_yp,                                 -- adult_yp_f11
-    ppd.nationality_short,                        -- nationality_f14
-    ppd.religion_short,                           -- religion_f16
-    ppd.marital_status_short,                     -- marital_f17
-*/
+    adult_yp: o.physicals.profileDetails.YOUTH,
+    nationality_short: o.physicals.profileDetails.NAT,
+    religion_short: o.physicals.profileDetails.RELF,
+    marital_status_short: o.physicals.profileDetails.MARITAL,
+
 //preferred_pregnancy_q
     maternity_status_short: o.maternityStatus.problemCode,
     maternity_ongoing_or_inactive: o.maternityStatus.problemStatus,
-/*
+
 //latest_iep_level_q
-    lil.iep_level as iep,                         -- 20	Incentive Level Description
-*/
+    iep: o.IEPLevel.iepLevel,
+
 //csra_level
     csra_level: (o.csraLevel.reviewSupLevelType || o.csraLevel.overridedSupLevelType || o.csraLevel.calcSupLevelType),
 
 //latest_created_case_q
-    court_code: o.mainOffence.case.agencyLocationId,
+    court_code: (o.mainOffence.case && o.mainOffence.case.agencyLocationId),
 
 //pivotted_offender_addresses_q
     home_flat: o.homeAddress.flat,
