@@ -30,7 +30,7 @@ const getContactPersons = o =>
   withList(o.contactPersons)
     .filter(ocp => (
       ocp.bookingId === o.ob.offenderBookingId &&
-      (ocp.address && !ocp.address.endDate) &&
+      (ocp.addresses && ocp.addresses[0] && ocp.addresses[0].endDate) &&
       (ocp.person && ocp.person.active)
     ));
 
@@ -474,8 +474,8 @@ module.exports.build = (data) => {
     f42: o.checkHoldAlerts.H_HA,                                                // 42	ACCT Status (F2052)
     f43: highestRankedOffence(o).offenceCode,                                   // 43	Highest Ranked Offence
     f34: "",                                                                    // 44	Status Rank (to be left blank)
-    f45: o.pendingTransfer.toAgencyLocationId,                                               // 45	Pending Transfers (Full Establishment Name)
-    f46: o.pendingTransfer.fromAgencyLocationId,                                             // 46	Received From
+    f45: o.pendingTransfer.toAgencyLocationId,                                  // 45	Pending Transfers (Full Establishment Name)
+    f46: o.pendingTransfer.fromAgencyLocationId,                                // 46	Received From
     f47: o.checkHoldAlerts.VUL,                                                 // 47	Vulnerable Prisoner Alert
     f48: o.offenderIdentifiers.PNC,                                             // 48	PNC Number
     f49: dischargeEmployment(o).employmentPostCode,                             // 49	Employment Status at Discharge
@@ -536,22 +536,22 @@ module.exports.build = (data) => {
 
     f101: formatContactPersonName(o.nextOfKin),
     f102: formatContactPersonRelationship(o.nextOfKin),                         // 102	NOK Address Relationship
-    f103: formatAddressLine1(o.nextOfKin),                                      // 103	NOK Address Line 1
-    f104: o.nextOfKin.locality,                                                 // 104	NOK Address Line 2
-    f105: o.nextOfKin.cityCode,                                                 // 105	NOK Address Line 3
-    f106: o.nextOfKin.countyCode,                                               // 106	NOK Address Line 4
-    f107: o.nextOfKin.countryCode,                                              // 107	NOK Address Line 5
-    f108: o.nextOfKin.postalCode,                                               // 108	NOK Address Line 6
-    f109: o.nextOfKin.phoneNo,                                                  // 109	NOK Address Line 7
+    f103: (o.nextOfKin && formatAddressLine1(o.nextOfKin.address)),             // 103	NOK Address Line 1
+    f104: (o.nextOfKin && o.nextOfKin.address.locality),                        // 104	NOK Address Line 2
+    f105: (o.nextOfKin && o.nextOfKin.address.cityCode),                        // 105	NOK Address Line 3
+    f106: (o.nextOfKin && o.nextOfKin.address.countyCode),                      // 106	NOK Address Line 4
+    f107: (o.nextOfKin && o.nextOfKin.address.countryCode),                     // 107	NOK Address Line 5
+    f108: (o.nextOfKin && o.nextOfKin.address.postalCode),                      // 108	NOK Address Line 6
+    f109: (o.nextOfKin && o.nextOfKin.address.phoneNo),                         // 109	NOK Address Line 7
 
     f110: formatContactPersonName(o.offenderManager),                           // 110	Offender Manager
-    f111: formatAddressLine1(o.offenderManager),                                // 111	Probation Address Line 1
-    f112: o.offenderManager.locality,                                           // 112	Probation Address Line 2
-    f113: o.offenderManager.cityCode,                                           // 113	Probation Address Line 3
-    f114: o.offenderManager.countyCode,                                         // 114	Probation Address Line 4
-    f115: o.offenderManager.countryCode,                                        // 115	Probation Address Line 5
-    f116: o.offenderManager.postalCode,                                         // 116	Probation Address Line 6
-    f117: o.offenderManager.phoneNo,                                            // 117	Probation Address Line 7
+    f111: formatAddressLine1(o.offenderManager.address),                        // 111	Probation Address Line 1
+    f112: (o.offenderManager && o.offenderManager.address.locality),                    // 112	Probation Address Line 2
+    f113: (o.offenderManager && o.offenderManager.address.cityCode),                    // 113	Probation Address Line 3
+    f114: (o.offenderManager && o.offenderManager.address.countyCode),                  // 114	Probation Address Line 4
+    f115: (o.offenderManager && o.offenderManager.address.countryCode),                 // 115	Probation Address Line 5
+    f116: (o.offenderManager && o.offenderManager.address.postalCode),                  // 116	Probation Address Line 6
+    f117: (o.offenderManager && o.offenderManager.address.phoneNo),                     // 117	Probation Address Line 7
 
     f118: "",                                                                   // 118	Remark Type Allocation
     f119: "",                                                                   // 119	Remarks Allocation
