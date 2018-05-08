@@ -3,76 +3,108 @@ const helpers = require('../helpers');
 
 const getFirst = a => a[0] || {};
 const getLast = a => a[a.length - 1] || {};
+const withList = a => a || [];
 
 const getTransfers = o =>
-  (o.movements || []).filter(oem => (
-    oem.movementTypeCode === 'TRN' &&
-    oem.offenderBookingId === o.ob.offenderBookingId
-  ));
+  withList(o.movements)
+    .filter(oem => (
+      oem.offenderBookingId === o.ob.offenderBookingId &&
+      oem.movementTypeCode === 'TRN'
+    ));
 
 const getEmployments = o =>
-  (o.employments || []).filter(oe => (
-    oe.employmentDate &&
-    !oe.terminationDate &&
-    oe.bookingId === o.ob.offenderBookingId
-  ));
+  withList(o.employments)
+    .filter(oe => (
+      oe.bookingId === o.ob.offenderBookingId &&
+      oe.employmentDate &&
+      !oe.terminationDate
+    ));
 
 const getCharges = o =>
-  (o.charges || []).filter(oc => (
-    oc.bookingId === o.ob.offenderBookingId
-  ));
+  withList(o.charges)
+    .filter(oc => (
+      oc.bookingId === o.ob.offenderBookingId
+    ));
+
+const getContactPersons = o =>
+  withList(o.contactPersons)
+    .filter(ocp => (
+      ocp.bookingId === o.ob.offenderBookingId &&
+      (ocp.address && !ocp.address.endDate) &&
+      (ocp.person && ocp.person.active)
+    ));
 
 const getReleaseDetails = o =>
-  (o.releaseDetails || []).filter(ord => (
-    ord.bookingId === o.ob.offenderBookingId
-  ));
+  withList(o.releaseDetails)
+    .filter(ord => (
+      ord.bookingId === o.ob.offenderBookingId
+    ));
 
 const getSentenceCalculations = o =>
-  (o.sentenceCalculations || []).filter(s => (
-    s.bookingId === o.ob.offenderBookingId
-  )).reduce((a, b) => (!a.effectiveSentenceEndDate || moment(b.effectiveSentenceEndDate).diff(a.effectiveSentenceEndDate) > 0 ? b : a), moment(0)) || {};
+  withList(o.sentenceCalculations)
+    .filter(s => (
+      s.bookingId === o.ob.offenderBookingId
+    ))
+    .reduce((a, b) => (
+      !a.effectiveSentenceEndDate ||
+      moment(b.effectiveSentenceEndDate).diff(a.effectiveSentenceEndDate) > 0 ? b : a
+    ), moment(0)) || {};
 
 const getSentence = o =>
-  (o.sentences || []).filter(s => (
-    s.sentenceStatus === 'A' &&
-    s.bookingId === o.ob.offenderBookingId
-  )).reduce((a, b) => (!a.startDate || moment(b.startDate).diff(a.startDate) > 0 ? b : a), moment(0)) || {};
+  withList(o.sentences)
+    .filter(s => (
+      s.bookingId === o.ob.offenderBookingId &&
+      s.sentenceStatus === 'A'
+    ))
+    .reduce((a, b) => (
+      !a.startDate ||
+      moment(b.startDate).diff(a.startDate) > 0 ? b : a
+    ), moment(0)) || {};
 
 const getOffenderAddresses = o =>
-  (o.addresses || []).filter(oa => (
-    oa.ownerClass === 'OFF' &&
-    !oa.endDate && oa.active
-  ));
+  withList(o.addresses)
+    .filter(oa => (
+      oa.ownerClass === 'OFF' &&
+      !oa.endDate &&
+      oa.active
+    ));
 
 const getIdentifiers = o =>
-  (o.identifiers || []).reduce((x, oi) => { x[oi.identifierType] = oi.identifier; return x; }, {});
+  withList(o.identifiers)
+    .reduce((x, oi) => {
+      x[oi.identifierType] = oi.identifier;
+      return x;
+    }, {});
 
 const getLicense = o =>
-  getFirst((o.sentences || []).filter(s => (
-    s.sentenceStatus === 'A' &&
-    s.bookingId === o.ob.offenderBookingId &&
-    s.sentenceCategory === 'LICENSE'
-  )));
+  getFirst(withList(o.sentences)
+    .filter(s => (
+      s.bookingId === o.ob.offenderBookingId &&
+      s.sentenceStatus === 'A' &&
+      s.sentenceCategory === 'LICENSE'
+    )));
 
 const getMaternityStatus = (o, sysdate) =>
-  getFirst((o.healthProblems || []).filter(hp => (
-    hp.bookingId === o.ob.offenderBookingId &&
-    hp.problemType === 'MATSTAT' &&
-    hp.problemStatus === 'ON' &&
-  //hp.domain === 'HEALTH_PBLM' &&
-    (!hp.endDate || moment(hp.endDate).diff(sysdate) > 0)
-  )));
+  getFirst(withList(o.healthProblems)
+    .filter(hp => (
+      hp.bookingId === o.ob.offenderBookingId &&
+      hp.problemType === 'MATSTAT' &&
+      hp.problemStatus === 'ON' &&
+    //hp.domain === 'HEALTH_PBLM' &&
+      (!hp.endDate || moment(hp.endDate).diff(sysdate) > 0)
+    )));
 
 const getSecurityCategory = o =>
-  getFirst((o.assessments || []).filter(oa => (
-    oa.offenderBookingId === o.ob.offenderBookingId &&
-    oa.evaluationResultCode === 'APP' &&
-    oa.assessStatus === 'A' &&
-    oa.assessmentType &&
-    oa.assessmentType.assessmentClass === 'TYPE' &&
-    oa.assessmentType.assessmentCode === 'CATEGORY' &&
-    oa.assessmentType.determineSupLevelFlag === 'Y'
-  )));
+  getFirst(withList(o.assessments)
+    .filter(oa => (
+      oa.offenderBookingId === o.ob.offenderBookingId &&
+      oa.evaluationResultCode === 'APP' &&
+      oa.assessStatus === 'A' &&
+      oa.assessmentType &&
+      oa.assessmentType.assessmentClass === 'TYPE' &&
+      oa.assessmentType.assessmentCode === 'CATEGORY' &&
+      oa.assessmentType.determineSupLevelFlag === 'Y'
+    )));
 
 const lastMovement = o =>
   getFirst(o.movements);
@@ -84,13 +116,21 @@ const lastTransfer = o =>
   getFirst(o.trn);
 
 const pendingTransfer = o =>
-  getLast((o.trn || []).filter(m => m.active));
+  getLast(withList(o.trn)
+    .filter(m => m.active));
 
 const courtEscort = o =>
-  getFirst((o.trn || []).filter(m => (m.movementType === 'CRT' && m.directionCode === 'OUT')));
+  getFirst(withList(o.trn)
+    .filter(m => (
+      m.movementType === 'CRT' &&
+      m.directionCode === 'OUT'
+    )));
 
 const firstOutMovement = o =>
-  getLast((o.movements || []).filter(m => (m.directionCode === 'OUT')));
+  getLast(withList(o.movements)
+    .filter(m => (
+      m.directionCode === 'OUT'
+    )));
 
 const receptionEmployment = o =>
   getLast(o.oe);
@@ -102,52 +142,106 @@ const highestRankedOffence = o =>
   getFirst(o.oc);
 
 const otherOffences = o =>
-  (o.oc || []).filter((o, i) => i !== 0);
+  withList(o.oc)
+    .filter((o, i) => i !== 0);
 
 const getHomeAddress = o =>
-  getFirst((o.oa || []).filter(a => (a.addressUsage === 'HOME')));
+  getFirst(withList(o.oa)
+    .filter(a => (a.addressUsage === 'HOME')));
 
 const getReceptionAddress = o =>
-  getFirst((o.oa || []).filter(a => (a.addressUsage === 'RECEP')));
+  getFirst(withList(o.oa)
+    .filter(a => (a.addressUsage === 'RECEP')));
 
 const getDischargeAddress = o =>
-  getFirst((o.oa || []).filter(a => (~['RELEASE','DNF','DUT','DST','DPH','DSH','DAP','DBA','DOH','DBH'].indexOf(a.addressUsage))));
+  getFirst(withList(o.oa)
+    .filter(a => (~['RELEASE','DNF','DUT','DST','DPH','DSH','DAP','DBA','DOH','DBH'].indexOf(a.addressUsage))));
 
 const getMainBooking = o =>
   getFirst(o.bookings);
 
 const getPreviousBookings = o =>
-  (o.bookings || []).reduce((a, b) => { if (!~a.indexOf(b.bookingNo)) a.push(b.bookingNo); return a; }, []);
+  withList(o.bookings)
+    .reduce((a, b) => {
+      if (!~a.indexOf(b.bookingNo)) {
+        a.push(b.bookingNo);
+      }
+      return a;
+    }, []);
 
 const getActiveAlerts = o =>
-  ((o.alerts || []).filter(oa => !oa.expired) || []);
+  withList(o.alerts)
+    .filter(oa => !oa.expired);
 
 const getMAPPAAlerts = o =>
-  getFirst((o.alerts || []).filter(oa => (!oa.expired && oa.alertType === 'P')));
+  getFirst(withList(o.alerts)
+    .filter(oa => (
+      !oa.expired &&
+      oa.alertType === 'P'
+    )));
 
 const getNotForReleaseAlerts = o =>
-  getFirst((o.alerts || []).filter(oa => (!oa.expired && oa.alertType === 'X' /*&& oa.alertStatus === 'ACTIVE'*/)));
+  getFirst(withList(o.alerts)
+    .filter(oa => (
+      !oa.expired &&
+      oa.alertType === 'X' /*&&
+      oa.alertStatus === 'ACTIVE'
+      */
+    )));
 
 const getAge = o =>
   moment().diff(moment(o.dateOfBirth), 'years');
 
+const getNextOfKin = o =>
+  getFirst(withList(o.offenderContactPersons)
+    .filter(ocp => (
+      ocp.nextOfKin
+    )));
+
+const getOffenderManager = o =>
+  getFirst(withList(o.offenderContactPersons)
+    .filter(ocp => (
+      ocp.contactPersonType.contactType === 'O' &&
+      ocp.contactPersonType.relationshipType === 'PROB'
+    )));
+
 const formatTransferReasonCode = trn =>
-  trn ? [trn.movementType, trn.movementReasonCode].filter(x => !!x).join('-') : undefined;
+  trn ? [trn.movementType, trn.movementReasonCode]
+    .filter(x => !!x)
+    .join('-') : undefined;
 
 const formatReleaseReason = ord =>
-  ord ? [ord.movementType, ord.movementReasonCode].filter(x => !!x).join('-') : undefined;
+  ord ? [ord.movementType, ord.movementReasonCode]
+    .filter(x => !!x)
+    .join('-') : undefined;
 
 const formatLicenseType = os =>
-  os ? [os.sentenceCategory, os.sentenceCalcType].filter(x => !!x).join('-') : undefined;
+  os ? [os.sentenceCategory, os.sentenceCalcType]
+    .filter(x => !!x)
+    .join('-') : undefined;
 
 const formatAddressLine1 = a =>
-  a ? [a.flat, a.premise, a.street].filter(x => !!x).join(' ') : undefined;
+  a ? [a.flat, a.premise, a.street]
+    .filter(x => !!x)
+    .join(' ') : undefined;
 
 const formatAlert = oa =>
-  oa ? [oa.alertType, oa.alertCode].filter(x => !!x).join('-') : undefined;
+  oa ? [oa.alertType, oa.alertCode]
+    .filter(x => !!x)
+    .join('-') : undefined;
 
 const formatIdentifyingMark = oim =>
-  oim ? [oim.markType, oim.bodyPartCode].filter(x => !!x).join(' ') : undefined;
+  oim ? [oim.markType, oim.bodyPartCode]
+    .filter(x => !!x)
+    .join(' ') : undefined;
+
+const formatContactPersonName = ocp =>
+  ocp && ocp.person ? [ocp.person.lastName, ocp.person.firstName]
+    .filter(x => !!x)
+    .join(' ') : undefined;
+
+const formatContactPersonRelationship = ocp =>
+  ocp ? (['Y', 'NFA'].indexOf(ocp.noFixedAddress) ? ocp.noFixedAddress : null) : undefined;
 
 const getCustodyStatus = o => {
   let ob = o.ob;
@@ -214,44 +308,51 @@ const getNFA = oa => {
 };
 
 const getCheckHoldAlerts = o =>
-  (o.activeAlerts || []).reduce((x, oa) => {
-    let fa = formatAlert(oa);
-    switch (fa) {
-      case 'T-TG': return x.T_TG = fa;
-      case 'T-TAH': return x.T_TAH = fa;
-      case 'T-TSE': return x.T_TSE = fa;
-      case 'T-TM': return x.T_TM = fa;
-      case 'T-TPR': return x.T_TPR = fa;
-      case 'H-HA': return x.H_HA = fa;
-    }
-
-    if (oa.alertType === 'V') {
-      if (~['V45','VOP','V46','V49G','V49P'].indexOf(oa.alertCode)) {
-        x.V_45_46 = 'Y';
-      } else {
-        x.VUL = 'Y';
+  withList(o.activeAlerts)
+    .reduce((x, oa) => {
+      let fa = formatAlert(oa);
+      switch (fa) {
+        case 'T-TG': return x.T_TG = fa;
+        case 'T-TAH': return x.T_TAH = fa;
+        case 'T-TSE': return x.T_TSE = fa;
+        case 'T-TM': return x.T_TM = fa;
+        case 'T-TPR': return x.T_TPR = fa;
+        case 'H-HA': return x.H_HA = fa;
       }
-    }
 
-    if (fa === 'H-HA') {
-      x.SH_STS = 'Y';
-      x.SH_Date = oa.alertDate;
-    }
+      if (oa.alertType === 'V') {
+        if (~['V45','VOP','V46','V49G','V49P'].indexOf(oa.alertCode)) {
+          x.V_45_46 = 'Y';
+        } else {
+          x.VUL = 'Y';
+        }
+      }
 
-    return x;
-  }, { VUL: 'N', V_45_46: 'N', SH_STS: 'N' });
+      if (fa === 'H-HA') {
+        x.SH_STS = 'Y';
+        x.SH_Date = oa.alertDate;
+      }
+
+      return x;
+    }, { VUL: 'N', V_45_46: 'N', SH_STS: 'N' });
 
 const getPhysicals = o => {
-  let physicals = getFirst((o.physicals || []).filter(op => (op.bookingId === o.mainBooking.offenderBookingId)));
+  let physicals = getFirst(withList(o.physicals)
+    .filter(op => (
+      op.bookingId === o.ob.offenderBookingId
+    )));
 
   return {
-    profileDetails: (physicals.profileDetails || [])
-        .reduce((x, opd) => { x[opd.profileType] = opd.profileCode; return x; }, {}),
+    profileDetails: withList(physicals.profileDetails)
+        .reduce((x, opd) => {
+          x[opd.profileType] = opd.profileCode;
+          return x;
+        }, {}),
     identifyingMarks: (x => {
       x.BODY = [...x.BODY];
       x.HEAD = [...x.HEAD];
       return x;
-    })((physicals.identifyingMarks || [])
+    })(withList(physicals.identifyingMarks)
         .reduce((x, oim) => {
           let area = (~[ 'EAR', 'FACE', 'HEAD', 'LIP', 'NECK', 'NOSE' ].indexOf(oim.bodyPartCode)) ? 'HEAD' : 'BODY';
           // area = (~[ 'ANKLE', 'ARM', 'ELBOW', 'FINGER', 'FOOT', 'HAND', 'KNEE', 'LEG', 'SHOULDER', 'THIGH', 'TOE', 'TORSO' ].indexOf(oim.bodyPartCode)) ? 'BODY' : 'HEAD';
@@ -260,25 +361,34 @@ const getPhysicals = o => {
 
           return x;
         }, {})),
-    physicalAttributes: (physicals.physicalAttributes || [])
+    physicalAttributes: withList(physicals.physicalAttributes)
         .reduce((x, opa) => (x || opa), false),
   };
 };
 
 const getIEPLevel = o =>
-  getFirst((o.IEPs || []).filter(op => (op.bookingId === o.ob.offenderBookingId)).map(iep => iep.iepLevel));
+  getFirst(withList(o.IEPs)
+    .filter(op => (
+      op.bookingId === o.ob.offenderBookingId
+    ))
+    .map(iep => iep.iepLevel));
 
 const getEmployment = o =>
-  getFirst((o.employments || []).filter(oe => (
-    oe.bookingId === o.ob.offenderBookingId &&
-    (oe.terminationDate || moment(oe.terminationDate).diff(o.ob.startDate) > 0)
-  )));
+  getFirst(withList(o.employments)
+    .filter(oe => (
+      oe.bookingId === o.ob.offenderBookingId &&
+      (oe.terminationDate || moment(oe.terminationDate).diff(o.ob.startDate) > 0)
+    )));
 
 const getImprisonmentStatus = o =>
-  getFirst((o.imprisonmentStatuses || []).filter(op => (op.offenderBookId === o.ob.offenderBookingId)));
+  getFirst(withList(o.imprisonmentStatuses)
+    .filter(op => (
+      op.offenderBookId === o.ob.offenderBookingId
+    )));
 
 const isSexOffender = o =>
-  (o.charges || []).filter(oc => ~oc.offenceIndicatorCodes.indexOf('S')).length > 0;
+  withList(o.charges)
+    .filter(oc => ~withList(oc.offenceIndicatorCodes).indexOf('S')).length > 0;
 
 module.exports.build = (data) => {
   let o = [
@@ -300,10 +410,13 @@ module.exports.build = (data) => {
     ['scd', sentenceCalculationDates],
     ['oe', getEmployments],
     ['oc', getCharges],
+    ['offenderContactPersons', getContactPersons],
     ['oa', getOffenderAddresses],
     ['homeAddr', getHomeAddress],
     ['recepAddr', getReceptionAddress],
     ['dischargeAddr', getDischargeAddress],
+    ['nextOfKin', getNextOfKin],
+    ['offenderManager', getOffenderManager],
     ['activeAlerts', getActiveAlerts],
     ['notForRelease', getNotForReleaseAlerts],
     ['MAPPA', getMAPPAAlerts],
@@ -421,24 +534,24 @@ module.exports.build = (data) => {
     f99: o.homeAddr.postalCode,                                                 // 99	Home Address Line 6
     f100: o.homeAddr.phoneNo,                                                   // 100	Home Address Line 7
 
-    // 101	Nominated NOK
-    // 102	NOK Address Relationship
-    // 103	NOK Address Line 1
-    // 104	NOK Address Line 2
-    // 105	NOK Address Line 3
-    // 106	NOK Address Line 4
-    // 107	NOK Address Line 5
-    // 108	NOK Address Line 6
-    // 109	NOK Address Line 7
+    f101: formatContactPersonName(o.nextOfKin),
+    f102: formatContactPersonRelationship(o.nextOfKin),                         // 102	NOK Address Relationship
+    f103: formatAddressLine1(o.nextOfKin),                                      // 103	NOK Address Line 1
+    f104: o.nextOfKin.locality,                                                 // 104	NOK Address Line 2
+    f105: o.nextOfKin.cityCode,                                                 // 105	NOK Address Line 3
+    f106: o.nextOfKin.countyCode,                                               // 106	NOK Address Line 4
+    f107: o.nextOfKin.countryCode,                                              // 107	NOK Address Line 5
+    f108: o.nextOfKin.postalCode,                                               // 108	NOK Address Line 6
+    f109: o.nextOfKin.phoneNo,                                                  // 109	NOK Address Line 7
 
-    // 110	Offender Manager
-    // 111	Probation Address Line 1
-    // 112	Probation Address Line 2
-    // 113	Probation Address Line 3
-    // 114	Probation Address Line 4
-    // 115	Probation Address Line 5
-    // 116	Probation Address Line 6
-    // 117	Probation Address Line 7
+    f110: formatContactPersonName(o.offenderManager),                           // 110	Offender Manager
+    f111: formatAddressLine1(o.offenderManager),                                // 111	Probation Address Line 1
+    f112: o.offenderManager.locality,                                           // 112	Probation Address Line 2
+    f113: o.offenderManager.cityCode,                                           // 113	Probation Address Line 3
+    f114: o.offenderManager.countyCode,                                         // 114	Probation Address Line 4
+    f115: o.offenderManager.countryCode,                                        // 115	Probation Address Line 5
+    f116: o.offenderManager.postalCode,                                         // 116	Probation Address Line 6
+    f117: o.offenderManager.phoneNo,                                            // 117	Probation Address Line 7
 
     f118: "",                                                                   // 118	Remark Type Allocation
     f119: "",                                                                   // 119	Remarks Allocation

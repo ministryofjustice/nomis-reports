@@ -25,6 +25,12 @@ const getCharges = o =>
       oc.bookingId === o.mainBooking.offenderBookingId
     ));
 
+const getContactPersons = o =>
+  (o.contactPersons || [])
+    .filter(ocp => (
+      ocp.bookingId === o.mainBooking.offenderBookingId
+    ));
+
 const getMainOffence = o =>
   getFirst((o.offenderCharges || [])
     .filter(oc => (
@@ -173,6 +179,9 @@ const getNotForReleaseAlerts = o =>
 
 const getAge = o =>
   moment().diff(moment(o.dateOfBirth), 'years');
+
+const getNextOfKin = o =>
+  getFirst((o.offenderContactPersons || []).filter(ocp => ocp.nextOfKin));
 
 const formatTransferReasonCode = trn =>
   trn ? [trn.movementType, trn.movementReasonCode].filter(x => !!x).join('-') : undefined;
@@ -382,10 +391,10 @@ const getImprisonmentStatusCategory = ois => {
   }
 };
 
-
-
 const formatSentenceLength = o => {
-  if (o.offenderImprisonmentStatus.bandCode === 1) {
+  if (o.offenderImprisonmentStatus.bandCode === 1 ||
+      !o.sentenceCalculationDates ||
+      !o.sentenceCalculationDates.effectiveSentenceEndDate) {
     return 'Indefinate';
   }
 
@@ -418,12 +427,14 @@ module.exports.build = (data) => {
     ['offenderIdentifiers', getIdentifiers],
     ['offenderAddresses', getOffenderAddresses],
     ['offenderCharges', getCharges],
+    ['offenderContactPersons', getContactPersons],
     ['offenderSentence', getSentence],
     ['offenderSentenceCalculations', getSentenceCalculations],
     ['sentenceCalculationDates', sentenceCalculationDates],
     ['homeAddress', getHomeAddress],
     ['receptionAddress', getReceptionAddress],
     ['dischargeAddress', getDischargeAddress2],
+    ['nextOfKin', getNextOfKin],
     ['securityCategory', getSecurityCategory2],
     ['csraLevel', getCSRALevel],
     ['checkHoldAlerts', getCheckHoldAlerts],
@@ -493,22 +504,17 @@ module.exports.build = (data) => {
     home_no_fixed_address: o.homeAddress.noFixedAddress,
 
 //pivotted_offender_addresses_q
-    /*
-    // 101	Nominated NOK
-    // 102	NOK Address Relationship
-    next_of_kin_flat: na.flat,
-    next_of_kin_premise: na.premise,
-    next_of_kin_street: na.street,
-    next_of_kin_locality: na.locality,
-    next_of_kin_city: na.city,
-    next_of_kin_county: na.county,
-    next_of_kin_postal_code: na.postal_code,
-    next_of_kin_country: na.country,
-    next_of_kin_no_fixed_address: na.no_fixed_address,
-    */
+    next_of_kin_flat: o.nextOfKin.flat,
+    next_of_kin_premise: o.nextOfKin.premise,
+    next_of_kin_street: o.nextOfKin.street,
+    next_of_kin_locality: o.nextOfKin.locality,
+    next_of_kin_city: o.nextOfKin.city,
+    next_of_kin_county: o.nextOfKin.county,
+    next_of_kin_postal_code: o.nextOfKin.postal_code,
+    next_of_kin_country: o.nextOfKin.country,
+    next_of_kin_no_fixed_address: o.nextOfKin.no_fixed_address,
 
 //pivotted_offender_addresses_q
-    // 78	Discharge Address Relationship
     discharge_flat: o.dischargeAddress.flat,
     discharge_premise: o.dischargeAddress.premise,
     discharge_street: o.dischargeAddress.street,
@@ -521,7 +527,6 @@ module.exports.build = (data) => {
     discharge_address_type: o.dischargeAddress.addressType,
 
 //pivotted_offender_addresses_q
-    // 86	Reception Address Relationship
     reception_flat: o.receptionAddress.flat,
     reception_premise: o.receptionAddress.premise,
     reception_street: o.receptionAddress.street,
@@ -538,7 +543,7 @@ module.exports.build = (data) => {
     sec_cat_next_review_date: moment(o.securityCategory.nextReviewDate).format('DD/MM/YYYY'),
 
 //first_conviction_q
-    first_convicted: (o.firstOffence.case && o.firstOffence.case.beginDate && moment(o.firstOffence.case.beginDate)).format('DD/MM/YYYY'),
+    first_convicted: (o.firstOffence.case && o.firstOffence.case.beginDate && moment(o.firstOffence.case.beginDate).format('DD/MM/YYYY')),
 
 //first_sentence_and_counts_q
     first_sentenced: moment(o.firstSentenceAndCounts.firstSentenced).format('DD/MM/YYYY'),
@@ -603,6 +608,7 @@ module.exports.build = (data) => {
     violent: coalesce(og.violent, 'N'),
     victim_offences: coalesce(og.victim_offences, 'N'),
 */
+
 /*
 //rehab_decision_provider_q
     rehab_decision_code: r.decision_code,
