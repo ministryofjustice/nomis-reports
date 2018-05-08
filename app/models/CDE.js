@@ -16,14 +16,6 @@ const getEmployments = o =>
     !oe.terminationDate &&
     oe.bookingId === o.ob.offenderBookingId
   ));
-/*
-SELECT
-  oe.employment_post_code emplmnt_status_discharge_f49
-FROM offender_employments oe
-ORDER BY
-  oe.modify_datetime,
-  oe.create_datetime
-*/
 
 const getCharges = o =>
   (o.charges || []).filter(oc => (
@@ -40,7 +32,7 @@ const getSentenceCalculations = o =>
     s.bookingId === o.ob.offenderBookingId
   )).reduce((a, b) => (!a.effectiveSentenceEndDate || moment(b.effectiveSentenceEndDate).diff(a.effectiveSentenceEndDate) > 0 ? b : a), moment(0)) || {};
 
-const getSentences = o =>
+const getSentence = o =>
   (o.sentences || []).filter(s => (
     s.sentenceStatus === 'A' &&
     s.bookingId === o.ob.offenderBookingId
@@ -142,7 +134,7 @@ const getAge = o =>
 const formatTransferReasonCode = trn =>
   trn ? [trn.movementType, trn.movementReasonCode].filter(x => !!x).join('-') : undefined;
 
-const formatReleaseName = ord =>
+const formatReleaseReason = ord =>
   ord ? [ord.movementType, ord.movementReasonCode].filter(x => !!x).join('-') : undefined;
 
 const formatLicenseType = os =>
@@ -153,6 +145,9 @@ const formatAddressLine1 = a =>
 
 const formatAlert = oa =>
   oa ? [oa.alertType, oa.alertCode].filter(x => !!x).join('-') : undefined;
+
+const formatIdentifyingMark = oim =>
+  oim ? [oim.markType, oim.bodyPartCode].filter(x => !!x).join(' ') : undefined;
 
 const getCustodyStatus = o => {
   let ob = o.ob;
@@ -246,7 +241,40 @@ const getCheckHoldAlerts = o =>
     return x;
   }, { VUL: 'N', V_45_46: 'N', SH_STS: 'N' });
 
+const getPhysicals = o => {
+  let physicals = getFirst((o.physicals || []).filter(op => (op.bookingId === o.ob.offenderBookingId)));
 
+  return {
+    profileDetails: (physicals.profileDetails || [])
+        .reduce((x, opd) => { x[opd.profileType] = opd.profileCode; return x; }, {}),
+    identifyingMarks: (x => ({ HEAD: [...x.HEAD || []], BODY: [...x.BODY || []]}))((physicals.identifyingMarks || [])
+        .reduce((x, oim) => {
+          let area = (~[ 'EAR', 'FACE', 'HEAD', 'LIP', 'NECK', 'NOSE' ].indexOf(oim.bodyPartCode)) ? 'HEAD' : 'BODY';
+          // area = (~[ 'ANKLE', 'ARM', 'ELBOW', 'FINGER', 'FOOT', 'HAND', 'KNEE', 'LEG', 'SHOULDER', 'THIGH', 'TOE', 'TORSO' ].indexOf(oim.bodyPartCode)) ? 'BODY' : 'HEAD';
+
+          (x[area] = x[area] || new Set()).add(formatIdentifyingMark(oim));
+
+          return x;
+        }, {})),
+    physicalAttributes: (physicals.physicalAttributes || [])
+        .reduce((x, opa) => (x || opa), false),
+  };
+};
+
+const getIEPLevel = o =>
+  getFirst((o.IEPs || []).filter(op => (op.bookingId === o.ob.offenderBookingId)).map(iep => iep.iepLevel));
+
+const getEmployment = o =>
+  getFirst((o.employments || []).filter(oe => (
+    oe.bookingId === o.ob.offenderBookingId &&
+    (oe.terminationDate || moment(oe.terminationDate).diff(o.ob.startDate) > 0)
+  )));
+
+const getImprisonmentStatus = o =>
+  getFirst((o.imprisonmentStatuses || []).filter(op => (op.offenderBookId === o.ob.offenderBookingId)));
+
+const isSexOffender = o =>
+  (o.charges || []).filter(oc => ~oc.offenceIndicatorCodes.indexOf('S')).length > 0;
 
 module.exports.build = (data) => {
   let o = [
@@ -256,7 +284,7 @@ module.exports.build = (data) => {
     ['offenderIdentifiers', getIdentifiers],
     ['secCat', getSecurityCategory],
     ['osc', getSentenceCalculations],
-    ['os', getSentences],
+    ['os', getSentence],
     ['licence', getLicense],
     ['trn', getTransfers],
     ['ftrn', firstTransfer],
@@ -276,11 +304,17 @@ module.exports.build = (data) => {
     ['notForRelease', getNotForReleaseAlerts],
     ['MAPPA', getMAPPAAlerts],
     ['checkHoldAlerts', getCheckHoldAlerts],
+    ['physicals', getPhysicals],
+    ['IEPLevel', getIEPLevel],
+    ['employments', getEmployment],
+    ['imprisonmentStatus', getImprisonmentStatus],
+    ['releaseDetails', getReleaseDetails],
+    ['isSexOffender', isSexOffender],
   ].reduce((x, p) => { x[p[0]] = p[1](x); return x; }, Object.assign({}, data));
 
   let model = {
     f1: o.sysdate.format('DD/MM/YYYY'),                                         // 1	System Date
-    f2: o.ob.agencyLocationId,                                                  // 2	Establishment
+    f2: "",                                                                     // 2	Establishment
     f3: o.ob.agencyLocationId,                                                  // 3	Prison Code
     f4: o.nomsId,                                                               // 4	NOMS Number
     f5: o.sexCode,                                                              // 5	Gender Description
@@ -289,40 +323,40 @@ module.exports.build = (data) => {
     f8: o.firstName,                                                            // 8	Given Name 1
     f9: o.middleNames,                                                          // 9	Given Name 2
     f10: o.offenderIdentifiers.CRO,                                             // 10	CRO Number
-    // 11	Adult or YP
+    f11: o.physicals.profileDetails.YOUTH,                                      // 11	Adult or YP
     f12: getAge(o),                                                             // 12	Age
     f13: moment(o.dateOfBirth).format('DD/MM/YYYY'),                            // 13	DOB
-    // 14	Nationality Description
+    f14: o.physicals.profileDetails.NAT,                                        // 14	Nationality Description
     f15: o.raceCode,                                                            // 15	Ethnicity Description
-    // 16	Religion Description
-    // 17	Marital Status Description
-    f18: getMaternityStatus(o, o.sysdate).problem_code,                          // 18	Maternity Status Description
+    f11: o.physicals.profileDetails.RELF,                                       // 16	Religion Description
+    f11: o.physicals.profileDetails.MARITAL,                                    // 17	Marital Status Description
+    f18: getMaternityStatus(o, o.sysdate).problem_code,                         // 18	Maternity Status Description
     f19: o.ob.livingUnitId,                                                     // 19	Cell Location
-    // 20	Incentive Level Description
-    // 21	Occupation Description
+    f20: o.IEPLevel.iepLevel,                                                   // 20	Incentive Level Description
+    f21: o.employments.occupationsCode,                                         // 21	Occupation Description
     f22: formatTransferReasonCode(o.ftrn),                                      // 22	Transfer Reason
     f23: moment(o.ob.startDate).format('DD/MM/YYYY'),                           // 23	First Reception Date
     f24: getCustodyStatus(o),                                                   // 24	Custody Status
-    // 25	Main Legal Status Description
+    f25: o.imprisonmentStatus.imprisonmentStatus,                               // 25	Main Legal Status Description
     f26: o.secCat.reviewSupLevelType,                                           // 26	Security Category Description
     f27: (o.secCat.nextReviewDate && moment(o.secCat.nextReviewDate).format('DD/MM/YYYY')),// 27	Security Category Review Date
     f28: (o.osc.effectiveSentenceLength || '').split(/\//gmi)[0],               // 28	Sentence Length (Years)
     f29: (o.osc.effectiveSentenceLength || '').split(/\//gmi)[1],               // 29	Sentence Length (Months)
     f30: (o.osc.effectiveSentenceLength || '').split(/\//gmi)[2],               // 30	Sentence Length (Days)
-    f31: o.previousBookingNos.join(','),                                        // 31	Previous Booking Number
+    f31: o.previousBookingNos,                                                  // 31	Previous Booking Number
     f32: earliestReleaseDate(o).format('DD/MM/YYYY'),                           // 32	Earliest Release Date
     f33: o.checkHoldAlerts.T_TG,                                                // 33	Check Hold Governor
-    // 34	Check Hold General (to be left blank)
-    // 35	Check Hold Discipline (to be left blank)
+    f34: "",                                                                    // 34	Check Hold General (to be left blank)
+    f34: "",                                                                    // 35	Check Hold Discipline (to be left blank)
     f36: o.checkHoldAlerts.T_TAH,                                               // 36	Check Hold Allocation
     f37: o.checkHoldAlerts.T_TSE,                                               // 37	Check Hold Security
     f38: o.checkHoldAlerts.T_TM,                                                // 38	Check Hold Medical
     f39: o.checkHoldAlerts.T_TPR,                                               // 39	Check Hold Parole
     // 40	Date Of First Conviction
-    // 41	Date First Sentenced
-    f37: o.checkHoldAlerts.H_HA,                                                // 42	ACCT Status (F2052)
+    f41: moment(o.os.startDate).format('DD/MM/YYYY'),                           // 41	Date First Sentenced
+    f42: o.checkHoldAlerts.H_HA,                                                // 42	ACCT Status (F2052)
     f43: highestRankedOffence(o).offenceCode,                                   // 43	Highest Ranked Offence
-    // 44	Status Rank (to be left blank)
+    f34: "",                                                                    // 44	Status Rank (to be left blank)
     f45: o.pendingTransfer.toAgencyLocationId,                                               // 45	Pending Transfers (Full Establishment Name)
     f46: o.pendingTransfer.fromAgencyLocationId,                                             // 46	Received From
     f47: o.checkHoldAlerts.VUL,                                                 // 47	Vulnerable Prisoner Alert
@@ -330,21 +364,21 @@ module.exports.build = (data) => {
     f49: dischargeEmployment(o).employmentPostCode,                             // 49	Employment Status at Discharge
     f50: receptionEmployment(o).employmentPostCode,                             // 50	Employment Status at Reception
     f51: formatAlert(o.MAPPA),                                                  // 51	MAPPA Levels (Schedule 1 Sex Offender)
-    // 52	Sex Offender
+    f52: o.isSexOffender ? 'Y' : 'N',                                           // 52	Sex Offender
     // 53	Supervising Service
-    // 54	Height (metres)
-    // 55	Complexion
-    // 56	Hair Colour
-    // 57	Left Eye
-    // 58	Right Eye
-    // 59	Build
-    // 60	Facial Shape
-    // 61	Facial Hair
-    // 62	Physical Mark  Head
-    // 63	Physical Mark Body
+    f54: o.physicals.physicalAttributes.heightCM / 100,                         // 54	Height (metres)
+    f55: o.physicals.profileDetails.COMPL,                                      // 55	Complexion
+    f56: o.physicals.profileDetails.HAIR,                                       // 56	Hair Colour
+    f57: o.physicals.profileDetails.L_EYE_C,                                    // 57	Left Eye
+    f58: o.physicals.profileDetails.R_EYE_C,                                    // 58	Right Eye
+    f59: o.physicals.profileDetails.BUILD,                                      // 59	Build
+    f60: o.physicals.profileDetails.FACE,                                       // 60	Facial Shape
+    f61: o.physicals.profileDetails.FACIAL_HAIR,                                // 61	Facial Hair
+    f62: o.physicals.identifyingMarks.HEAD,                                     // 62	Physical Mark  Head
+    f63: o.physicals.identifyingMarks.BODY,                                     // 63	Physical Mark Body
     f64: moment(o.osc.effectiveSentenceEndDate).diff(moment(o.os.startDate), 'years'),// 64	Effective Sentence Length
-    f55: moment(getReleaseDetails(o).releaseDate).format('DD/MM/YYYY'),         // 65	Confirmed Release Date
-    f66: formatReleaseName(getReleaseDetails(o)),                               // 66	Release Reason
+    f55: moment(o.releaseDetails.releaseDate).format('DD/MM/YYYY'),             // 65	Confirmed Release Date
+    f66: formatReleaseReason(o.releaseDetails),                                 // 66	Release Reason
     f67: o.scd.sed,                                                             // 67	SED
     f68: o.scd.hdced,                                                           // 68	HDCED
     f69: o.scd.hdcad,                                                           // 69	HDCAD
@@ -402,22 +436,22 @@ module.exports.build = (data) => {
     // 116	Probation Address Line 6
     // 117	Probation Address Line 7
 
-    // 118	Remark Type Allocation
-    // 119	Remarks Allocation
-    // 120	Remark Type Security
-    // 121	Remarks Security
-    // 122	Remark Type Medical
-    // 123	Remarks Medical
-    // 124	Remark Type Parole
-    // 125	Remarks Parole
-    // 126	Remark Type Discipline
-    // 127	Remarks Discipline
-    // 128	Remark Type General
-    // 129	Remarks General
-    // 130	Remark Type Reception
-    // 131	Remarks Reception
-    // 132	Remark Type Labour
-    // 133	Remarks Labour
+    f118: "",                                                                   // 118	Remark Type Allocation
+    f119: "",                                                                   // 119	Remarks Allocation
+    f120: "",                                                                   // 120	Remark Type Security
+    f121: "",                                                                   // 121	Remarks Security
+    f122: "",                                                                   // 122	Remark Type Medical
+    f123: "",                                                                   // 123	Remarks Medical
+    f124: "",                                                                   // 124	Remark Type Parole
+    f125: "",                                                                   // 125	Remarks Parole
+    f126: "",                                                                   // 126	Remark Type Discipline
+    f127: "",                                                                   // 127	Remarks Discipline
+    f128: "",                                                                   // 128	Remark Type General
+    f129: "",                                                                   // 129	Remarks General
+    f130: "",                                                                   // 130	Remark Type Reception
+    f131: "",                                                                   // 131	Remarks Reception
+    f132: "",                                                                   // 132	Remark Type Labour
+    f133: "",                                                                   // 133	Remarks Labour
 
     f134: o.ltrn.fromAgencyLocationId,                                          // 134	Movement Establishment Name
     f135: o.ltrn.movementReasonCode,                                            // 135	Transfer Reason
@@ -438,8 +472,8 @@ module.exports.build = (data) => {
     //     145e	Diary Details - Escort Type
     f145f: formatAlert(o.notForRelease),                                        // 145f	Diary Details - Not For Release Alert
     f146: formatLicenseType(o.licence),                                         // 146	Licence Type
-    f147: otherOffences(o).map(c => c.offenceCode).join(','),                   // 147	Other Offences
-    f148: o.activeAlerts.map(formatAlert).join(','),                            // 148 (a&b)	Active Alerts
+    f147: [...otherOffences(o).reduce((x, c) => x.add(c.offenceCode), new Set())], // 147	Other Offences
+    f148: o.activeAlerts.map(formatAlert),                                      // 148 (a&b)	Active Alerts
     // 149	Court Outcome
     // 150	Court Code
     // 151	Court Name
@@ -452,6 +486,13 @@ module.exports.build = (data) => {
     //     152f	Activity End Min
     f153: o.scd.tused,                                                          // 153	Top Up Supervision Expiry Date
   };
+
+  for (let i = 0; i < 153; ) {
+    i++;
+
+    model[`f${i}`] = model[`f${i}`] ||
+        (~['f31', 'f62', 'f63', 'f145', 'f147', 'f148', 'f152'].indexOf(`f${i}`) ? [] : "");
+  }
 
   return model;
 };
