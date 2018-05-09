@@ -3,6 +3,7 @@ const helpers = require('../helpers');
 
 const getFirst = a => a[0] || {};
 const getLast = a => a[a.length - 1] || {};
+const withList = a => a || [];
 
 const getTransfers = o =>
   (o.movements || []).filter(oem => (
@@ -317,6 +318,31 @@ const getCheckHoldAlerts = o =>
     return x;
   }, { VUL: 'N', V_45_46: 'N', SH_STS: 'N' });
 
+const getOffenceGroups = o =>
+  withList(o.charges).reduce((x, oc) => {
+    x.drugOffences = ~oc.offenceIndicatorCodes.indexOf('D') ? true : x.drugOffences;
+    x.harassmentOffences = ~oc.offenceIndicatorCodes.indexOf('H') ? true : x.harassmentOffences;
+    x.raciallyAggravated = ~oc.offenceIndicatorCodes.indexOf('RA') ? true : x.raciallyAggravated;
+    x.religiouslyAggravated = ~oc.offenceIndicatorCodes.indexOf('REA') ? true : x.religiouslyAggravated;
+    x.sexual = ~oc.offenceIndicatorCodes.indexOf('S') ? true : x.sexual;
+    x.riskToChildren = ~oc.offenceIndicatorCodes.indexOf('S1') ? true : x.riskToChildren;
+    x.sexOffenderRegister = ~oc.offenceIndicatorCodes.indexOf('SOR') ? true : x.sexOffenderRegister;
+    x.violent = ~oc.offenceIndicatorCodes.indexOf('V') ? true : x.violent;
+    x.victimOffences = ~oc.offenceIndicatorCodes.indexOf('VO') ? true : x.victimOffences;
+
+    return x;
+  }, {
+    drugOffences: false,
+    harassmentOffences: false,
+    raciallyAggravated: false,
+    religiouslyAggravated: false,
+    sexual: false,
+    riskToChildren: false,
+    sexOffenderRegister: false,
+    violent: false,
+    victimOffences: false,
+  });
+
 const getPhysicals = o => {
   let physicals = getFirst((o.physicals || []).filter(op => (op.bookingId === o.mainBooking.offenderBookingId)));
 
@@ -448,6 +474,7 @@ module.exports.build = (data) => {
     ['earliestReleaseDate', earliestReleaseDate],
     ['physicals', getPhysicals],
     ['IEPLevel', getIEPLevel],
+    ['offenceGroups', getOffenceGroups]
   ].reduce((x, p) => { x[p[0]] = p[1](x); return x; }, Object.assign({}, data));
 
   o.maternityStatus = getMaternityStatus(o, o.sysdate);
@@ -504,15 +531,15 @@ module.exports.build = (data) => {
     home_no_fixed_address: o.homeAddress.noFixedAddress,
 
 //pivotted_offender_addresses_q
-    next_of_kin_flat: o.nextOfKin.flat,
-    next_of_kin_premise: o.nextOfKin.premise,
-    next_of_kin_street: o.nextOfKin.street,
-    next_of_kin_locality: o.nextOfKin.locality,
-    next_of_kin_city: o.nextOfKin.city,
-    next_of_kin_county: o.nextOfKin.county,
-    next_of_kin_postal_code: o.nextOfKin.postal_code,
-    next_of_kin_country: o.nextOfKin.country,
-    next_of_kin_no_fixed_address: o.nextOfKin.no_fixed_address,
+    next_of_kin_flat: getFirst(withList(o.nextOfKin.addresses)).flat,
+    next_of_kin_premise: getFirst(withList(o.nextOfKin.addresses)).premise,
+    next_of_kin_street: getFirst(withList(o.nextOfKin.addresses)).street,
+    next_of_kin_locality: getFirst(withList(o.nextOfKin.addresses)).locality,
+    next_of_kin_city: getFirst(withList(o.nextOfKin.addresses)).city,
+    next_of_kin_county: getFirst(withList(o.nextOfKin.addresses)).county,
+    next_of_kin_postal_code: getFirst(withList(o.nextOfKin.addresses)).postalCode,
+    next_of_kin_country: getFirst(withList(o.nextOfKin.addresses)).country,
+    next_of_kin_no_fixed_address: getFirst(withList(o.nextOfKin.addresses)).noFixedAddress,
 
 //pivotted_offender_addresses_q
     discharge_flat: o.dischargeAddress.flat,
@@ -596,18 +623,16 @@ module.exports.build = (data) => {
     main_offence_code: o.mainOffence.offenceCode,
     main_offence_statute_code: o.mainOffence.statuteCode,
 
-/*
 //offence_groups_q
-    drug_offences: coalesce(og.drug_offences, 'N'),
-    harassment_offences: coalesce(og.harassment_offences, 'N'),
-    racially_aggravated: coalesce(og.racially_aggravated, 'N'),
-    religiously_aggravated: coalesce(og.religiously_aggravated, 'N'),
-    sexual: coalesce(og.sexual, 'N'),
-    risk_to_children: coalesce(og.risk_to_children, 'N'),
-    sex_offender_register: coalesce(og.sex_offender_register, 'N'),
-    violent: coalesce(og.violent, 'N'),
-    victim_offences: coalesce(og.victim_offences, 'N'),
-*/
+    drug_offences: (o.offenceGroups.drugOffences ? 'Y' : 'N'),
+    harassment_offences: (o.offenceGroups.harassment_offences ? 'Y' : 'N'),
+    racially_aggravated: (o.offenceGroups.racially_aggravated ? 'Y' : 'N'),
+    religiously_aggravated: (o.offenceGroups.religiously_aggravated ? 'Y' : 'N'),
+    sexual: (o.offenceGroups.sexual ? 'Y' : 'N'),
+    risk_to_children: (o.offenceGroups.risk_to_children ? 'Y' : 'N'),
+    sex_offender_register: (o.offenceGroups.sex_offender_register ? 'Y' : 'N'),
+    violent: (o.offenceGroups.violent ? 'Y' : 'N'),
+    victim_offences: (o.offenceGroups.victim_offences ? 'Y' : 'N'),
 
 /*
 //rehab_decision_provider_q

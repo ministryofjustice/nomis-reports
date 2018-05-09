@@ -30,8 +30,8 @@ const getContactPersons = o =>
   withList(o.contactPersons)
     .filter(ocp => (
       ocp.bookingId === o.ob.offenderBookingId &&
-      (ocp.addresses && ocp.addresses[0] && ocp.addresses[0].endDate) &&
-      (ocp.person && ocp.person.active)
+      ocp.active &&
+      !getFirst(withList(ocp.addresses)).endDate
     ));
 
 const getReleaseDetails = o =>
@@ -430,128 +430,128 @@ module.exports.build = (data) => {
   ].reduce((x, p) => { x[p[0]] = p[1](x); return x; }, Object.assign({}, data));
 
   let model = {
-    f1: o.sysdate.format('DD/MM/YYYY'),                                         // 1	System Date
-    f2: "",                                                                     // 2	Establishment
-    f3: o.ob.agencyLocationId,                                                  // 3	Prison Code
-    f4: o.nomsId,                                                               // 4	NOMS Number
-    f5: o.sexCode,                                                              // 5	Gender Description
-    f6: o.ob.bookingNo,                                                         // 6	Booking Number
-    f7: o.surname,                                                              // 7	Last Name
-    f8: o.firstName,                                                            // 8	Given Name 1
-    f9: o.middleNames,                                                          // 9	Given Name 2
-    f10: o.offenderIdentifiers.CRO,                                             // 10	CRO Number
-    f11: o.physicals.profileDetails.YOUTH,                                      // 11	Adult or YP
-    f12: getAge(o),                                                             // 12	Age
-    f13: moment(o.dateOfBirth).format('DD/MM/YYYY'),                            // 13	DOB
-    f14: o.physicals.profileDetails.NAT,                                        // 14	Nationality Description
-    f15: o.raceCode,                                                            // 15	Ethnicity Description
-    f16: o.physicals.profileDetails.RELF,                                       // 16	Religion Description
-    f17: o.physicals.profileDetails.MARITAL,                                    // 17	Marital Status Description
-    f18: getMaternityStatus(o, o.sysdate).problemCode,                          // 18	Maternity Status Description
-    f19: o.ob.livingUnitId,                                                     // 19	Cell Location
-    f20: o.IEPLevel.iepLevel,                                                   // 20	Incentive Level Description
-    f21: o.employments.occupationsCode,                                         // 21	Occupation Description
-    f22: formatTransferReasonCode(o.ftrn),                                      // 22	Transfer Reason
-    f23: moment(o.ob.startDate).format('DD/MM/YYYY'),                           // 23	First Reception Date
-    f24: getCustodyStatus(o),                                                   // 24	Custody Status
-    f25: o.imprisonmentStatus.imprisonmentStatus,                               // 25	Main Legal Status Description
-    f26: o.secCat.reviewSupLevelType,                                           // 26	Security Category Description
-    f27: (o.secCat.nextReviewDate && moment(o.secCat.nextReviewDate).format('DD/MM/YYYY')),// 27	Security Category Review Date
-    f28: (o.osc.effectiveSentenceLength || '').split(/\//gmi)[0],               // 28	Sentence Length (Years)
-    f29: (o.osc.effectiveSentenceLength || '').split(/\//gmi)[1],               // 29	Sentence Length (Months)
-    f30: (o.osc.effectiveSentenceLength || '').split(/\//gmi)[2],               // 30	Sentence Length (Days)
-    f31: o.previousBookingNos,                                                  // 31	Previous Booking Number
-    f32: earliestReleaseDate(o).format('DD/MM/YYYY'),                           // 32	Earliest Release Date
-    f33: o.checkHoldAlerts.T_TG,                                                // 33	Check Hold Governor
-    f34: "",                                                                    // 34	Check Hold General (to be left blank)
-    f34: "",                                                                    // 35	Check Hold Discipline (to be left blank)
-    f36: o.checkHoldAlerts.T_TAH,                                               // 36	Check Hold Allocation
-    f37: o.checkHoldAlerts.T_TSE,                                               // 37	Check Hold Security
-    f38: o.checkHoldAlerts.T_TM,                                                // 38	Check Hold Medical
-    f39: o.checkHoldAlerts.T_TPR,                                               // 39	Check Hold Parole
-    // 40	Date Of First Conviction
-    f41: moment(o.os.startDate).format('DD/MM/YYYY'),                           // 41	Date First Sentenced
-    f42: o.checkHoldAlerts.H_HA,                                                // 42	ACCT Status (F2052)
-    f43: highestRankedOffence(o).offenceCode,                                   // 43	Highest Ranked Offence
-    f34: "",                                                                    // 44	Status Rank (to be left blank)
-    f45: o.pendingTransfer.toAgencyLocationId,                                  // 45	Pending Transfers (Full Establishment Name)
-    f46: o.pendingTransfer.fromAgencyLocationId,                                // 46	Received From
-    f47: o.checkHoldAlerts.VUL,                                                 // 47	Vulnerable Prisoner Alert
-    f48: o.offenderIdentifiers.PNC,                                             // 48	PNC Number
-    f49: dischargeEmployment(o).employmentPostCode,                             // 49	Employment Status at Discharge
-    f50: receptionEmployment(o).employmentPostCode,                             // 50	Employment Status at Reception
-    f51: formatAlert(o.MAPPA),                                                  // 51	MAPPA Levels (Schedule 1 Sex Offender)
-    f52: o.isSexOffender ? 'Y' : 'N',                                           // 52	Sex Offender
-    // 53	Supervising Service
-    f54: o.physicals.physicalAttributes.heightCM / 100,                         // 54	Height (metres)
-    f55: o.physicals.profileDetails.COMPL,                                      // 55	Complexion
-    f56: o.physicals.profileDetails.HAIR,                                       // 56	Hair Colour
-    f57: o.physicals.profileDetails.L_EYE_C,                                    // 57	Left Eye
-    f58: o.physicals.profileDetails.R_EYE_C,                                    // 58	Right Eye
-    f59: o.physicals.profileDetails.BUILD,                                      // 59	Build
-    f60: o.physicals.profileDetails.FACE,                                       // 60	Facial Shape
-    f61: o.physicals.profileDetails.FACIAL_HAIR,                                // 61	Facial Hair
-    f62: o.physicals.identifyingMarks.HEAD,                                     // 62	Physical Mark  Head
-    f63: o.physicals.identifyingMarks.BODY,                                     // 63	Physical Mark Body
-    f64: moment(o.osc.effectiveSentenceEndDate).diff(moment(o.os.startDate), 'years'),// 64	Effective Sentence Length
-    f55: moment(o.releaseDetails.releaseDate).format('DD/MM/YYYY'),             // 65	Confirmed Release Date
-    f66: formatReleaseReason(o.releaseDetails),                                 // 66	Release Reason
-    f67: o.scd.sed,                                                             // 67	SED
-    f68: o.scd.hdced,                                                           // 68	HDCED
-    f69: o.scd.hdcad,                                                           // 69	HDCAD
-    f70: o.scd.ped,                                                             // 70	PED
-    f71: o.scd.crd,                                                             // 71	CRD
-    f72: o.scd.npd,                                                             // 72	NPD
-    f73: o.scd.led,                                                             // 73	LED
-    f74: o.secCat.evaluationDate && moment(o.secCat.evaluationDate).format('DD/MM/YYYY'),// 74	Date Security Category Changed
-    f75: o.checkHoldAlerts.V_45_46,                                             // 75	Rule 45/YOI Rule 49
-    f76: o.checkHoldAlerts.SH_STS,                                              // 76	ACCT (Self Harm) Status
-    f77: o.checkHoldAlerts.SH_Date,                                             // 77  ACCT (Self Harm) Start Date
+    sysdate_f1: o.sysdate.format('DD/MM/YYYY'),                                         // 1	System Date
+    establishment_f2: "",                                                                     // 2	Establishment
+    estab_code_f3: o.ob.agencyLocationId,                                                  // 3	Prison Code
+    nomis_id_f4: o.nomsId,                                                               // 4	NOMS Number
+    gender_f5: o.sexCode,                                                              // 5	Gender Description
+    prison_no_f6: o.ob.bookingNo,                                                         // 6	Booking Number
+    surname_f7: o.surname,                                                              // 7	Last Name
+    forename1_f8: o.firstName,                                                            // 8	Given Name 1
+    forename2_f9: o.middleNames,                                                          // 9	Given Name 2
+    cro_f10: o.offenderIdentifiers.CRO,                                             // 10	CRO Number
+    adult_yp_f11: o.physicals.profileDetails.YOUTH,                                      // 11	Adult or YP
+    age_f12: getAge(o),                                                             // 12	Age
+    dob_f13: moment(o.dateOfBirth).format('DD/MM/YYYY'),                            // 13	DOB
+    nationality_f14: o.physicals.profileDetails.NAT,                                        // 14	Nationality Description
+    ethnicity_f15: o.raceCode,                                                            // 15	Ethnicity Description
+    religion_f16: o.physicals.profileDetails.RELF,                                       // 16	Religion Description
+    marital_f17: o.physicals.profileDetails.MARITAL,                                    // 17	Marital Status Description
+    maternity_status_f18: getMaternityStatus(o, o.sysdate).problemCode,                          // 18	Maternity Status Description
+    location_f19: o.ob.livingUnitId,                                                     // 19	Cell Location
+    incentive_band_f20: o.IEPLevel.iepLevel,                                                   // 20	Incentive Level Description
+    occupation_v21: o.employments.occupationsCode,                                         // 21	Occupation Description
+    transfer_reason_f22: formatTransferReasonCode(o.ftrn),                                      // 22	Transfer Reason
+    first_reception_date_f23: moment(o.ob.startDate).format('DD/MM/YYYY'),                           // 23	First Reception Date
+    custody_status_f24: getCustodyStatus(o),                                                   // 24	Custody Status
+    inmate_status_f25: o.imprisonmentStatus.imprisonmentStatus,                               // 25	Main Legal Status Description
+    sec_cat_f26: o.secCat.reviewSupLevelType,                                           // 26	Security Category Description
+    sec_cat_next_review_f27: (o.secCat.nextReviewDate && moment(o.secCat.nextReviewDate).format('DD/MM/YYYY')),// 27	Security Category Review Date
+    sentence_years_f28: (o.osc.effectiveSentenceLength || '').split(/\//gmi)[0],               // 28	Sentence Length (Years)
+    sentence_months_f29: (o.osc.effectiveSentenceLength || '').split(/\//gmi)[1],               // 29	Sentence Length (Months)
+    sentence_days_f30: (o.osc.effectiveSentenceLength || '').split(/\//gmi)[2],               // 30	Sentence Length (Days)
+    previous_prison_no_f31: o.previousBookingNos,                                                  // 31	Previous Booking Number
+    earliest_release_date_f32: earliestReleaseDate(o).format('DD/MM/YYYY'),                           // 32	Earliest Release Date
+    check_hold_governor_f33: o.checkHoldAlerts.T_TG,                                                // 33	Check Hold Governor
+    // 34	Check Hold General (to be left blank)
+    // 35	Check Hold Discipline (to be left blank)
+    check_hold_allocation_36: o.checkHoldAlerts.T_TAH,                                               // 36	Check Hold Allocation
+    check_hold_security_37: o.checkHoldAlerts.T_TSE,                                               // 37	Check Hold Security
+    check_hold_medical_38: o.checkHoldAlerts.T_TM,                                                // 38	Check Hold Medical
+    check_hold_parole_39: o.checkHoldAlerts.T_TPR,                                               // 39	Check Hold Parole
+    date_of_first_conviction_40: "",// 40	Date Of First Conviction
+    date_first_sentenced_f41: moment(o.os.startDate).format('DD/MM/YYYY'),                           // 41	Date First Sentenced
+    f2052_status_42: o.checkHoldAlerts.H_HA,                                                // 42	ACCT Status (F2052)
+    highest_ranked_offence_f43: highestRankedOffence(o).offenceCode,                                   // 43	Highest Ranked Offence
+    // 44	Status Rank (to be left blank)
+    pending_transfers_f45: o.pendingTransfer.toAgencyLocationId,                                  // 45	Pending Transfers (Full Establishment Name)
+    received_from_f46: o.pendingTransfer.fromAgencyLocationId,                                // 46	Received From
+    vulnerable_prisoner_alert_f47: o.checkHoldAlerts.VUL,                                                 // 47	Vulnerable Prisoner Alert
+    pnc_f48: o.offenderIdentifiers.PNC,                                             // 48	PNC Number
+    emplmnt_status_discharge_f49: dischargeEmployment(o).employmentPostCode,                             // 49	Employment Status at Discharge
+    emplmnt_status_reception_f50: receptionEmployment(o).employmentPostCode,                             // 50	Employment Status at Reception
+    schedule_1_sex_offender_f51: formatAlert(o.MAPPA),                                                  // 51	MAPPA Levels (Schedule 1 Sex Offender)
+    sex_offender_f52: o.isSexOffender ? 'Y' : 'N',                                           // 52	Sex Offender
+// 53	Supervising Service
+    height_metres_f54: o.physicals.physicalAttributes.heightCM / 100,                         // 54	Height (metres)
+    complexion_f55: o.physicals.profileDetails.COMPL,                                      // 55	Complexion
+    hair_56: o.physicals.profileDetails.HAIR,                                       // 56	Hair Colour
+    left_eye_57: o.physicals.profileDetails.L_EYE_C,                                    // 57	Left Eye
+    right_eye_58: o.physicals.profileDetails.R_EYE_C,                                    // 58	Right Eye
+    build_59: o.physicals.profileDetails.BUILD,                                      // 59	Build
+    face_60: o.physicals.profileDetails.FACE,                                       // 60	Facial Shape
+    facial_hair_61: o.physicals.profileDetails.FACIAL_HAIR,                                // 61	Facial Hair
+    marks_head_f62: o.physicals.identifyingMarks.HEAD,                                     // 62	Physical Mark  Head
+    marks_body_f63: o.physicals.identifyingMarks.BODY,                                     // 63	Physical Mark Body
+    sentence_length_f64: moment(o.osc.effectiveSentenceEndDate).diff(moment(o.os.startDate), 'years'),// 64	Effective Sentence Length
+    release_date_f65: moment(o.releaseDetails.releaseDate).format('DD/MM/YYYY'),             // 65	Confirmed Release Date
+    release_name_f66: formatReleaseReason(o.releaseDetails),                                 // 66	Release Reason
+    sed_f67: o.scd.sed,                                                             // 67	SED
+    hdced_f68: o.scd.hdced,                                                           // 68	HDCED
+    hdcad_f69: o.scd.hdcad,                                                           // 69	HDCAD
+    ped_f70: o.scd.ped,                                                             // 70	PED
+    crd_f71: o.scd.crd,                                                             // 71	CRD
+    npd_f72: o.scd.npd,                                                             // 72	NPD
+    led_f73: o.scd.led,                                                             // 73	LED
+    date_sec_cat_changed_f74: o.secCat.evaluationDate && moment(o.secCat.evaluationDate).format('DD/MM/YYYY'),// 74	Date Security Category Changed
+    rule_45_yoi_rule_46_f75: o.checkHoldAlerts.V_45_46,                                             // 75	Rule 45/YOI Rule 49
+    f2052sh_f76: o.checkHoldAlerts.SH_STS,                                              // 76	ACCT (Self Harm) Status
+    f2052_start_f77: o.checkHoldAlerts.SH_Date,                                             // 77  ACCT (Self Harm) Start Date
 
-    f78: getNFA(o.dischargeAddr),                                               // 78	Discharge Address Relationship
-    f79: formatAddressLine1(o.dischargeAddr),                                   // 79	Discharge Address Line 1
-    f80: o.dischargeAddr.locality,                                              // 80	Discharge Address Line 2
-    f81: o.dischargeAddr.cityCode,                                              // 81	Discharge Address Line 3
-    f82: o.dischargeAddr.countyCode,                                            // 82	Discharge Address Line 4
-    f83: o.dischargeAddr.countryCode,                                           // 83	Discharge Address Line 5
-    f84: o.dischargeAddr.postalCode,                                            // 84	Discharge Address Line 6
-    f85: o.dischargeAddr.phoneNo,                                               // 85	Discharge Address Line 7
+    nfa_f78: getNFA(o.dischargeAddr),                                               // 78	Discharge Address Relationship
+    address1_f79: formatAddressLine1(o.dischargeAddr),                                   // 79	Discharge Address Line 1
+    address2_f80: o.dischargeAddr.locality,                                              // 80	Discharge Address Line 2
+    address3_f81: o.dischargeAddr.cityCode,                                              // 81	Discharge Address Line 3
+    address4_f82: o.dischargeAddr.countyCode,                                            // 82	Discharge Address Line 4
+    address5_f83: o.dischargeAddr.countryCode,                                           // 83	Discharge Address Line 5
+    address6_f84: o.dischargeAddr.postalCode,                                            // 84	Discharge Address Line 6
+    address7_f85: o.dischargeAddr.phoneNo,                                               // 85	Discharge Address Line 7
 
-    f86: getNFA(o.recepAddr),                                                   // 86	Reception Address Relationship
-    f87: formatAddressLine1(o.recepAddr),                                       // 87	Reception Address Line 1
-    f88: o.recepAddr.locality,                                                  // 88	Reception Address Line 2
-    f89: o.recepAddr.cityCode,                                                  // 89	Reception Address Line 3
-    f90: o.recepAddr.countyCode,                                                // 90	Reception Address Line 4
-    f91: o.recepAddr.countryCode,                                               // 91	Reception Address Line 5
-    f92: o.recepAddr.postalCode,                                                // 92	Reception Address Line 6
-    f93: o.recepAddr.phoneNo,                                                   // 93	Reception Address Line 7
+    nfa_f86: getNFA(o.recepAddr),                                                   // 86	Reception Address Relationship
+    address1_f87: formatAddressLine1(o.recepAddr),                                       // 87	Reception Address Line 1
+    address2_f88: o.recepAddr.locality,                                                  // 88	Reception Address Line 2
+    address3_f89: o.recepAddr.cityCode,                                                  // 89	Reception Address Line 3
+    address4_f90: o.recepAddr.countyCode,                                                // 90	Reception Address Line 4
+    address5_f91: o.recepAddr.countryCode,                                               // 91	Reception Address Line 5
+    address6_f92: o.recepAddr.postalCode,                                                // 92	Reception Address Line 6
+    address7_f93: o.recepAddr.phoneNo,                                                   // 93	Reception Address Line 7
 
-    f94: formatAddressLine1(o.homeAddr),                                        // 94	Home Address Line 1
-    f95: o.homeAddr.locality,                                                   // 95	Home Address Line 2
-    f96: o.homeAddr.cityCode,                                                   // 96	Home Address Line 3
-    f97: o.homeAddr.countyCode,                                                 // 97	Home Address Line 4
-    f98: o.homeAddr.countryCode,                                                // 98	Home Address Line 5
-    f99: o.homeAddr.postalCode,                                                 // 99	Home Address Line 6
-    f100: o.homeAddr.phoneNo,                                                   // 100	Home Address Line 7
+    address1_f94: formatAddressLine1(o.homeAddr),                                        // 94	Home Address Line 1
+    address2_f95: o.homeAddr.locality,                                                   // 95	Home Address Line 2
+    address3_f96: o.homeAddr.cityCode,                                                   // 96	Home Address Line 3
+    address4_f97: o.homeAddr.countyCode,                                                 // 97	Home Address Line 4
+    address5_f98: o.homeAddr.countryCode,                                                // 98	Home Address Line 5
+    address6_f99: o.homeAddr.postalCode,                                                 // 99	Home Address Line 6
+    address7_f100: o.homeAddr.phoneNo,                                                   // 100	Home Address Line 7
 
-    f101: formatContactPersonName(o.nextOfKin),
-    f102: formatContactPersonRelationship(o.nextOfKin),                         // 102	NOK Address Relationship
-    f103: (o.nextOfKin && formatAddressLine1(o.nextOfKin.addresses[0])),             // 103	NOK Address Line 1
-    f104: (o.nextOfKin && o.nextOfKin.addresses[0].locality),                        // 104	NOK Address Line 2
-    f105: (o.nextOfKin && o.nextOfKin.addresses[0].cityCode),                        // 105	NOK Address Line 3
-    f106: (o.nextOfKin && o.nextOfKin.addresses[0].countyCode),                      // 106	NOK Address Line 4
-    f107: (o.nextOfKin && o.nextOfKin.addresses[0].countryCode),                     // 107	NOK Address Line 5
-    f108: (o.nextOfKin && o.nextOfKin.addresses[0].postalCode),                      // 108	NOK Address Line 6
-    f109: (o.nextOfKin && o.nextOfKin.addresses[0].phoneNo),                         // 109	NOK Address Line 7
+    nok_name_f101: formatContactPersonName(o.nextOfKin),
+    nfa_f102: formatContactPersonRelationship(o.nextOfKin),                         // 102	NOK Address Relationship
+    address1_f103: (o.nextOfKin && formatAddressLine1(getFirst(withList(o.nextOfKin.addresses)))),             // 103	NOK Address Line 1
+    address2_f104: (o.nextOfKin && getFirst(withList(o.nextOfKin.addresses)).locality),                        // 104	NOK Address Line 2
+    address3_f105: (o.nextOfKin && getFirst(withList(o.nextOfKin.addresses)).cityCode),                        // 105	NOK Address Line 3
+    address4_f106: (o.nextOfKin && getFirst(withList(o.nextOfKin.addresses)).countyCode),                      // 106	NOK Address Line 4
+    address5_f107: (o.nextOfKin && getFirst(withList(o.nextOfKin.addresses)).countryCode),                     // 107	NOK Address Line 5
+    address6_f108: (o.nextOfKin && getFirst(withList(o.nextOfKin.addresses)).postalCode),                      // 108	NOK Address Line 6
+    address7_f109: (o.nextOfKin && getFirst(withList(o.nextOfKin.addresses)).phoneNo),                         // 109	NOK Address Line 7
 
-    f110: formatContactPersonName(o.offenderManager),                           // 110	Offender Manager
-    f111: formatAddressLine1(o.offenderManager.addresses[0]),                        // 111	Probation Address Line 1
-    f112: (o.offenderManager && o.offenderManager.addresses[0].locality),                    // 112	Probation Address Line 2
-    f113: (o.offenderManager && o.offenderManager.addresses[0].cityCode),                    // 113	Probation Address Line 3
-    f114: (o.offenderManager && o.offenderManager.addresses[0].countyCode),                  // 114	Probation Address Line 4
-    f115: (o.offenderManager && o.offenderManager.addresses[0].countryCode),                 // 115	Probation Address Line 5
-    f116: (o.offenderManager && o.offenderManager.addresses[0].postalCode),                  // 116	Probation Address Line 6
-    f117: (o.offenderManager && o.offenderManager.addresses[0].phoneNo),                     // 117	Probation Address Line 7
+    prob_name_f110: formatContactPersonName(o.offenderManager),                           // 110	Offender Manager
+    address1_f111: (o.offenderManager && formatAddressLine1(getFirst(withList(o.offenderManager.addresses)))),  // 111	Probation Address Line 1
+    address2_f112: (o.offenderManager && getFirst(withList(o.offenderManager.addresses)).locality),       // 112	Probation Address Line 2
+    address3_f113: (o.offenderManager && getFirst(withList(o.offenderManager.addresses)).cityCode),       // 113	Probation Address Line 3
+    address4_f114: (o.offenderManager && getFirst(withList(o.offenderManager.addresses)).countyCode),     // 114	Probation Address Line 4
+    address5_f115: (o.offenderManager && getFirst(withList(o.offenderManager.addresses)).countryCode),    // 115	Probation Address Line 5
+    address6_f116: (o.offenderManager && getFirst(withList(o.offenderManager.addresses)).postalCode),     // 116	Probation Address Line 6
+    address7_f117: (o.offenderManager && getFirst(withList(o.offenderManager.addresses)).phoneNo),        // 117	Probation Address Line 7
 
     f118: "",                                                                   // 118	Remark Type Allocation
     f119: "",                                                                   // 119	Remarks Allocation
@@ -570,46 +570,39 @@ module.exports.build = (data) => {
     f132: "",                                                                   // 132	Remark Type Labour
     f133: "",                                                                   // 133	Remarks Labour
 
-    f134: o.ltrn.fromAgencyLocationId,                                          // 134	Movement Establishment Name
-    f135: o.ltrn.movementReasonCode,                                            // 135	Transfer Reason
-    f136: moment(o.lmove.movementDate).format('DD/MM/YYYY'),                    // 136	Date Of Movement
-    f137: moment(o.lmove.movementTime).format('HH'),                            // 137	Hour of Movement
-    f138: moment(o.lmove.movementTime).format('mm'),                            // 138	Minute Of Movement
-    f139: moment(o.lmove.movementTime).format('ss'),                            // 139	Second Of Movement
-    f140: o.lmove.movementReasonCode,                                           // 140	Movement Code
-    f141: o.courtEscort.toAgencyLocationId,                                     // 141	Court Name
-    f142: o.courtEscort.escortCode,                                             // 142	Escort Type
-    f143: moment(o.firstOutMovement.movementDate).format('DD/MM/YYYY'),         // 143	Date Of First Movement
-    // 144	Employed
-    // 145	Diary Details
-    //     145a	Diary Details - Date (Movement)
-    //     145b	Diary Details - Time (Movement)
-    //     145c	Diary Details - Movement Reason Code
-    //     145d	Diary Details - Movement Comment Text
-    //     145e	Diary Details - Escort Type
-    f145f: formatAlert(o.notForRelease),                                        // 145f	Diary Details - Not For Release Alert
-    f146: formatLicenseType(o.licence),                                         // 146	Licence Type
-    f147: [...otherOffences(o).reduce((x, c) => x.add(c.offenceCode), new Set())], // 147	Other Offences
-    f148: o.activeAlerts.map(formatAlert),                                      // 148 (a&b)	Active Alerts
-    // 149	Court Outcome
-    // 150	Court Code
-    // 151	Court Name
-    // 152	Activity Details
-    //     152a	Activity Description
-    //     152b	Activity Location
-    //     152c	Activity Start Hour
-    //     152d	Activity Start Min
-    //     152e	Activity End Hour
-    //     152f	Activity End Min
-    f153: o.scd.tused,                                                          // 153	Top Up Supervision Expiry Date
+    sending_estab_f134: o.ltrn.fromAgencyLocationId,                                          // 134	Movement Establishment Name
+    reason_f135: o.ltrn.movementReasonCode,                                            // 135	Transfer Reason
+    movement_date_f136: moment(o.lmove.movementDate).format('DD/MM/YYYY'),                    // 136	Date Of Movement
+    movement_hour_f137: moment(o.lmove.movementTime).format('HH'),                            // 137	Hour of Movement
+    movement_min_f138: moment(o.lmove.movementTime).format('mm'),                            // 138	Minute Of Movement
+    movement_sec_f139: moment(o.lmove.movementTime).format('ss'),                            // 139	Second Of Movement
+    movement_code_f140: o.lmove.movementReasonCode,                                           // 140	Movement Code
+    court_f141: o.courtEscort.toAgencyLocationId,                                     // 141	Court Name
+    escort_f142: o.courtEscort.escortCode,                                             // 142	Escort Type
+    first_out_mov_post_adm_f143: moment(o.firstOutMovement.movementDate).format('DD/MM/YYYY'),         // 143	Date Of First Movement
+// 144	Employed
+// 145	Diary Details
+//     145a	Diary Details - Date (Movement)
+//     145b	Diary Details - Time (Movement)
+//     145c	Diary Details - Movement Reason Code
+//     145d	Diary Details - Movement Comment Text
+//     145e	Diary Details - Escort Type
+    security_not_for_release_145f: formatAlert(o.notForRelease),                                        // 145f	Diary Details - Not For Release Alert
+    licence_type_f146: formatLicenseType(o.licence),                                         // 146	Licence Type
+    other_offences_f147: [...otherOffences(o).reduce((x, c) => x.add(c.offenceCode), new Set())], // 147	Other Offences
+    active_alerts_f148: o.activeAlerts.map(formatAlert),                                      // 148 (a&b)	Active Alerts
+// 149	Court Outcome
+// 150	Court Code
+// 151	Court Name
+// 152	Activity Details
+//     152a	Activity Description
+//     152b	Activity Location
+//     152c	Activity Start Hour
+//     152d	Activity Start Min
+//     152e	Activity End Hour
+//     152f	Activity End Min
+    tused_f153: o.scd.tused,                                                          // 153	Top Up Supervision Expiry Date
   };
-
-  for (let i = 0; i < 153; ) {
-    i++;
-
-    model[`f${i}`] = model[`f${i}`] ||
-        (~['f31', 'f62', 'f63', 'f145', 'f147', 'f148', 'f152'].indexOf(`f${i}`) ? [] : "");
-  }
 
   return model;
 };
