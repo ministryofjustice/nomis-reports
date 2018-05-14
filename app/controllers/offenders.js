@@ -15,8 +15,9 @@ let setUpServices = (config) => {
   setUpServices = () => {};
 };
 
-const listAlerts = (data) =>
-  services.booking.listAlerts(data.bookings[0].offenderBookingId)
+const withAlerts = (data) =>
+  services.booking
+    .listAlerts(data.bookings[0].offenderBookingId)
     .catch(err => {
       if (err.status === 404) {
         return Promise.resolve([]);
@@ -31,21 +32,24 @@ const list = (req, res, next) =>
     .catch(helpers.failWithError(res, next));
 
 const retrieveDetails = (req, res, next) =>
-  services.reports.getDetails(req.params.offenderId)
-    .then(listAlerts)
+  services.reports
+    .getDetails(req.params.offenderId)
+    .then(withAlerts)
     .then(data => res.json(data))
     .catch(helpers.failWithError(res, next));
 
 const retrieveAODetails = (req, res, next) =>
-  services.reports.getDetails(req.params.offenderId)
-    .then(listAlerts)
+  services.reports
+    .getDetails(req.params.offenderId)
+    .then(withAlerts)
     .then(AOModel.build)
     .then(data => res.json(data))
     .catch(helpers.failWithError(res, next));
 
 const retrieveCDEDetails = (req, res, next) =>
-  services.reports.getDetails(req.params.offenderId)
-    .then(listAlerts)
+  services.reports
+    .getDetails(req.params.offenderId)
+    .then(withAlerts)
     .then(CDEModel.build)
     .then(data => res.json(data))
     .catch(helpers.failWithError(res, next));
