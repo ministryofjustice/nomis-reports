@@ -173,6 +173,7 @@ const getActiveAlerts = o =>
   withList(o.alerts)
     .filter(oa => !oa.expired);
 
+// Multi Agency Public Protection Alert
 const getMAPPAAlerts = o =>
   getFirst(withList(o.alerts)
     .filter(oa => (
