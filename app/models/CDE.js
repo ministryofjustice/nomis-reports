@@ -404,6 +404,9 @@ const isSexOffender = o =>
 const getFirstConviction = o =>
   getLast(withList(o.courtEvents));
 
+const getMostRecentConviction = o =>
+  getFirst(withList(o.courtEvents));
+
 const getFirstSentence = o =>
   getFirst(withList(getFirst(withList(
     getLast(withList(o.courtEvents).filter(ce => withList(getFirst(withList(ce.courtEventCharges)).sentences).length > 0))
@@ -454,6 +457,7 @@ module.exports.build = (data) => {
     ['releaseDetails', getReleaseDetails],
     ['isSexOffender', isSexOffender],
     ['firstConviction', getFirstConviction],
+    ['mostRecentConviction', getMostRecentConviction],
     ['firstSentence', getFirstSentence],
     ['courtOutcome', getCourtOutcome],
   ].reduce((x, p) => { x[p[0]] = p[1](x); return x; }, Object.assign({}, data));
@@ -511,7 +515,7 @@ module.exports.build = (data) => {
     emplmnt_status_reception_f50: receptionEmployment(o).employmentPostCode,
     schedule_1_sex_offender_f51: formatAlert(o.MAPPA),
     sex_offender_f52: (o.isSexOffender ? 'Y' : 'N'),
-// 53	Supervising Service
+    supervising_service_f53: (o.offenderManager && o.offenderManager.address),
     height_metres_f54: o.physicals.physicalAttributes.heightCM / 100,
     complexion_f55: o.physicals.profileDetails.COMPL,
     hair_56: o.physicals.profileDetails.HAIR,
@@ -610,19 +614,13 @@ module.exports.build = (data) => {
     escort_f142: o.offenderCourtEscort.escortCode,
     first_out_mov_post_adm_f143: o.firstOffenderOutMovement.movementDate,
 // 144	Employed
-    /*
-    "Woodwork 2 AM","ALI-WIND-WWW2","08","15","11","45"~
-    "Woodwork 2 AM","ALI-WIND-WWW2","08","15","11","45"~
-    "Woodwork 2 PM","ALI-WIND-WWW2","13","15","16","15"~
-    "Woodwork 2 PM","ALI-WIND-WWW2","13","15","16","15"
-    */
     diary_details_f145: o.diaryDetails.map(odd => formatOffenderDiaryDetail(odd, o)),
     licence_type_f146: formatLicenseType(o.offenderLicense),
     other_offences_f147: [...otherOffences(o).reduce((x, c) => x.add(c.offenceCode), new Set())],
     active_alerts_f148: o.activeAlerts.map(formatAlert),
     court_type_f149: o.courtOutcome.outcomeReasonCode,
-// 150	Court Code
-// 151	Court Name
+    court_code_f150: o.mostRecentConviction.agyLocId,
+    court_name_f151: "",
 // 152	Activity Details
 //     152a	Activity Description
 //     152b	Activity Location
