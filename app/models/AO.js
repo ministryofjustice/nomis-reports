@@ -8,7 +8,7 @@ const withList = a => a || [];
 const getTransfers = o =>
   (o.movements || []).filter(oem => (
     oem.movementTypeCode === 'TRN' &&
-    oem.offenderBookingId === o.mainBooking.offenderBookingId
+    oem.bookingId === o.mainBooking.bookingId
   ));
 
 const getEmployments = o =>
@@ -17,19 +17,19 @@ const getEmployments = o =>
       oe.employmentDate &&
       !oe.terminationDate &&
       oe.terminationDate &&
-      oe.bookingId === o.mainBooking.offenderBookingId
+      oe.bookingId === o.mainBooking.bookingId
     ));
 
 const getCharges = o =>
   (o.charges || [])
     .filter(oc => (
-      oc.bookingId === o.mainBooking.offenderBookingId
+      oc.bookingId === o.mainBooking.bookingId
     ));
 
 const getContactPersons = o =>
   (o.contactPersons || [])
     .filter(ocp => (
-      ocp.bookingId === o.mainBooking.offenderBookingId
+      ocp.bookingId === o.mainBooking.bookingId
     ));
 
 const getMainOffence = o =>
@@ -43,30 +43,30 @@ const getFirstCharge = o =>
 
 const getReleaseDetails = o =>
   (o.releaseDetails || []).filter(ord => (
-    ord.bookingId === o.mainBooking.offenderBookingId
+    ord.bookingId === o.mainBooking.bookingId
   ));
 
 const getSentenceCalculations = o =>
   (o.sentenceCalculations || []).filter(s => (
-    s.bookingId === o.mainBooking.offenderBookingId
+    s.bookingId === o.mainBooking.bookingId
   )).reduce((a, b) => (!a.effectiveSentenceEndDate || moment(b.effectiveSentenceEndDate).diff(a.effectiveSentenceEndDate) > 0 ? b : a), moment(0)) || {};
 
 const getSentence = o =>
   (o.sentences || []).filter(s => (
     s.sentenceStatus === 'A' &&
-    s.bookingId === o.mainBooking.offenderBookingId
+    s.bookingId === o.mainBooking.bookingId
   )).reduce((a, b) => (!a.startDate || moment(b.startDate).diff(a.startDate) > 0 ? b : a), moment(0)) || {};
 
 const getLicense = o =>
   getFirst((o.sentences || []).filter(s => (
     s.sentenceStatus === 'A' &&
-    s.bookingId === o.mainBooking.offenderBookingId &&
+    s.bookingId === o.mainBooking.bookingId &&
     s.sentenceCategory === 'LICENSE'
   )));
 
 const getFirstSentenceAndCounts = o =>
   (o.sentences || [])
-    .filter(s => s.bookingId === o.mainBooking.offenderBookingId)
+    .filter(s => s.bookingId === o.mainBooking.bookingId)
     .reduce((a, b) => ({
       firstSentenced: b.courtDate < a.courtDate ? b.courtDate : a.courtDate || b.courtDate,
       firstActiveSentenceStart: b.sentenceStatus === 'A' && b.startDate < a.startDate ? b.startDate : a.startDate || b.startDate,
@@ -87,7 +87,7 @@ const getIdentifiers = o =>
 
 const getMaternityStatus = (o, sysdate) =>
   getFirst((o.healthProblems || []).filter(hp => (
-    hp.bookingId === o.mainBooking.offenderBookingId &&
+    hp.bookingId === o.mainBooking.bookingId &&
     hp.problemType === 'MATSTAT' &&
     hp.problemStatus === 'ON' &&
   //hp.domain === 'HEALTH_PBLM' &&
@@ -96,7 +96,7 @@ const getMaternityStatus = (o, sysdate) =>
 
 const getSecurityCategory = o =>
   getFirst((o.assessments || []).filter(oa => (
-    oa.offenderBookingId === o.mainBooking.offenderBookingId &&
+    oa.bookingId === o.mainBooking.bookingId &&
     oa.evaluationResultCode === 'APP' &&
     oa.assessStatus === 'A' &&
     oa.assessmentType &&
@@ -320,15 +320,15 @@ const getCheckHoldAlerts = o =>
 
 const getOffenceGroups = o =>
   withList(o.charges).reduce((x, oc) => {
-    x.drugOffences = ~oc.offenceIndicatorCodes.indexOf('D') ? true : x.drugOffences;
-    x.harassmentOffences = ~oc.offenceIndicatorCodes.indexOf('H') ? true : x.harassmentOffences;
-    x.raciallyAggravated = ~oc.offenceIndicatorCodes.indexOf('RA') ? true : x.raciallyAggravated;
-    x.religiouslyAggravated = ~oc.offenceIndicatorCodes.indexOf('REA') ? true : x.religiouslyAggravated;
-    x.sexual = ~oc.offenceIndicatorCodes.indexOf('S') ? true : x.sexual;
-    x.riskToChildren = ~oc.offenceIndicatorCodes.indexOf('S1') ? true : x.riskToChildren;
-    x.sexOffenderRegister = ~oc.offenceIndicatorCodes.indexOf('SOR') ? true : x.sexOffenderRegister;
-    x.violent = ~oc.offenceIndicatorCodes.indexOf('V') ? true : x.violent;
-    x.victimOffences = ~oc.offenceIndicatorCodes.indexOf('VO') ? true : x.victimOffences;
+    x.drugOffences = ~withList(oc.offenceIndicatorCodes).indexOf('D') ? true : x.drugOffences;
+    x.harassmentOffences = ~withList(oc.offenceIndicatorCodes).indexOf('H') ? true : x.harassmentOffences;
+    x.raciallyAggravated = ~withList(oc.offenceIndicatorCodes).indexOf('RA') ? true : x.raciallyAggravated;
+    x.religiouslyAggravated = ~withList(oc.offenceIndicatorCodes).indexOf('REA') ? true : x.religiouslyAggravated;
+    x.sexual = ~withList(oc.offenceIndicatorCodes).indexOf('S') ? true : x.sexual;
+    x.riskToChildren = ~withList(oc.offenceIndicatorCodes).indexOf('S1') ? true : x.riskToChildren;
+    x.sexOffenderRegister = ~withList(oc.offenceIndicatorCodes).indexOf('SOR') ? true : x.sexOffenderRegister;
+    x.violent = ~withList(oc.offenceIndicatorCodes).indexOf('V') ? true : x.violent;
+    x.victimOffences = ~withList(oc.offenceIndicatorCodes).indexOf('VO') ? true : x.victimOffences;
 
     return x;
   }, {
@@ -344,14 +344,14 @@ const getOffenceGroups = o =>
   });
 
 const getPhysicals = o => {
-  let physicals = getFirst((o.physicals || []).filter(op => (op.bookingId === o.mainBooking.offenderBookingId)));
+  let physicals = getFirst((o.physicals || []).filter(op => (op.bookingId === o.mainBooking.bookingId)));
 
   return {
     profileDetails: (physicals.profileDetails || [])
         .reduce((x, opd) => { x[opd.profileType] = opd.profileCode; return x; }, {}),
     identifyingMarks: (x => {
-      x.BODY = [...x.BODY];
-      x.HEAD = [...x.HEAD];
+      x.BODY = [...(x.BODY || [])];
+      x.HEAD = [...(x.HEAD || [])];
       return x;
     })((physicals.identifyingMarks || [])
         .reduce((x, oim) => {
@@ -368,7 +368,7 @@ const getPhysicals = o => {
 
 const getIEPLevel = o =>
   getFirst((o.IEPs || [])
-    .filter(op => (op.bookingId === o.mainBooking.offenderBookingId))
+    .filter(op => (op.bookingId === o.mainBooking.bookingId))
     .map(iep => iep.iepLevel.iepLevel));
 
 const getCSRALevel = o =>
@@ -382,17 +382,22 @@ const getCSRALevel = o =>
 const getEmployment = o =>
   getFirst((o.employments || [])
     .filter(oe => (
-      oe.bookingId === o.mainBooking.offenderBookingId &&
+      oe.bookingId === o.mainBooking.bookingId &&
       (!oe.terminationDate || moment(oe.terminationDate).diff(o.mainBooking.startDate) > 0)
     )));
 
 const getImprisonmentStatus = o =>
   getFirst((o.imprisonmentStatuses || [])
-    .filter(op => (op.offenderBookId === o.mainBooking.offenderBookingId)));
+    .filter(op => (
+      op.bookingId === o.mainBooking.bookingId
+    )));
 
 const getImprisonmentStatus2 = o =>
   getFirst((o.imprisonmentStatuses || [])
-    .filter(op => (op.offenderBookId === o.mainBooking.offenderBookingId && op.latestStatus)));
+    .filter(op => (
+      op.bookingId === o.mainBooking.bookingId &&
+      op.latestStatus
+    )));
 
 
 const getImprisonmentStatusCategory = ois => {
@@ -485,7 +490,7 @@ module.exports.build = (data) => {
 //offender_booking_q
     nomis_no: o.nomsId,
     booking_no: o.mainBooking.bookingNo,
-    offender_book_id: o.mainBooking.offenderBookingId,
+    offender_book_id: o.mainBooking.bookingId,
     cro_no: o.offenderIdentifiers.CRO,
     pncid_no: o.offenderIdentifiers.PNC,
     dob: moment(o.dateOfBirth).format('DD/MM/YYYY'),

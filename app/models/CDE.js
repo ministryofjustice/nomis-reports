@@ -8,14 +8,14 @@ const withList = a => a || [];
 const getOffenderTransfers = o =>
   withList(o.movements)
     .filter(oem => (
-      oem.offenderBookingId === o.mainBooking.offenderBookingId &&
+      oem.bookingId === o.mainBooking.bookingId &&
       oem.movementTypeCode === 'TRN'
     ));
 
 const getOffenderEmployments = o =>
   withList(o.employments)
     .filter(oe => (
-      oe.bookingId === o.mainBooking.offenderBookingId &&
+      oe.bookingId === o.mainBooking.bookingId &&
       oe.employmentDate &&
       !oe.terminationDate
     ));
@@ -23,13 +23,13 @@ const getOffenderEmployments = o =>
 const getCharges = o =>
   withList(o.charges)
     .filter(oc => (
-      oc.bookingId === o.mainBooking.offenderBookingId
+      oc.bookingId === o.mainBooking.bookingId
     ));
 
 const getContactPersons = o =>
   withList(o.contactPersons)
     .filter(ocp => (
-      ocp.bookingId === o.mainBooking.offenderBookingId &&
+      ocp.bookingId === o.mainBooking.bookingId &&
       ocp.active &&
       !getFirst(withList(ocp.addresses)).endDate
     ));
@@ -37,13 +37,13 @@ const getContactPersons = o =>
 const getReleaseDetails = o =>
   withList(o.releaseDetails)
     .filter(ord => (
-      ord.bookingId === o.mainBooking.offenderBookingId
+      ord.bookingId === o.mainBooking.bookingId
     ));
 
 const getOffenderSentenceCalculations = o =>
   withList(o.sentenceCalculations)
     .filter(s => (
-      s.bookingId === o.mainBooking.offenderBookingId
+      s.bookingId === o.mainBooking.bookingId
     ))
     .reduce((a, b) => (
       !a.effectiveSentenceEndDate ||
@@ -53,7 +53,7 @@ const getOffenderSentenceCalculations = o =>
 const getOffenderSentences = o =>
   withList(o.sentences)
     .filter(s => (
-      s.bookingId === o.mainBooking.offenderBookingId &&
+      s.bookingId === o.mainBooking.bookingId &&
       s.isActive
     ));
 
@@ -87,7 +87,7 @@ const mapOffenderIdentifiers = o =>
 const getMaternityStatus = (o, sysdate) =>
   getFirst(withList(o.healthProblems)
     .filter(hp => (
-      hp.bookingId === o.mainBooking.offenderBookingId &&
+      hp.bookingId === o.mainBooking.bookingId &&
       hp.problemType === 'MATSTAT' &&
       hp.problemStatus === 'ON' &&
     //hp.domain === 'HEALTH_PBLM' &&
@@ -97,7 +97,7 @@ const getMaternityStatus = (o, sysdate) =>
 const getOffenderSecurityCategory = o =>
   getFirst(withList(o.assessments)
     .filter(oa => (
-      oa.offenderBookingId === o.mainBooking.offenderBookingId &&
+      oa.bookingId === o.mainBooking.bookingId &&
       oa.evaluationResultCode === 'APP' &&
       oa.assessStatus === 'A' &&
       oa.assessmentType &&
@@ -245,23 +245,14 @@ const formatContactPersonRelationship = ocp =>
   ocp ? (['Y', 'NFA'].indexOf(ocp.noFixedAddress) ? ocp.noFixedAddress : null) : undefined;
 
 const formatOffenderDiaryDetail = (odd, o) =>
-  /*
-  `"${[
-    moment(odd.movementDateTime).format('DD/MM/YYYY'),
-    moment(odd.movementDateTime).format('HH:mm:ss'),
-    odd.movementReasonCode || "",
-    odd.comments || "",
-    odd.escortType || "",
-  ].join('","')}"`;
-  */
-  [
-    moment(odd.movementDateTime).format('DD/MM/YYYY'),
-    moment(odd.movementDateTime).format('HH:mm:ss'),
-    odd.movementReasonCode || "",
-    odd.comments || "",
-    odd.escortType || "",
-    formatAlert(o.notForRelease),
-  ];
+  ({
+    date_145a: moment(odd.movementDateTime),
+    time_145b: moment(odd.movementDateTime).format('HH:mm:ss'),
+    reason_code_145c: odd.movementReasonCode || "",
+    comment_text_145d: odd.comments || "",
+    escort_type_145e: odd.escortType || "",
+    not_for_release_alert_145f: formatAlert(o.notForRelease),
+  });
 
 const getCustodyStatus = o => {
   let ob = o.mainBooking;
@@ -359,7 +350,7 @@ const getCheckHoldAlerts = o =>
 const getPhysicals = o => {
   let physicals = getFirst(withList(o.physicals)
     .filter(op => (
-      op.bookingId === o.mainBooking.offenderBookingId
+      op.bookingId === o.mainBooking.bookingId
     )));
 
   return {
@@ -369,8 +360,8 @@ const getPhysicals = o => {
           return x;
         }, {}),
     identifyingMarks: (x => {
-      x.BODY = [...x.BODY];
-      x.HEAD = [...x.HEAD];
+      x.BODY = [...(x.BODY || [])];
+      x.HEAD = [...(x.HEAD || [])];
       return x;
     })(withList(physicals.identifyingMarks)
         .reduce((x, oim) => {
@@ -389,30 +380,41 @@ const getPhysicals = o => {
 const getIEPLevel = o =>
   getFirst(withList(o.IEPs)
     .filter(op => (
-      op.bookingId === o.mainBooking.offenderBookingId
+      op.bookingId === o.mainBooking.bookingId
     ))
     .map(iep => iep.iepLevel));
 
 const getEmployment = o =>
   getFirst(withList(o.employments)
     .filter(oe => (
-      oe.bookingId === o.mainBooking.offenderBookingId &&
+      oe.bookingId === o.mainBooking.bookingId &&
       (oe.terminationDate || moment(oe.terminationDate).diff(o.mainBooking.startDate) > 0)
     )));
 
 const getImprisonmentStatus = o =>
   getFirst(withList(o.imprisonmentStatuses)
     .filter(op => (
-      op.offenderBookId === o.mainBooking.offenderBookingId
+      op.bookingId === o.mainBooking.bookingId
     )));
 
 const isSexOffender = o =>
   withList(o.charges)
     .filter(oc => ~withList(oc.offenceIndicatorCodes).indexOf('S')).length > 0;
 
-const getDateOfFirstConviction = o =>
-  withList(o.courtEvents)
-    //.filter(ce => os.sentence_status = 'A')
+const getFirstConviction = o =>
+  getLast(withList(o.courtEvents));
+
+const getFirstSentence = o =>
+  getFirst(withList(getFirst(withList(
+    getLast(withList(o.courtEvents).filter(ce => withList(getFirst(withList(ce.courtEventCharges)).sentences).length > 0))
+    .courtEventCharges)).sentences));
+
+const getCourtOutcome = o =>
+  getFirst(withList(o.courtEvents)
+    .filter(ce =>
+      ce.bookingId === o.mainBooking.bookingId &&
+      ce.directionCode === 'OUT'
+    ));
 
 module.exports.build = (data) => {
   let o = [
@@ -451,84 +453,86 @@ module.exports.build = (data) => {
     ['imprisonmentStatus', getImprisonmentStatus],
     ['releaseDetails', getReleaseDetails],
     ['isSexOffender', isSexOffender],
-    ['dateOfFirstConviction', getDateOfFirstConviction]
+    ['firstConviction', getFirstConviction],
+    ['firstSentence', getFirstSentence],
+    ['courtOutcome', getCourtOutcome],
   ].reduce((x, p) => { x[p[0]] = p[1](x); return x; }, Object.assign({}, data));
 
   let model = {
-    sysdate_f1: o.sysdate.format('DD/MM/YYYY'),                                         // 1	System Date
-    establishment_f2: "",                                                                     // 2	Establishment
-    estab_code_f3: o.mainBooking.agencyLocationId,                                                  // 3	Prison Code
-    nomis_id_f4: o.nomsId,                                                               // 4	NOMS Number
-    gender_f5: o.sexCode,                                                              // 5	Gender Description
-    prison_no_f6: o.mainBooking.bookingNo,                                                         // 6	Booking Number
-    surname_f7: o.surname,                                                              // 7	Last Name
-    forename1_f8: o.firstName,                                                            // 8	Given Name 1
-    forename2_f9: o.middleNames,                                                          // 9	Given Name 2
-    cro_f10: o.offenderIdentifiers.CRO,                                             // 10	CRO Number
-    adult_yp_f11: o.physicals.profileDetails.YOUTH,                                      // 11	Adult or YP
-    age_f12: getAge(o),                                                             // 12	Age
-    dob_f13: moment(o.dateOfBirth).format('DD/MM/YYYY'),                            // 13	DOB
-    nationality_f14: o.physicals.profileDetails.NAT,                                        // 14	Nationality Description
-    ethnicity_f15: o.raceCode,                                                            // 15	Ethnicity Description
-    religion_f16: o.physicals.profileDetails.RELF,                                       // 16	Religion Description
-    marital_f17: o.physicals.profileDetails.MARITAL,                                    // 17	Marital Status Description
-    maternity_status_f18: getMaternityStatus(o, o.sysdate).problemCode,                          // 18	Maternity Status Description
-    location_f19: o.mainBooking.livingUnitId,                                                     // 19	Cell Location
-    incentive_band_f20: o.IEPLevel.iepLevel,                                                   // 20	Incentive Level Description
-    occupation_v21: o.employments.occupationsCode,                                         // 21	Occupation Description
-    transfer_reason_f22: formatTransferReasonCode(o.firstOffenderTransfer),                                      // 22	Transfer Reason
-    first_reception_date_f23: moment(o.mainBooking.startDate).format('DD/MM/YYYY'),                           // 23	First Reception Date
-    custody_status_f24: getCustodyStatus(o),                                                   // 24	Custody Status
-    inmate_status_f25: o.imprisonmentStatus.imprisonmentStatus,                               // 25	Main Legal Status Description
-    sec_cat_f26: o.offenderSecurityCategory.reviewSupLevelType,                                           // 26	Security Category Description
-    sec_cat_next_review_f27: (o.offenderSecurityCategory.nextReviewDate && moment(o.offenderSecurityCategory.nextReviewDate).format('DD/MM/YYYY')),// 27	Security Category Review Date
-    sentence_years_f28: (o.offenderSentenceCalculations.effectiveSentenceLength || '').split(/\//gmi)[0],               // 28	Sentence Length (Years)
-    sentence_months_f29: (o.offenderSentenceCalculations.effectiveSentenceLength || '').split(/\//gmi)[1],               // 29	Sentence Length (Months)
-    sentence_days_f30: (o.offenderSentenceCalculations.effectiveSentenceLength || '').split(/\//gmi)[2],               // 30	Sentence Length (Days)
-    previous_prison_no_f31: o.previousBookingNos,                                                  // 31	Previous Booking Number
-    earliest_release_date_f32: earliestReleaseDate(o).format('DD/MM/YYYY'),                           // 32	Earliest Release Date
-    check_hold_governor_f33: o.checkHoldAlerts.T_TG,                                                // 33	Check Hold Governor
+    sysdate_f1: o.sysdate,
+    establishment_f2: "",
+    estab_code_f3: o.mainBooking.agencyLocationId,
+    nomis_id_f4: o.nomsId,
+    gender_f5: o.sexCode,
+    prison_no_f6: o.mainBooking.bookingNo,
+    surname_f7: o.surname,
+    forename1_f8: o.firstName,
+    forename2_f9: o.middleNames,
+    cro_f10: o.offenderIdentifiers.CRO,
+    adult_yp_f11: o.physicals.profileDetails.YOUTH,
+    age_f12: getAge(o),
+    dob_f13: moment(o.dateOfBirth),
+    nationality_f14: o.physicals.profileDetails.NAT,
+    ethnicity_f15: o.raceCode,
+    religion_f16: o.physicals.profileDetails.RELF,
+    marital_f17: o.physicals.profileDetails.MARITAL,
+    maternity_status_f18: getMaternityStatus(o, o.sysdate).problemCode,
+    location_f19: o.mainBooking.livingUnitId,
+    incentive_band_f20: o.IEPLevel.iepLevel,
+    occupation_v21: o.employments.occupationsCode,
+    transfer_reason_f22: formatTransferReasonCode(o.firstOffenderTransfer),
+    first_reception_date_f23: moment(o.mainBooking.startDate),
+    custody_status_f24: getCustodyStatus(o),
+    inmate_status_f25: o.imprisonmentStatus.imprisonmentStatus,
+    sec_cat_f26: o.offenderSecurityCategory.reviewSupLevelType,
+    sec_cat_next_review_f27: o.offenderSecurityCategory.nextReviewDate,
+    sentence_years_f28: (o.offenderSentenceCalculations.effectiveSentenceLength || '').split(/\//gmi)[0],
+    sentence_months_f29: (o.offenderSentenceCalculations.effectiveSentenceLength || '').split(/\//gmi)[1],
+    sentence_days_f30: (o.offenderSentenceCalculations.effectiveSentenceLength || '').split(/\//gmi)[2],
+    previous_prison_no_f31: o.previousBookingNos,
+    earliest_release_date_f32: earliestReleaseDate(o),
+    check_hold_governor_f33: o.checkHoldAlerts.T_TG,
     // 34	Check Hold General (to be left blank)
     // 35	Check Hold Discipline (to be left blank)
-    check_hold_allocation_36: o.checkHoldAlerts.T_TAH,                                               // 36	Check Hold Allocation
-    check_hold_security_37: o.checkHoldAlerts.T_TSE,                                               // 37	Check Hold Security
-    check_hold_medical_38: o.checkHoldAlerts.T_TM,                                                // 38	Check Hold Medical
-    check_hold_parole_39: o.checkHoldAlerts.T_TPR,                                               // 39	Check Hold Parole
-    date_of_first_conviction_40: "",// 40	Date Of First Conviction
-    date_first_sentenced_f41: moment(o.offenderSentence.startDate).format('DD/MM/YYYY'),                           // 41	Date First Sentenced
-    f2052_status_42: o.checkHoldAlerts.H_HA,                                                // 42	ACCT Status (F2052)
-    highest_ranked_offence_f43: highestRankedOffence(o).offenceCode,                                   // 43	Highest Ranked Offence
+    check_hold_allocation_36: o.checkHoldAlerts.T_TAH,
+    check_hold_security_37: o.checkHoldAlerts.T_TSE,
+    check_hold_medical_38: o.checkHoldAlerts.T_TM,
+    check_hold_parole_39: o.checkHoldAlerts.T_TPR,
+    date_of_first_conviction_40: o.firstConviction.startDateTime,
+    date_first_sentenced_f41: moment(o.firstSentence.startDate),
+    f2052_status_42: o.checkHoldAlerts.H_HA,
+    highest_ranked_offence_f43: highestRankedOffence(o).offenceCode,
     // 44	Status Rank (to be left blank)
-    pending_transfers_f45: o.pendingOffenderTransfer.toAgencyLocationId,                                  // 45	Pending Transfers (Full Establishment Name)
-    received_from_f46: o.pendingOffenderTransfer.fromAgencyLocationId,                                // 46	Received From
-    vulnerable_prisoner_alert_f47: o.checkHoldAlerts.VUL,                                                 // 47	Vulnerable Prisoner Alert
-    pnc_f48: o.offenderIdentifiers.PNC,                                             // 48	PNC Number
-    emplmnt_status_discharge_f49: dischargeEmployment(o).employmentPostCode,                             // 49	Employment Status at Discharge
-    emplmnt_status_reception_f50: receptionEmployment(o).employmentPostCode,                             // 50	Employment Status at Reception
-    schedule_1_sex_offender_f51: formatAlert(o.MAPPA),                                                  // 51	MAPPA Levels (Schedule 1 Sex Offender)
-    sex_offender_f52: o.isSexOffender ? 'Y' : 'N',                                           // 52	Sex Offender
+    pending_transfers_f45: o.pendingOffenderTransfer.toAgencyLocationId,
+    received_from_f46: o.pendingOffenderTransfer.fromAgencyLocationId,
+    vulnerable_prisoner_alert_f47: o.checkHoldAlerts.VUL,
+    pnc_f48: o.offenderIdentifiers.PNC,
+    emplmnt_status_discharge_f49: dischargeEmployment(o).employmentPostCode,
+    emplmnt_status_reception_f50: receptionEmployment(o).employmentPostCode,
+    schedule_1_sex_offender_f51: formatAlert(o.MAPPA),
+    sex_offender_f52: (o.isSexOffender ? 'Y' : 'N'),
 // 53	Supervising Service
-    height_metres_f54: o.physicals.physicalAttributes.heightCM / 100,                         // 54	Height (metres)
-    complexion_f55: o.physicals.profileDetails.COMPL,                                      // 55	Complexion
-    hair_56: o.physicals.profileDetails.HAIR,                                       // 56	Hair Colour
-    left_eye_57: o.physicals.profileDetails.L_EYE_C,                                    // 57	Left Eye
-    right_eye_58: o.physicals.profileDetails.R_EYE_C,                                    // 58	Right Eye
-    build_59: o.physicals.profileDetails.BUILD,                                      // 59	Build
-    face_60: o.physicals.profileDetails.FACE,                                       // 60	Facial Shape
-    facial_hair_61: o.physicals.profileDetails.FACIAL_HAIR,                                // 61	Facial Hair
-    marks_head_f62: o.physicals.identifyingMarks.HEAD,                                     // 62	Physical Mark  Head
-    marks_body_f63: o.physicals.identifyingMarks.BODY,                                     // 63	Physical Mark Body
-    sentence_length_f64: moment(o.offenderSentenceCalculations.effectiveSentenceEndDate).diff(moment(o.offenderSentence.startDate), 'years'),// 64	Effective Sentence Length
-    release_date_f65: moment(o.releaseDetails.releaseDate).format('DD/MM/YYYY'),             // 65	Confirmed Release Date
-    release_name_f66: formatReleaseReason(o.releaseDetails),                                 // 66	Release Reason
-    sed_f67: o.offenderSentenceCalculationDates.sed,                                                             // 67	SED
-    hdced_f68: o.offenderSentenceCalculationDates.hdced,                                                           // 68	HDCED
-    hdcad_f69: o.offenderSentenceCalculationDates.hdcad,                                                           // 69	HDCAD
-    ped_f70: o.offenderSentenceCalculationDates.ped,                                                             // 70	PED
-    crd_f71: o.offenderSentenceCalculationDates.crd,                                                             // 71	CRD
-    npd_f72: o.offenderSentenceCalculationDates.npd,                                                             // 72	NPD
-    led_f73: o.offenderSentenceCalculationDates.led,                                                             // 73	LED
-    date_sec_cat_changed_f74: o.offenderSecurityCategory.evaluationDate && moment(o.offenderSecurityCategory.evaluationDate).format('DD/MM/YYYY'),// 74	Date Security Category Changed
+    height_metres_f54: o.physicals.physicalAttributes.heightCM / 100,
+    complexion_f55: o.physicals.profileDetails.COMPL,
+    hair_56: o.physicals.profileDetails.HAIR,
+    left_eye_57: o.physicals.profileDetails.L_EYE_C,
+    right_eye_58: o.physicals.profileDetails.R_EYE_C,
+    build_59: o.physicals.profileDetails.BUILD,
+    face_60: o.physicals.profileDetails.FACE,
+    facial_hair_61: o.physicals.profileDetails.FACIAL_HAIR,
+    marks_head_f62: o.physicals.identifyingMarks.HEAD,
+    marks_body_f63: o.physicals.identifyingMarks.BODY,
+    sentence_length_f64: moment(o.offenderSentenceCalculations.effectiveSentenceEndDate).diff(moment(o.offenderSentence.startDate), 'years'),
+    release_date_f65: o.releaseDetails.releaseDate,
+    release_name_f66: formatReleaseReason(o.releaseDetails),
+    sed_f67: o.offenderSentenceCalculationDates.sed,
+    hdced_f68: o.offenderSentenceCalculationDates.hdced,
+    hdcad_f69: o.offenderSentenceCalculationDates.hdcad,
+    ped_f70: o.offenderSentenceCalculationDates.ped,
+    crd_f71: o.offenderSentenceCalculationDates.crd,
+    npd_f72: o.offenderSentenceCalculationDates.npd,
+    led_f73: o.offenderSentenceCalculationDates.led,
+    date_sec_cat_changed_f74: o.offenderSecurityCategory.evaluationDate,
     rule_45_yoi_rule_46_f75: o.checkHoldAlerts.V_45_46,                                             // 75	Rule 45/YOI Rule 49
     f2052sh_f76: o.checkHoldAlerts.SH_STS,                                              // 76	ACCT (Self Harm) Status
     f2052_start_f77: o.checkHoldAlerts.SH_Date,                                             // 77  ACCT (Self Harm) Start Date
@@ -597,14 +601,14 @@ module.exports.build = (data) => {
 
     sending_estab_f134: o.lastOffenderTransfer.fromAgencyLocationId,
     reason_f135: o.lastOffenderTransfer.movementReasonCode,
-    movement_date_f136: moment(o.lastOffenderMovement.movementDate).format('DD/MM/YYYY'),
+    movement_date_f136: o.lastOffenderMovement.movementDate,
     movement_hour_f137: moment(o.lastOffenderMovement.movementTime).format('HH'),
     movement_min_f138: moment(o.lastOffenderMovement.movementTime).format('mm'),
     movement_sec_f139: moment(o.lastOffenderMovement.movementTime).format('ss'),
     movement_code_f140: o.lastOffenderMovement.movementReasonCode,
     court_f141: o.offenderCourtEscort.toAgencyLocationId,
     escort_f142: o.offenderCourtEscort.escortCode,
-    first_out_mov_post_adm_f143: moment(o.firstOffenderOutMovement.movementDate).format('DD/MM/YYYY'),
+    first_out_mov_post_adm_f143: o.firstOffenderOutMovement.movementDate,
 // 144	Employed
     /*
     "Woodwork 2 AM","ALI-WIND-WWW2","08","15","11","45"~
@@ -616,7 +620,7 @@ module.exports.build = (data) => {
     licence_type_f146: formatLicenseType(o.offenderLicense),
     other_offences_f147: [...otherOffences(o).reduce((x, c) => x.add(c.offenceCode), new Set())],
     active_alerts_f148: o.activeAlerts.map(formatAlert),
-// 149	Court Outcome
+    court_type_f149: o.courtOutcome.outcomeReasonCode,
 // 150	Court Code
 // 151	Court Name
 // 152	Activity Details
