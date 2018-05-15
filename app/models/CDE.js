@@ -5,17 +5,17 @@ const getFirst = a => a[0] || {};
 const getLast = a => a[a.length - 1] || {};
 const withList = a => a || [];
 
-const getTransfers = o =>
+const getOffenderTransfers = o =>
   withList(o.movements)
     .filter(oem => (
-      oem.offenderBookingId === o.ob.offenderBookingId &&
+      oem.offenderBookingId === o.mainBooking.offenderBookingId &&
       oem.movementTypeCode === 'TRN'
     ));
 
-const getEmployments = o =>
+const getOffenderEmployments = o =>
   withList(o.employments)
     .filter(oe => (
-      oe.bookingId === o.ob.offenderBookingId &&
+      oe.bookingId === o.mainBooking.offenderBookingId &&
       oe.employmentDate &&
       !oe.terminationDate
     ));
@@ -23,13 +23,13 @@ const getEmployments = o =>
 const getCharges = o =>
   withList(o.charges)
     .filter(oc => (
-      oc.bookingId === o.ob.offenderBookingId
+      oc.bookingId === o.mainBooking.offenderBookingId
     ));
 
 const getContactPersons = o =>
   withList(o.contactPersons)
     .filter(ocp => (
-      ocp.bookingId === o.ob.offenderBookingId &&
+      ocp.bookingId === o.mainBooking.offenderBookingId &&
       ocp.active &&
       !getFirst(withList(ocp.addresses)).endDate
     ));
@@ -37,67 +37,67 @@ const getContactPersons = o =>
 const getReleaseDetails = o =>
   withList(o.releaseDetails)
     .filter(ord => (
-      ord.bookingId === o.ob.offenderBookingId
+      ord.bookingId === o.mainBooking.offenderBookingId
     ));
 
-const getSentenceCalculations = o =>
+const getOffenderSentenceCalculations = o =>
   withList(o.sentenceCalculations)
     .filter(s => (
-      s.bookingId === o.ob.offenderBookingId
+      s.bookingId === o.mainBooking.offenderBookingId
     ))
     .reduce((a, b) => (
       !a.effectiveSentenceEndDate ||
       moment(b.effectiveSentenceEndDate).diff(a.effectiveSentenceEndDate) > 0 ? b : a
     ), moment(0)) || {};
 
-const getSentence = o =>
+const getOffenderSentences = o =>
   withList(o.sentences)
     .filter(s => (
-      s.bookingId === o.ob.offenderBookingId &&
-      s.sentenceStatus === 'A'
-    ))
+      s.bookingId === o.mainBooking.offenderBookingId &&
+      s.isActive
+    ));
+
+const getOffenderSentence = o =>
+  getFirst(withList(o.offenderSentences)
     .reduce((a, b) => (
       !a.startDate ||
       moment(b.startDate).diff(a.startDate) > 0 ? b : a
-    ), moment(0)) || {};
+    ), moment(0)) || {});
 
-const getOffenderAddresses = o =>
+const getOffenderLicense = o =>
+  getFirst(withList(o.offenderSentences)
+    .filter(s => (
+      s.sentenceCategory === 'LICENSE'
+    )));
+
+const getActiveOffenderAddresses = o =>
   withList(o.addresses)
     .filter(oa => (
-      oa.ownerClass === 'OFF' &&
       !oa.endDate &&
       oa.active
     ));
 
-const getIdentifiers = o =>
+const mapOffenderIdentifiers = o =>
   withList(o.identifiers)
     .reduce((x, oi) => {
       x[oi.identifierType] = oi.identifier;
       return x;
     }, {});
 
-const getLicense = o =>
-  getFirst(withList(o.sentences)
-    .filter(s => (
-      s.bookingId === o.ob.offenderBookingId &&
-      s.sentenceStatus === 'A' &&
-      s.sentenceCategory === 'LICENSE'
-    )));
-
 const getMaternityStatus = (o, sysdate) =>
   getFirst(withList(o.healthProblems)
     .filter(hp => (
-      hp.bookingId === o.ob.offenderBookingId &&
+      hp.bookingId === o.mainBooking.offenderBookingId &&
       hp.problemType === 'MATSTAT' &&
       hp.problemStatus === 'ON' &&
     //hp.domain === 'HEALTH_PBLM' &&
       (!hp.endDate || moment(hp.endDate).diff(sysdate) > 0)
     )));
 
-const getSecurityCategory = o =>
+const getOffenderSecurityCategory = o =>
   getFirst(withList(o.assessments)
     .filter(oa => (
-      oa.offenderBookingId === o.ob.offenderBookingId &&
+      oa.offenderBookingId === o.mainBooking.offenderBookingId &&
       oa.evaluationResultCode === 'APP' &&
       oa.assessStatus === 'A' &&
       oa.assessmentType &&
@@ -106,55 +106,55 @@ const getSecurityCategory = o =>
       oa.assessmentType.determineSupLevelFlag === 'Y'
     )));
 
-const lastMovement = o =>
+const getLastOffenderMovement = o =>
   getFirst(o.movements);
 
-const firstTransfer = o =>
-  getLast(o.trn);
+const getFirstOffenderTransfer = o =>
+  getLast(o.OffenderTransfers);
 
-const lastTransfer = o =>
-  getFirst(o.trn);
+const getLastOffenderTransfer = o =>
+  getFirst(o.OffenderTransfers);
 
-const pendingTransfer = o =>
-  getLast(withList(o.trn)
+const getPendingOffenderTransfer = o =>
+  getLast(withList(o.OffenderTransfers)
     .filter(m => m.active));
 
-const courtEscort = o =>
-  getFirst(withList(o.trn)
+const getOffenderCourtEscort = o =>
+  getFirst(withList(o.OffenderTransfers)
     .filter(m => (
       m.movementType === 'CRT' &&
       m.directionCode === 'OUT'
     )));
 
-const firstOutMovement = o =>
+const getFirstOffenderOutMovement = o =>
   getLast(withList(o.movements)
     .filter(m => (
       m.directionCode === 'OUT'
     )));
 
 const receptionEmployment = o =>
-  getLast(o.oe);
+  getLast(o.offenderEmployments);
 
 const dischargeEmployment = o =>
-  getFirst(o.oe);
+  getFirst(o.offenderEmployments);
 
 const highestRankedOffence = o =>
-  getFirst(o.oc);
+  getFirst(o.offenderCharges);
 
 const otherOffences = o =>
-  withList(o.oc)
+  withList(o.offenderCharges)
     .filter((o, i) => i !== 0);
 
-const getHomeAddress = o =>
-  getFirst(withList(o.oa)
+const getOffenderHomeAddress = o =>
+  getFirst(withList(o.offenderAddresses)
     .filter(a => (a.addressUsage === 'HOME')));
 
-const getReceptionAddress = o =>
-  getFirst(withList(o.oa)
+const getOffenderReceptionAddress = o =>
+  getFirst(withList(o.offenderAddresses)
     .filter(a => (a.addressUsage === 'RECEP')));
 
-const getDischargeAddress = o =>
-  getFirst(withList(o.oa)
+const getOffenderDischargeAddress = o =>
+  getFirst(withList(o.offenderAddresses)
     .filter(a => (~['RELEASE','DNF','DUT','DST','DPH','DSH','DAP','DBA','DOH','DBH'].indexOf(a.addressUsage))));
 
 const getMainBooking = o =>
@@ -244,8 +244,27 @@ const formatContactPersonName = ocp =>
 const formatContactPersonRelationship = ocp =>
   ocp ? (['Y', 'NFA'].indexOf(ocp.noFixedAddress) ? ocp.noFixedAddress : null) : undefined;
 
+const formatOffenderDiaryDetail = (odd, o) =>
+  /*
+  `"${[
+    moment(odd.movementDateTime).format('DD/MM/YYYY'),
+    moment(odd.movementDateTime).format('HH:mm:ss'),
+    odd.movementReasonCode || "",
+    odd.comments || "",
+    odd.escortType || "",
+  ].join('","')}"`;
+  */
+  [
+    moment(odd.movementDateTime).format('DD/MM/YYYY'),
+    moment(odd.movementDateTime).format('HH:mm:ss'),
+    odd.movementReasonCode || "",
+    odd.comments || "",
+    odd.escortType || "",
+    formatAlert(o.notForRelease),
+  ];
+
 const getCustodyStatus = o => {
-  let ob = o.ob;
+  let ob = o.mainBooking;
 
   let status = [];
   if (ob.activeFlag || (!ob.activeFlag && ~['ESCP', 'UAL', 'UAL_ECL'].indexOf(ob.statusReason.substring(5))) || ob.inOutStatus === 'TRN') {
@@ -281,9 +300,9 @@ const earliestReleaseDate =  o =>
     scd.apd,
     scd.npd,
     scd.ard
-  ].sort((a, b) => a.diff(b))[0])(o.scd);
+  ].sort((a, b) => a.diff(b))[0])(o.offenderSentenceCalculationDates);
 
-const sentenceCalculationDates = o =>
+const getOffenderSentenceCalculationDates = o =>
   (osc => ({
     sed: moment(osc.sedOverridedDate || osc.sedCalculatedDate),
     hdced: moment(osc.hdcedOverridedDate || osc.hdcedCalculatedDate),
@@ -298,7 +317,7 @@ const sentenceCalculationDates = o =>
     ard: moment(osc.ardOverridedDate || osc.ardCalculatedDate),
     led: moment(osc.ledOverridedDate || osc.ledCalculatedDate),
     tused: moment(osc.tusedOverridedDate || osc.tusedCalculatedDate)
-  }))(o.osc);
+  }))(o.offenderSentenceCalculations);
 
 const getNFA = oa => {
   if (~['RELEASE', 'HOME', 'RECEP'].indexOf(oa.addressUsage)) {
@@ -340,7 +359,7 @@ const getCheckHoldAlerts = o =>
 const getPhysicals = o => {
   let physicals = getFirst(withList(o.physicals)
     .filter(op => (
-      op.bookingId === o.ob.offenderBookingId
+      op.bookingId === o.mainBooking.offenderBookingId
     )));
 
   return {
@@ -370,52 +389,56 @@ const getPhysicals = o => {
 const getIEPLevel = o =>
   getFirst(withList(o.IEPs)
     .filter(op => (
-      op.bookingId === o.ob.offenderBookingId
+      op.bookingId === o.mainBooking.offenderBookingId
     ))
     .map(iep => iep.iepLevel));
 
 const getEmployment = o =>
   getFirst(withList(o.employments)
     .filter(oe => (
-      oe.bookingId === o.ob.offenderBookingId &&
-      (oe.terminationDate || moment(oe.terminationDate).diff(o.ob.startDate) > 0)
+      oe.bookingId === o.mainBooking.offenderBookingId &&
+      (oe.terminationDate || moment(oe.terminationDate).diff(o.mainBooking.startDate) > 0)
     )));
 
 const getImprisonmentStatus = o =>
   getFirst(withList(o.imprisonmentStatuses)
     .filter(op => (
-      op.offenderBookId === o.ob.offenderBookingId
+      op.offenderBookId === o.mainBooking.offenderBookingId
     )));
 
 const isSexOffender = o =>
   withList(o.charges)
     .filter(oc => ~withList(oc.offenceIndicatorCodes).indexOf('S')).length > 0;
 
+const getDateOfFirstConviction = o =>
+  withList(o.courtEvents)
+    //.filter(ce => os.sentence_status = 'A')
+
 module.exports.build = (data) => {
   let o = [
     ['sysdate', () => moment()],
-    ['ob', getMainBooking],
+    ['mainBooking', getMainBooking],
     ['previousBookingNos', getPreviousBookings],
-    ['offenderIdentifiers', getIdentifiers],
-    ['secCat', getSecurityCategory],
-    ['osc', getSentenceCalculations],
-    ['os', getSentence],
-    ['licence', getLicense],
-    ['trn', getTransfers],
-    ['ftrn', firstTransfer],
-    ['ltrn', lastTransfer],
-    ['lmove', lastMovement],
-    ['firstOutMovement', firstOutMovement],
-    ['pendingTransfer', pendingTransfer],
-    ['courtEscort', courtEscort],
-    ['scd', sentenceCalculationDates],
-    ['oe', getEmployments],
-    ['oc', getCharges],
+    ['offenderIdentifiers', mapOffenderIdentifiers],
+    ['offenderSecurityCategory', getOffenderSecurityCategory],
+    ['offenderSentenceCalculations', getOffenderSentenceCalculations],
+    ['offenderSentence', getOffenderSentence],
+    ['offenderLicense', getOffenderLicense],
+    ['OffenderTransfers', getOffenderTransfers],
+    ['firstOffenderTransfer', getFirstOffenderTransfer],
+    ['lastOffenderTransfer', getLastOffenderTransfer],
+    ['lastOffenderMovement', getLastOffenderMovement],
+    ['firstOffenderOutMovement', getFirstOffenderOutMovement],
+    ['pendingOffenderTransfer', getPendingOffenderTransfer],
+    ['offenderCourtEscort', getOffenderCourtEscort],
+    ['offenderSentenceCalculationDates', getOffenderSentenceCalculationDates],
+    ['offenderEmployments', getOffenderEmployments],
+    ['offenderCharges', getCharges],
     ['offenderContactPersons', getContactPersons],
-    ['oa', getOffenderAddresses],
-    ['homeAddr', getHomeAddress],
-    ['recepAddr', getReceptionAddress],
-    ['dischargeAddr', getDischargeAddress],
+    ['offenderAddresses', getActiveOffenderAddresses],
+    ['offenderHomeAddresses', getOffenderHomeAddress],
+    ['offenderReceptionAddresses', getOffenderReceptionAddress],
+    ['offenderDischargeAddresses', getOffenderDischargeAddress],
     ['nextOfKin', getNextOfKin],
     ['offenderManager', getOffenderManager],
     ['activeAlerts', getActiveAlerts],
@@ -428,15 +451,16 @@ module.exports.build = (data) => {
     ['imprisonmentStatus', getImprisonmentStatus],
     ['releaseDetails', getReleaseDetails],
     ['isSexOffender', isSexOffender],
+    ['dateOfFirstConviction', getDateOfFirstConviction]
   ].reduce((x, p) => { x[p[0]] = p[1](x); return x; }, Object.assign({}, data));
 
   let model = {
     sysdate_f1: o.sysdate.format('DD/MM/YYYY'),                                         // 1	System Date
     establishment_f2: "",                                                                     // 2	Establishment
-    estab_code_f3: o.ob.agencyLocationId,                                                  // 3	Prison Code
+    estab_code_f3: o.mainBooking.agencyLocationId,                                                  // 3	Prison Code
     nomis_id_f4: o.nomsId,                                                               // 4	NOMS Number
     gender_f5: o.sexCode,                                                              // 5	Gender Description
-    prison_no_f6: o.ob.bookingNo,                                                         // 6	Booking Number
+    prison_no_f6: o.mainBooking.bookingNo,                                                         // 6	Booking Number
     surname_f7: o.surname,                                                              // 7	Last Name
     forename1_f8: o.firstName,                                                            // 8	Given Name 1
     forename2_f9: o.middleNames,                                                          // 9	Given Name 2
@@ -449,18 +473,18 @@ module.exports.build = (data) => {
     religion_f16: o.physicals.profileDetails.RELF,                                       // 16	Religion Description
     marital_f17: o.physicals.profileDetails.MARITAL,                                    // 17	Marital Status Description
     maternity_status_f18: getMaternityStatus(o, o.sysdate).problemCode,                          // 18	Maternity Status Description
-    location_f19: o.ob.livingUnitId,                                                     // 19	Cell Location
+    location_f19: o.mainBooking.livingUnitId,                                                     // 19	Cell Location
     incentive_band_f20: o.IEPLevel.iepLevel,                                                   // 20	Incentive Level Description
     occupation_v21: o.employments.occupationsCode,                                         // 21	Occupation Description
-    transfer_reason_f22: formatTransferReasonCode(o.ftrn),                                      // 22	Transfer Reason
-    first_reception_date_f23: moment(o.ob.startDate).format('DD/MM/YYYY'),                           // 23	First Reception Date
+    transfer_reason_f22: formatTransferReasonCode(o.firstOffenderTransfer),                                      // 22	Transfer Reason
+    first_reception_date_f23: moment(o.mainBooking.startDate).format('DD/MM/YYYY'),                           // 23	First Reception Date
     custody_status_f24: getCustodyStatus(o),                                                   // 24	Custody Status
     inmate_status_f25: o.imprisonmentStatus.imprisonmentStatus,                               // 25	Main Legal Status Description
-    sec_cat_f26: o.secCat.reviewSupLevelType,                                           // 26	Security Category Description
-    sec_cat_next_review_f27: (o.secCat.nextReviewDate && moment(o.secCat.nextReviewDate).format('DD/MM/YYYY')),// 27	Security Category Review Date
-    sentence_years_f28: (o.osc.effectiveSentenceLength || '').split(/\//gmi)[0],               // 28	Sentence Length (Years)
-    sentence_months_f29: (o.osc.effectiveSentenceLength || '').split(/\//gmi)[1],               // 29	Sentence Length (Months)
-    sentence_days_f30: (o.osc.effectiveSentenceLength || '').split(/\//gmi)[2],               // 30	Sentence Length (Days)
+    sec_cat_f26: o.offenderSecurityCategory.reviewSupLevelType,                                           // 26	Security Category Description
+    sec_cat_next_review_f27: (o.offenderSecurityCategory.nextReviewDate && moment(o.offenderSecurityCategory.nextReviewDate).format('DD/MM/YYYY')),// 27	Security Category Review Date
+    sentence_years_f28: (o.offenderSentenceCalculations.effectiveSentenceLength || '').split(/\//gmi)[0],               // 28	Sentence Length (Years)
+    sentence_months_f29: (o.offenderSentenceCalculations.effectiveSentenceLength || '').split(/\//gmi)[1],               // 29	Sentence Length (Months)
+    sentence_days_f30: (o.offenderSentenceCalculations.effectiveSentenceLength || '').split(/\//gmi)[2],               // 30	Sentence Length (Days)
     previous_prison_no_f31: o.previousBookingNos,                                                  // 31	Previous Booking Number
     earliest_release_date_f32: earliestReleaseDate(o).format('DD/MM/YYYY'),                           // 32	Earliest Release Date
     check_hold_governor_f33: o.checkHoldAlerts.T_TG,                                                // 33	Check Hold Governor
@@ -471,12 +495,12 @@ module.exports.build = (data) => {
     check_hold_medical_38: o.checkHoldAlerts.T_TM,                                                // 38	Check Hold Medical
     check_hold_parole_39: o.checkHoldAlerts.T_TPR,                                               // 39	Check Hold Parole
     date_of_first_conviction_40: "",// 40	Date Of First Conviction
-    date_first_sentenced_f41: moment(o.os.startDate).format('DD/MM/YYYY'),                           // 41	Date First Sentenced
+    date_first_sentenced_f41: moment(o.offenderSentence.startDate).format('DD/MM/YYYY'),                           // 41	Date First Sentenced
     f2052_status_42: o.checkHoldAlerts.H_HA,                                                // 42	ACCT Status (F2052)
     highest_ranked_offence_f43: highestRankedOffence(o).offenceCode,                                   // 43	Highest Ranked Offence
     // 44	Status Rank (to be left blank)
-    pending_transfers_f45: o.pendingTransfer.toAgencyLocationId,                                  // 45	Pending Transfers (Full Establishment Name)
-    received_from_f46: o.pendingTransfer.fromAgencyLocationId,                                // 46	Received From
+    pending_transfers_f45: o.pendingOffenderTransfer.toAgencyLocationId,                                  // 45	Pending Transfers (Full Establishment Name)
+    received_from_f46: o.pendingOffenderTransfer.fromAgencyLocationId,                                // 46	Received From
     vulnerable_prisoner_alert_f47: o.checkHoldAlerts.VUL,                                                 // 47	Vulnerable Prisoner Alert
     pnc_f48: o.offenderIdentifiers.PNC,                                             // 48	PNC Number
     emplmnt_status_discharge_f49: dischargeEmployment(o).employmentPostCode,                             // 49	Employment Status at Discharge
@@ -494,65 +518,65 @@ module.exports.build = (data) => {
     facial_hair_61: o.physicals.profileDetails.FACIAL_HAIR,                                // 61	Facial Hair
     marks_head_f62: o.physicals.identifyingMarks.HEAD,                                     // 62	Physical Mark  Head
     marks_body_f63: o.physicals.identifyingMarks.BODY,                                     // 63	Physical Mark Body
-    sentence_length_f64: moment(o.osc.effectiveSentenceEndDate).diff(moment(o.os.startDate), 'years'),// 64	Effective Sentence Length
+    sentence_length_f64: moment(o.offenderSentenceCalculations.effectiveSentenceEndDate).diff(moment(o.offenderSentence.startDate), 'years'),// 64	Effective Sentence Length
     release_date_f65: moment(o.releaseDetails.releaseDate).format('DD/MM/YYYY'),             // 65	Confirmed Release Date
     release_name_f66: formatReleaseReason(o.releaseDetails),                                 // 66	Release Reason
-    sed_f67: o.scd.sed,                                                             // 67	SED
-    hdced_f68: o.scd.hdced,                                                           // 68	HDCED
-    hdcad_f69: o.scd.hdcad,                                                           // 69	HDCAD
-    ped_f70: o.scd.ped,                                                             // 70	PED
-    crd_f71: o.scd.crd,                                                             // 71	CRD
-    npd_f72: o.scd.npd,                                                             // 72	NPD
-    led_f73: o.scd.led,                                                             // 73	LED
-    date_sec_cat_changed_f74: o.secCat.evaluationDate && moment(o.secCat.evaluationDate).format('DD/MM/YYYY'),// 74	Date Security Category Changed
+    sed_f67: o.offenderSentenceCalculationDates.sed,                                                             // 67	SED
+    hdced_f68: o.offenderSentenceCalculationDates.hdced,                                                           // 68	HDCED
+    hdcad_f69: o.offenderSentenceCalculationDates.hdcad,                                                           // 69	HDCAD
+    ped_f70: o.offenderSentenceCalculationDates.ped,                                                             // 70	PED
+    crd_f71: o.offenderSentenceCalculationDates.crd,                                                             // 71	CRD
+    npd_f72: o.offenderSentenceCalculationDates.npd,                                                             // 72	NPD
+    led_f73: o.offenderSentenceCalculationDates.led,                                                             // 73	LED
+    date_sec_cat_changed_f74: o.offenderSecurityCategory.evaluationDate && moment(o.offenderSecurityCategory.evaluationDate).format('DD/MM/YYYY'),// 74	Date Security Category Changed
     rule_45_yoi_rule_46_f75: o.checkHoldAlerts.V_45_46,                                             // 75	Rule 45/YOI Rule 49
     f2052sh_f76: o.checkHoldAlerts.SH_STS,                                              // 76	ACCT (Self Harm) Status
     f2052_start_f77: o.checkHoldAlerts.SH_Date,                                             // 77  ACCT (Self Harm) Start Date
 
-    nfa_f78: getNFA(o.dischargeAddr),                                               // 78	Discharge Address Relationship
-    address1_f79: formatAddressLine1(o.dischargeAddr),                                   // 79	Discharge Address Line 1
-    address2_f80: o.dischargeAddr.locality,                                              // 80	Discharge Address Line 2
-    address3_f81: o.dischargeAddr.cityCode,                                              // 81	Discharge Address Line 3
-    address4_f82: o.dischargeAddr.countyCode,                                            // 82	Discharge Address Line 4
-    address5_f83: o.dischargeAddr.countryCode,                                           // 83	Discharge Address Line 5
-    address6_f84: o.dischargeAddr.postalCode,                                            // 84	Discharge Address Line 6
-    address7_f85: o.dischargeAddr.phoneNo,                                               // 85	Discharge Address Line 7
+    discharge_nfa_f78: getNFA(o.offenderDischargeAddresses),                                               // 78	Discharge Address Relationship
+    discharge_address1_f79: formatAddressLine1(o.offenderDischargeAddresses),                                   // 79	Discharge Address Line 1
+    discharge_address2_f80: o.offenderDischargeAddresses.locality,                                              // 80	Discharge Address Line 2
+    discharge_address3_f81: o.offenderDischargeAddresses.cityCode,                                              // 81	Discharge Address Line 3
+    discharge_address4_f82: o.offenderDischargeAddresses.countyCode,                                            // 82	Discharge Address Line 4
+    discharge_address5_f83: o.offenderDischargeAddresses.countryCode,                                           // 83	Discharge Address Line 5
+    discharge_address6_f84: o.offenderDischargeAddresses.postalCode,                                            // 84	Discharge Address Line 6
+    discharge_address7_f85: o.offenderDischargeAddresses.phoneNo,                                               // 85	Discharge Address Line 7
 
-    nfa_f86: getNFA(o.recepAddr),                                                   // 86	Reception Address Relationship
-    address1_f87: formatAddressLine1(o.recepAddr),                                       // 87	Reception Address Line 1
-    address2_f88: o.recepAddr.locality,                                                  // 88	Reception Address Line 2
-    address3_f89: o.recepAddr.cityCode,                                                  // 89	Reception Address Line 3
-    address4_f90: o.recepAddr.countyCode,                                                // 90	Reception Address Line 4
-    address5_f91: o.recepAddr.countryCode,                                               // 91	Reception Address Line 5
-    address6_f92: o.recepAddr.postalCode,                                                // 92	Reception Address Line 6
-    address7_f93: o.recepAddr.phoneNo,                                                   // 93	Reception Address Line 7
+    reception_nfa_f86: getNFA(o.offenderReceptionAddresses),                                                   // 86	Reception Address Relationship
+    reception_address1_f87: formatAddressLine1(o.offenderReceptionAddresses),                                       // 87	Reception Address Line 1
+    reception_address2_f88: o.offenderReceptionAddresses.locality,                                                  // 88	Reception Address Line 2
+    reception_address3_f89: o.offenderReceptionAddresses.cityCode,                                                  // 89	Reception Address Line 3
+    reception_address4_f90: o.offenderReceptionAddresses.countyCode,                                                // 90	Reception Address Line 4
+    reception_address5_f91: o.offenderReceptionAddresses.countryCode,                                               // 91	Reception Address Line 5
+    reception_address6_f92: o.offenderReceptionAddresses.postalCode,                                                // 92	Reception Address Line 6
+    reception_address7_f93: o.offenderReceptionAddresses.phoneNo,                                                   // 93	Reception Address Line 7
 
-    address1_f94: formatAddressLine1(o.homeAddr),                                        // 94	Home Address Line 1
-    address2_f95: o.homeAddr.locality,                                                   // 95	Home Address Line 2
-    address3_f96: o.homeAddr.cityCode,                                                   // 96	Home Address Line 3
-    address4_f97: o.homeAddr.countyCode,                                                 // 97	Home Address Line 4
-    address5_f98: o.homeAddr.countryCode,                                                // 98	Home Address Line 5
-    address6_f99: o.homeAddr.postalCode,                                                 // 99	Home Address Line 6
-    address7_f100: o.homeAddr.phoneNo,                                                   // 100	Home Address Line 7
+    home_address1_f94: formatAddressLine1(o.offenderHomeAddresses),                                        // 94	Home Address Line 1
+    home_address2_f95: o.offenderHomeAddresses.locality,                                                   // 95	Home Address Line 2
+    home_address3_f96: o.offenderHomeAddresses.cityCode,                                                   // 96	Home Address Line 3
+    home_address4_f97: o.offenderHomeAddresses.countyCode,                                                 // 97	Home Address Line 4
+    home_address5_f98: o.offenderHomeAddresses.countryCode,                                                // 98	Home Address Line 5
+    home_address6_f99: o.offenderHomeAddresses.postalCode,                                                 // 99	Home Address Line 6
+    home_address7_f100: o.offenderHomeAddresses.phoneNo,                                                   // 100	Home Address Line 7
 
     nok_name_f101: formatContactPersonName(o.nextOfKin),
-    nfa_f102: formatContactPersonRelationship(o.nextOfKin),                         // 102	NOK Address Relationship
-    address1_f103: (o.nextOfKin && formatAddressLine1(getFirst(withList(o.nextOfKin.addresses)))),             // 103	NOK Address Line 1
-    address2_f104: (o.nextOfKin && getFirst(withList(o.nextOfKin.addresses)).locality),                        // 104	NOK Address Line 2
-    address3_f105: (o.nextOfKin && getFirst(withList(o.nextOfKin.addresses)).cityCode),                        // 105	NOK Address Line 3
-    address4_f106: (o.nextOfKin && getFirst(withList(o.nextOfKin.addresses)).countyCode),                      // 106	NOK Address Line 4
-    address5_f107: (o.nextOfKin && getFirst(withList(o.nextOfKin.addresses)).countryCode),                     // 107	NOK Address Line 5
-    address6_f108: (o.nextOfKin && getFirst(withList(o.nextOfKin.addresses)).postalCode),                      // 108	NOK Address Line 6
-    address7_f109: (o.nextOfKin && getFirst(withList(o.nextOfKin.addresses)).phoneNo),                         // 109	NOK Address Line 7
+    nok_nfa_f102: formatContactPersonRelationship(o.nextOfKin),                         // 102	NOK Address Relationship
+    nok_address1_f103: (o.nextOfKin && formatAddressLine1(getFirst(withList(o.nextOfKin.addresses)))),             // 103	NOK Address Line 1
+    nok_address2_f104: (o.nextOfKin && getFirst(withList(o.nextOfKin.addresses)).locality),                        // 104	NOK Address Line 2
+    nok_address3_f105: (o.nextOfKin && getFirst(withList(o.nextOfKin.addresses)).cityCode),                        // 105	NOK Address Line 3
+    nok_address4_f106: (o.nextOfKin && getFirst(withList(o.nextOfKin.addresses)).countyCode),                      // 106	NOK Address Line 4
+    nok_address5_f107: (o.nextOfKin && getFirst(withList(o.nextOfKin.addresses)).countryCode),                     // 107	NOK Address Line 5
+    nok_address6_f108: (o.nextOfKin && getFirst(withList(o.nextOfKin.addresses)).postalCode),                      // 108	NOK Address Line 6
+    nok_address7_f109: (o.nextOfKin && getFirst(withList(o.nextOfKin.addresses)).phoneNo),                         // 109	NOK Address Line 7
 
-    prob_name_f110: formatContactPersonName(o.offenderManager),                           // 110	Offender Manager
-    address1_f111: (o.offenderManager && formatAddressLine1(getFirst(withList(o.offenderManager.addresses)))),  // 111	Probation Address Line 1
-    address2_f112: (o.offenderManager && getFirst(withList(o.offenderManager.addresses)).locality),       // 112	Probation Address Line 2
-    address3_f113: (o.offenderManager && getFirst(withList(o.offenderManager.addresses)).cityCode),       // 113	Probation Address Line 3
-    address4_f114: (o.offenderManager && getFirst(withList(o.offenderManager.addresses)).countyCode),     // 114	Probation Address Line 4
-    address5_f115: (o.offenderManager && getFirst(withList(o.offenderManager.addresses)).countryCode),    // 115	Probation Address Line 5
-    address6_f116: (o.offenderManager && getFirst(withList(o.offenderManager.addresses)).postalCode),     // 116	Probation Address Line 6
-    address7_f117: (o.offenderManager && getFirst(withList(o.offenderManager.addresses)).phoneNo),        // 117	Probation Address Line 7
+    prob_name_f110: formatContactPersonName(o.offenderManager),
+    prob_address1_f111: (o.offenderManager && formatAddressLine1(getFirst(withList(o.offenderManager.addresses)))),
+    prob_address2_f112: (o.offenderManager && getFirst(withList(o.offenderManager.addresses)).locality),
+    prob_address3_f113: (o.offenderManager && getFirst(withList(o.offenderManager.addresses)).cityCode),
+    prob_address4_f114: (o.offenderManager && getFirst(withList(o.offenderManager.addresses)).countyCode),
+    prob_address5_f115: (o.offenderManager && getFirst(withList(o.offenderManager.addresses)).countryCode),
+    prob_address6_f116: (o.offenderManager && getFirst(withList(o.offenderManager.addresses)).postalCode),
+    prob_address7_f117: (o.offenderManager && getFirst(withList(o.offenderManager.addresses)).phoneNo),
 
     f118: "",                                                                   // 118	Remark Type Allocation
     f119: "",                                                                   // 119	Remarks Allocation
@@ -571,27 +595,27 @@ module.exports.build = (data) => {
     f132: "",                                                                   // 132	Remark Type Labour
     f133: "",                                                                   // 133	Remarks Labour
 
-    sending_estab_f134: o.ltrn.fromAgencyLocationId,                                          // 134	Movement Establishment Name
-    reason_f135: o.ltrn.movementReasonCode,                                            // 135	Transfer Reason
-    movement_date_f136: moment(o.lmove.movementDate).format('DD/MM/YYYY'),                    // 136	Date Of Movement
-    movement_hour_f137: moment(o.lmove.movementTime).format('HH'),                            // 137	Hour of Movement
-    movement_min_f138: moment(o.lmove.movementTime).format('mm'),                            // 138	Minute Of Movement
-    movement_sec_f139: moment(o.lmove.movementTime).format('ss'),                            // 139	Second Of Movement
-    movement_code_f140: o.lmove.movementReasonCode,                                           // 140	Movement Code
-    court_f141: o.courtEscort.toAgencyLocationId,                                     // 141	Court Name
-    escort_f142: o.courtEscort.escortCode,                                             // 142	Escort Type
-    first_out_mov_post_adm_f143: moment(o.firstOutMovement.movementDate).format('DD/MM/YYYY'),         // 143	Date Of First Movement
+    sending_estab_f134: o.lastOffenderTransfer.fromAgencyLocationId,
+    reason_f135: o.lastOffenderTransfer.movementReasonCode,
+    movement_date_f136: moment(o.lastOffenderMovement.movementDate).format('DD/MM/YYYY'),
+    movement_hour_f137: moment(o.lastOffenderMovement.movementTime).format('HH'),
+    movement_min_f138: moment(o.lastOffenderMovement.movementTime).format('mm'),
+    movement_sec_f139: moment(o.lastOffenderMovement.movementTime).format('ss'),
+    movement_code_f140: o.lastOffenderMovement.movementReasonCode,
+    court_f141: o.offenderCourtEscort.toAgencyLocationId,
+    escort_f142: o.offenderCourtEscort.escortCode,
+    first_out_mov_post_adm_f143: moment(o.firstOffenderOutMovement.movementDate).format('DD/MM/YYYY'),
 // 144	Employed
-// 145	Diary Details
-//     145a	Diary Details - Date (Movement)
-//     145b	Diary Details - Time (Movement)
-//     145c	Diary Details - Movement Reason Code
-//     145d	Diary Details - Movement Comment Text
-//     145e	Diary Details - Escort Type
-    security_not_for_release_145f: formatAlert(o.notForRelease),                                        // 145f	Diary Details - Not For Release Alert
-    licence_type_f146: formatLicenseType(o.licence),                                         // 146	Licence Type
-    other_offences_f147: [...otherOffences(o).reduce((x, c) => x.add(c.offenceCode), new Set())], // 147	Other Offences
-    active_alerts_f148: o.activeAlerts.map(formatAlert),                                      // 148 (a&b)	Active Alerts
+    /*
+    "Woodwork 2 AM","ALI-WIND-WWW2","08","15","11","45"~
+    "Woodwork 2 AM","ALI-WIND-WWW2","08","15","11","45"~
+    "Woodwork 2 PM","ALI-WIND-WWW2","13","15","16","15"~
+    "Woodwork 2 PM","ALI-WIND-WWW2","13","15","16","15"
+    */
+    diary_details_f145: o.diaryDetails.map(odd => formatOffenderDiaryDetail(odd, o)),
+    licence_type_f146: formatLicenseType(o.offenderLicense),
+    other_offences_f147: [...otherOffences(o).reduce((x, c) => x.add(c.offenceCode), new Set())],
+    active_alerts_f148: o.activeAlerts.map(formatAlert),
 // 149	Court Outcome
 // 150	Court Code
 // 151	Court Name
@@ -602,7 +626,7 @@ module.exports.build = (data) => {
 //     152d	Activity Start Min
 //     152e	Activity End Hour
 //     152f	Activity End Min
-    tused_f153: o.scd.tused,                                                          // 153	Top Up Supervision Expiry Date
+    tused_f153: o.offenderSentenceCalculationDates.tused,                                                          // 153	Top Up Supervision Expiry Date
   };
 
   return model;
