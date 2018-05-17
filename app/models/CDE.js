@@ -50,13 +50,6 @@ const getOffenderSentenceCalculations = o =>
       moment(b.effectiveSentenceEndDate).diff(a.effectiveSentenceEndDate) > 0 ? b : a
     ), moment(0)) || {};
 
-const getOffenderSentences = o =>
-  withList(o.sentences)
-    .filter(s => (
-      s.bookingId === o.mainBooking.bookingId &&
-      s.isActive
-    ));
-
 const getOffenderSentence = o =>
   getFirst(withList(o.offenderSentences)
     .reduce((a, b) => (
@@ -254,29 +247,39 @@ const formatOffenderDiaryDetail = (odd, o) =>
     not_for_release_alert_145f: formatAlert(o.notForRelease),
   });
 
-const getCustodyStatus = o => {
-  let ob = o.mainBooking;
+const getCustodyStatus = data => {
+  let mainBooking = getFirst(withList(data.bookings));
 
-  let status = [];
-  if (ob.activeFlag || (!ob.activeFlag && ~['ESCP', 'UAL', 'UAL_ECL'].indexOf(ob.statusReason.substring(5))) || ob.inOutStatus === 'TRN') {
-    status.push('Active');
-  } else if (!ob.activeFlag && ob.bookingSequence === 1) {
-    status.push('INACTIVE');
-  } else if (!ob.activeFlag && ob.bookingSequence > 1) {
-    status.push('HISTORIC');
+  let stat = {
+    statusReason: (mainBooking.statusReason || "").substring(5),
+    inTransit: (mainBooking.inOutStatus || "").toUpperCase() === 'TRN',
+    isActive: (mainBooking.activeFlag || false),
+    bookingSequence: mainBooking.bookingSequence,
+  };
+
+  if (stat.isActive) {
+    return 'Active';
   }
 
-  if (~['ESCP', 'UAL'].indexOf(ob.statusReason.substring(5))) {
-    status.push('UAL');
-  } else if (~['UAL_ECL'].indexOf(ob.statusReason.substring(5))) {
-    status.push('UAL_ECL');
-  } else if (ob.inOutStatus === 'TRN') {
-    status.push('In Transit');
-  } else {
-    status.push(ob.inOutStatus.toUpperCase());
+  if (stat.inTransit) {
+    return 'In Transit';
   }
 
-  return status.join('-');
+  if (!stat.isActive) {
+    if (~['ESCP', 'UAL'].indexOf(stat.statusReason)) {
+      return 'UAL';
+    } else if (~['UAL_ECL'].indexOf(stat.statusReason)) {
+      return 'UAL_ECL';
+    } else {
+      return stat.inOutStatus;
+    }
+
+    if (stat.bookingSequence === 1) {
+      return 'INACTIVE';
+    } else if (stat.bookingSequence > 1) {
+      return 'HISTORIC';
+    }
+  }
 };
 
 const earliestReleaseDate =  o =>
@@ -366,7 +369,11 @@ const getPhysicals = o => {
     })(withList(physicals.identifyingMarks)
         .reduce((x, oim) => {
           let area = (~[ 'EAR', 'FACE', 'HEAD', 'LIP', 'NECK', 'NOSE' ].indexOf(oim.bodyPartCode)) ? 'HEAD' : 'BODY';
-          // area = (~[ 'ANKLE', 'ARM', 'ELBOW', 'FINGER', 'FOOT', 'HAND', 'KNEE', 'LEG', 'SHOULDER', 'THIGH', 'TOE', 'TORSO' ].indexOf(oim.bodyPartCode)) ? 'BODY' : 'HEAD';
+          /*
+          area = (~[
+            'ANKLE', 'ARM', 'ELBOW', 'FINGER', 'FOOT', 'HAND', 'KNEE', 'LEG', 'SHOULDER', 'THIGH', 'TOE', 'TORSO'
+          ].indexOf(oim.bodyPartCode)) ? 'BODY' : 'HEAD';
+          */
 
           (x[area] = x[area] || new Set()).add(formatIdentifyingMark(oim));
 
@@ -614,7 +621,7 @@ module.exports.build = (data) => {
     escort_f142: o.offenderCourtEscort.escortCode,
     first_out_mov_post_adm_f143: o.firstOffenderOutMovement.movementDate,
 // 144	Employed
-    diary_details_f145: o.diaryDetails.map(odd => formatOffenderDiaryDetail(odd, o)),
+    diary_details_f145: withList(o.diaryDetails).map(odd => formatOffenderDiaryDetail(odd, o)),
     licence_type_f146: formatLicenseType(o.offenderLicense),
     other_offences_f147: [...otherOffences(o).reduce((x, c) => x.add(c.offenceCode), new Set())],
     active_alerts_f148: o.activeAlerts.map(formatAlert),

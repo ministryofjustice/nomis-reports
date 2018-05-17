@@ -15,17 +15,6 @@ let setUpServices = (config) => {
   setUpServices = () => {};
 };
 
-const withAlerts = (data) =>
-  services.booking
-    .listAlerts(data.bookings[0].offenderBookingId)
-    .catch(err => {
-      if (err.status === 404) {
-        return Promise.resolve([]);
-      }
-    })
-    .then(alerts => data.alerts = alerts)
-    .then(() => data);
-
 const list = (req, res, next) =>
   services.reports.listOffenders(req.params.offenderId)
     .then(data => res.json(data))
@@ -34,14 +23,12 @@ const list = (req, res, next) =>
 const retrieveDetails = (req, res, next) =>
   services.reports
     .getDetails(req.params.offenderId)
-    .then(withAlerts)
     .then(data => res.json(data))
     .catch(helpers.failWithError(res, next));
 
 const retrieveAODetails = (req, res, next) =>
   services.reports
     .getDetails(req.params.offenderId)
-    .then(withAlerts)
     .then(AOModel.build)
     .then(data => res.json(data))
     .catch(helpers.failWithError(res, next));
@@ -49,7 +36,6 @@ const retrieveAODetails = (req, res, next) =>
 const retrieveCDEDetails = (req, res, next) =>
   services.reports
     .getDetails(req.params.offenderId)
-    .then(withAlerts)
     .then(CDEModel.build)
     .then(data => res.json(data))
     .catch(helpers.failWithError(res, next));

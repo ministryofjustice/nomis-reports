@@ -12,6 +12,16 @@ const describe = (name, promise, alt, map) =>
       return alt;
     });
 
+const withAlerts = (agent) => (data) =>
+  agent.request('booking', 'listAlerts', data.bookings[0].offenderBookingId)
+    .catch(err => {
+      if (err.status === 404) {
+        return Promise.resolve([]);
+      }
+    })
+    .then(alerts => data.alerts = alerts)
+    .then(() => data);
+
 function ReportsService(config, childProcessAgent) {
   this.config = config;
   this.agent = childProcessAgent || new ProcessAgent(this.config);
@@ -48,7 +58,8 @@ ReportsService.prototype.getDetails = function (offenderId) {
     describe('sentenceCalculations', this.getOffenderSentenceCalculations(offenderId), []),
     describe('sentences', this.getOffenderSentences(offenderId), []),
   ])
-  .then((data) => data.reduce((a, b) => Object.assign(a, b), {}));
+  .then((data) => data.reduce((a, b) => Object.assign(a, b), {}))
+  .then(withAlerts(this.agent));
 };
 
 
