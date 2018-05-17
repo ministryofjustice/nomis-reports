@@ -352,7 +352,8 @@ module.exports.build = sysdate => data => {
   o.maternityStatus = getMaternityStatus(o, o.sysdate);
 
   let model = {
-  //record_number: o.record_number,
+//record_number: o.record_number,
+    sysdate: o.sysdate,
 
 //offender_booking_q
     nomis_no: o.nomsId,

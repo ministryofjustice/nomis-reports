@@ -62,7 +62,7 @@ const isCDEEntry = (data, extractDate) => {
 };
 
 let reportName = 'CDE';
-let extractDate = moment('2016-01-01');
+let extractDate = moment('2016-01-01T00:00:00.000Z');
 let builder = CDEModel.build(extractDate);
 let entryChecker = isCDEEntry;
 

@@ -13,7 +13,7 @@ const describe = (name, promise, alt, map) =>
     });
 
 const withAlerts = (agent) => (data) =>
-  agent.request('booking', 'listAlerts', data.bookings[0].offenderBookingId)
+  agent.request('booking', 'listAlerts', data.bookings[0].bookingId)
     .catch(err => {
       if (err.status === 404) {
         return Promise.resolve([]);

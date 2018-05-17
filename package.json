@@ -12,7 +12,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js | bunyan -o short",
-    "ingest-oa": "node app/ingest.ao.js | bunyan -o short",
+    "ingest-ao": "node app/ingest.ao.js | bunyan -o short",
     "ingest-cde": "node app/ingest.cde.js | bunyan -o short",
     "sync": "node app/sync.js | bunyan -o short",
     "build": "webpack",
