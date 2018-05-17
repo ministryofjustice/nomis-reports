@@ -1,4 +1,3 @@
-
 const fs = require('fs');
 const moment = require('moment');
 
@@ -63,8 +62,8 @@ const isCDEEntry = (data, extractDate) => {
 };
 
 let reportName = 'CDE';
-let builder = CDEModel.build;
 let extractDate = moment('2016-01-01');
+let builder = CDEModel.build(extractDate);
 let entryChecker = isCDEEntry;
 
 // start of routine

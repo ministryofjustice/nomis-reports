@@ -16,10 +16,6 @@ const services = {
 const getFirst = a => a[0] || {};
 const ofList = a => a || [];
 
-let reportName = 'AO';
-let builder = AOModel.build;
-let extractDate = moment('2016-01-01');
-
 const isAOEntry = (data, extractDate) => {
   let mainBooking = getFirst(ofList(data.bookings));
   let lastMovement = mainBooking.lastMovement || {};
@@ -32,13 +28,17 @@ const isAOEntry = (data, extractDate) => {
       lastMovement.movementTypeCode !== 'ADM';
 };
 
+let reportName = 'AO';
+let extractDate = moment('2016-01-01');
+let builder = AOModel.build(extractDate);
+let entryChecker = isAOEntry;
+
 // start of routine
 
 let now = moment();
 let ep = `./.extracts/reports/${reportName}/${extractDate.format('YYYYMMDD')}.json`;
 let ws = fs.createWriteStream(ep, 'utf8');
 let size = 100;
-let entryChecker = isAOEntry;
 
 let rq;
 let isFirst = true;

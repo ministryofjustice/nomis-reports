@@ -1,16 +1,17 @@
 const express = require('express');
 const router = new express.Router();
 
+const moment = require('moment');
 const helpers = require('../helpers');
+
 const ReportsService = require('../services/ReportsService');
-const BookingService = require('../services/BookingService');
+
 const AOModel = require('../models/AO');
 const CDEModel = require('../models/CDE');
 
 const services = {};
 let setUpServices = (config) => {
   services.reports = services.reports || new ReportsService(config);
-  services.booking = services.booking || new BookingService(config);
 
   setUpServices = () => {};
 };
@@ -29,14 +30,14 @@ const retrieveDetails = (req, res, next) =>
 const retrieveAODetails = (req, res, next) =>
   services.reports
     .getDetails(req.params.offenderId)
-    .then(AOModel.build)
+    .then(AOModel.build(moment()))
     .then(data => res.json(data))
     .catch(helpers.failWithError(res, next));
 
 const retrieveCDEDetails = (req, res, next) =>
   services.reports
     .getDetails(req.params.offenderId)
-    .then(CDEModel.build)
+    .then(CDEModel.build(moment()))
     .then(data => res.json(data))
     .catch(helpers.failWithError(res, next));
 

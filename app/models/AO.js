@@ -317,9 +317,9 @@ const formatSentenceLength = o => {
   return 'Less than 6 months';
 };
 
-module.exports.build = (data) => {
+module.exports.build = sysdate => data => {
   let o = [
-    ['sysdate', () => moment()],
+    ['sysdate', () => sysdate],
     ['mainBooking', getMainBooking],
     ['activeBookings', getNumberOfActiveBookings],
     ['offenderIdentifiers', getIdentifiers],

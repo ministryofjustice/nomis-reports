@@ -426,9 +426,9 @@ const getCourtOutcome = o =>
       ce.directionCode === 'OUT'
     ));
 
-module.exports.build = (data) => {
+module.exports.build = sysdate => data => {
   let o = [
-    ['sysdate', () => moment()],
+    ['sysdate', () => sysdate],
     ['mainBooking', getMainBooking],
     ['previousBookingNos', getPreviousBookings],
     ['offenderIdentifiers', mapOffenderIdentifiers],
@@ -496,7 +496,7 @@ module.exports.build = (data) => {
     custody_status_f24: getCustodyStatus(o),
     inmate_status_f25: o.imprisonmentStatus.imprisonmentStatus,
     sec_cat_f26: o.offenderSecurityCategory.reviewSupLevelType,
-    sec_cat_next_review_f27: o.offenderSecurityCategory.nextReviewDate,
+    sec_cat_next_review_f27: moment(o.offenderSecurityCategory.nextReviewDate),
     sentence_years_f28: (o.offenderSentenceCalculations.effectiveSentenceLength || '').split(/\//gmi)[0],
     sentence_months_f29: (o.offenderSentenceCalculations.effectiveSentenceLength || '').split(/\//gmi)[1],
     sentence_days_f30: (o.offenderSentenceCalculations.effectiveSentenceLength || '').split(/\//gmi)[2],
@@ -509,7 +509,7 @@ module.exports.build = (data) => {
     check_hold_security_37: o.checkHoldAlerts.T_TSE,
     check_hold_medical_38: o.checkHoldAlerts.T_TM,
     check_hold_parole_39: o.checkHoldAlerts.T_TPR,
-    date_of_first_conviction_40: o.firstConviction.startDateTime,
+    date_of_first_conviction_40: moment(o.firstConviction.startDateTime),
     date_first_sentenced_f41: moment(o.firstSentence.startDate),
     f2052_status_42: o.checkHoldAlerts.H_HA,
     highest_ranked_offence_f43: highestRankedOffence(o).offenceCode,
@@ -534,7 +534,7 @@ module.exports.build = (data) => {
     marks_head_f62: o.physicals.identifyingMarks.HEAD,
     marks_body_f63: o.physicals.identifyingMarks.BODY,
     sentence_length_f64: moment(o.offenderSentenceCalculations.effectiveSentenceEndDate).diff(moment(o.offenderSentence.startDate), 'years'),
-    release_date_f65: o.releaseDetails.releaseDate,
+    release_date_f65: moment(o.releaseDetails.releaseDate),
     release_name_f66: formatReleaseReason(o.releaseDetails),
     sed_f67: o.offenderSentenceCalculationDates.sed,
     hdced_f68: o.offenderSentenceCalculationDates.hdced,
@@ -544,45 +544,45 @@ module.exports.build = (data) => {
     npd_f72: o.offenderSentenceCalculationDates.npd,
     led_f73: o.offenderSentenceCalculationDates.led,
     date_sec_cat_changed_f74: o.offenderSecurityCategory.evaluationDate,
-    rule_45_yoi_rule_46_f75: o.checkHoldAlerts.V_45_46,                                             // 75	Rule 45/YOI Rule 49
-    f2052sh_f76: o.checkHoldAlerts.SH_STS,                                              // 76	ACCT (Self Harm) Status
-    f2052_start_f77: o.checkHoldAlerts.SH_Date,                                             // 77  ACCT (Self Harm) Start Date
+    rule_45_yoi_rule_46_f75: o.checkHoldAlerts.V_45_46,
+    f2052sh_f76: o.checkHoldAlerts.SH_STS,
+    f2052_start_f77: o.checkHoldAlerts.SH_Date,
 
-    discharge_nfa_f78: getNFA(o.offenderDischargeAddresses),                                               // 78	Discharge Address Relationship
-    discharge_address1_f79: formatAddressLine1(o.offenderDischargeAddresses),                                   // 79	Discharge Address Line 1
-    discharge_address2_f80: o.offenderDischargeAddresses.locality,                                              // 80	Discharge Address Line 2
-    discharge_address3_f81: o.offenderDischargeAddresses.cityCode,                                              // 81	Discharge Address Line 3
-    discharge_address4_f82: o.offenderDischargeAddresses.countyCode,                                            // 82	Discharge Address Line 4
-    discharge_address5_f83: o.offenderDischargeAddresses.countryCode,                                           // 83	Discharge Address Line 5
-    discharge_address6_f84: o.offenderDischargeAddresses.postalCode,                                            // 84	Discharge Address Line 6
-    discharge_address7_f85: o.offenderDischargeAddresses.phoneNo,                                               // 85	Discharge Address Line 7
+    discharge_nfa_f78: getNFA(o.offenderDischargeAddresses),
+    discharge_address1_f79: formatAddressLine1(o.offenderDischargeAddresses),
+    discharge_address2_f80: o.offenderDischargeAddresses.locality,
+    discharge_address3_f81: o.offenderDischargeAddresses.cityCode,
+    discharge_address4_f82: o.offenderDischargeAddresses.countyCode,
+    discharge_address5_f83: o.offenderDischargeAddresses.countryCode,
+    discharge_address6_f84: o.offenderDischargeAddresses.postalCode,
+    discharge_address7_f85: o.offenderDischargeAddresses.phoneNo,
 
-    reception_nfa_f86: getNFA(o.offenderReceptionAddresses),                                                   // 86	Reception Address Relationship
-    reception_address1_f87: formatAddressLine1(o.offenderReceptionAddresses),                                       // 87	Reception Address Line 1
-    reception_address2_f88: o.offenderReceptionAddresses.locality,                                                  // 88	Reception Address Line 2
-    reception_address3_f89: o.offenderReceptionAddresses.cityCode,                                                  // 89	Reception Address Line 3
-    reception_address4_f90: o.offenderReceptionAddresses.countyCode,                                                // 90	Reception Address Line 4
-    reception_address5_f91: o.offenderReceptionAddresses.countryCode,                                               // 91	Reception Address Line 5
-    reception_address6_f92: o.offenderReceptionAddresses.postalCode,                                                // 92	Reception Address Line 6
-    reception_address7_f93: o.offenderReceptionAddresses.phoneNo,                                                   // 93	Reception Address Line 7
+    reception_nfa_f86: getNFA(o.offenderReceptionAddresses),
+    reception_address1_f87: formatAddressLine1(o.offenderReceptionAddresses),
+    reception_address2_f88: o.offenderReceptionAddresses.locality,
+    reception_address3_f89: o.offenderReceptionAddresses.cityCode,
+    reception_address4_f90: o.offenderReceptionAddresses.countyCode,
+    reception_address5_f91: o.offenderReceptionAddresses.countryCode,
+    reception_address6_f92: o.offenderReceptionAddresses.postalCode,
+    reception_address7_f93: o.offenderReceptionAddresses.phoneNo,
 
-    home_address1_f94: formatAddressLine1(o.offenderHomeAddresses),                                        // 94	Home Address Line 1
-    home_address2_f95: o.offenderHomeAddresses.locality,                                                   // 95	Home Address Line 2
-    home_address3_f96: o.offenderHomeAddresses.cityCode,                                                   // 96	Home Address Line 3
-    home_address4_f97: o.offenderHomeAddresses.countyCode,                                                 // 97	Home Address Line 4
-    home_address5_f98: o.offenderHomeAddresses.countryCode,                                                // 98	Home Address Line 5
-    home_address6_f99: o.offenderHomeAddresses.postalCode,                                                 // 99	Home Address Line 6
-    home_address7_f100: o.offenderHomeAddresses.phoneNo,                                                   // 100	Home Address Line 7
+    home_address1_f94: formatAddressLine1(o.offenderHomeAddresses),
+    home_address2_f95: o.offenderHomeAddresses.locality,
+    home_address3_f96: o.offenderHomeAddresses.cityCode,
+    home_address4_f97: o.offenderHomeAddresses.countyCode,
+    home_address5_f98: o.offenderHomeAddresses.countryCode,
+    home_address6_f99: o.offenderHomeAddresses.postalCode,
+    home_address7_f100: o.offenderHomeAddresses.phoneNo,
 
     nok_name_f101: formatContactPersonName(o.nextOfKin),
-    nok_nfa_f102: formatContactPersonRelationship(o.nextOfKin),                         // 102	NOK Address Relationship
-    nok_address1_f103: (o.nextOfKin && formatAddressLine1(getFirst(withList(o.nextOfKin.addresses)))),             // 103	NOK Address Line 1
-    nok_address2_f104: (o.nextOfKin && getFirst(withList(o.nextOfKin.addresses)).locality),                        // 104	NOK Address Line 2
-    nok_address3_f105: (o.nextOfKin && getFirst(withList(o.nextOfKin.addresses)).cityCode),                        // 105	NOK Address Line 3
-    nok_address4_f106: (o.nextOfKin && getFirst(withList(o.nextOfKin.addresses)).countyCode),                      // 106	NOK Address Line 4
-    nok_address5_f107: (o.nextOfKin && getFirst(withList(o.nextOfKin.addresses)).countryCode),                     // 107	NOK Address Line 5
-    nok_address6_f108: (o.nextOfKin && getFirst(withList(o.nextOfKin.addresses)).postalCode),                      // 108	NOK Address Line 6
-    nok_address7_f109: (o.nextOfKin && getFirst(withList(o.nextOfKin.addresses)).phoneNo),                         // 109	NOK Address Line 7
+    nok_nfa_f102: formatContactPersonRelationship(o.nextOfKin),
+    nok_address1_f103: (o.nextOfKin && formatAddressLine1(getFirst(withList(o.nextOfKin.addresses)))),
+    nok_address2_f104: (o.nextOfKin && getFirst(withList(o.nextOfKin.addresses)).locality),
+    nok_address3_f105: (o.nextOfKin && getFirst(withList(o.nextOfKin.addresses)).cityCode),
+    nok_address4_f106: (o.nextOfKin && getFirst(withList(o.nextOfKin.addresses)).countyCode),
+    nok_address5_f107: (o.nextOfKin && getFirst(withList(o.nextOfKin.addresses)).countryCode),
+    nok_address6_f108: (o.nextOfKin && getFirst(withList(o.nextOfKin.addresses)).postalCode),
+    nok_address7_f109: (o.nextOfKin && getFirst(withList(o.nextOfKin.addresses)).phoneNo),
 
     prob_name_f110: formatContactPersonName(o.offenderManager),
     prob_address1_f111: (o.offenderManager && formatAddressLine1(getFirst(withList(o.offenderManager.addresses)))),
@@ -593,33 +593,33 @@ module.exports.build = (data) => {
     prob_address6_f116: (o.offenderManager && getFirst(withList(o.offenderManager.addresses)).postalCode),
     prob_address7_f117: (o.offenderManager && getFirst(withList(o.offenderManager.addresses)).phoneNo),
 
-    f118: "",                                                                   // 118	Remark Type Allocation
-    f119: "",                                                                   // 119	Remarks Allocation
-    f120: "",                                                                   // 120	Remark Type Security
-    f121: "",                                                                   // 121	Remarks Security
-    f122: "",                                                                   // 122	Remark Type Medical
-    f123: "",                                                                   // 123	Remarks Medical
-    f124: "",                                                                   // 124	Remark Type Parole
-    f125: "",                                                                   // 125	Remarks Parole
-    f126: "",                                                                   // 126	Remark Type Discipline
-    f127: "",                                                                   // 127	Remarks Discipline
-    f128: "",                                                                   // 128	Remark Type General
-    f129: "",                                                                   // 129	Remarks General
-    f130: "",                                                                   // 130	Remark Type Reception
-    f131: "",                                                                   // 131	Remarks Reception
-    f132: "",                                                                   // 132	Remark Type Labour
-    f133: "",                                                                   // 133	Remarks Labour
+    f118: "",  // 118	Remark Type Allocation
+    f119: "",  // 119	Remarks Allocation
+    f120: "",  // 120	Remark Type Security
+    f121: "",  // 121	Remarks Security
+    f122: "",  // 122	Remark Type Medical
+    f123: "",  // 123	Remarks Medical
+    f124: "",  // 124	Remark Type Parole
+    f125: "",  // 125	Remarks Parole
+    f126: "",  // 126	Remark Type Discipline
+    f127: "",  // 127	Remarks Discipline
+    f128: "",  // 128	Remark Type General
+    f129: "",  // 129	Remarks General
+    f130: "",  // 130	Remark Type Reception
+    f131: "",  // 131	Remarks Reception
+    f132: "",  // 132	Remark Type Labour
+    f133: "",  // 133	Remarks Labour
 
     sending_estab_f134: o.lastOffenderTransfer.fromAgencyLocationId,
     reason_f135: o.lastOffenderTransfer.movementReasonCode,
-    movement_date_f136: o.lastOffenderMovement.movementDate,
+    movement_date_f136: moment(o.lastOffenderMovement.movementDate),
     movement_hour_f137: moment(o.lastOffenderMovement.movementTime).format('HH'),
     movement_min_f138: moment(o.lastOffenderMovement.movementTime).format('mm'),
     movement_sec_f139: moment(o.lastOffenderMovement.movementTime).format('ss'),
     movement_code_f140: o.lastOffenderMovement.movementReasonCode,
     court_f141: o.offenderCourtEscort.toAgencyLocationId,
     escort_f142: o.offenderCourtEscort.escortCode,
-    first_out_mov_post_adm_f143: o.firstOffenderOutMovement.movementDate,
+    first_out_mov_post_adm_f143: moment(o.firstOffenderOutMovement.movementDate),
 // 144	Employed
     diary_details_f145: withList(o.diaryDetails).map(odd => formatOffenderDiaryDetail(odd, o)),
     licence_type_f146: formatLicenseType(o.offenderLicense),
@@ -635,7 +635,7 @@ module.exports.build = (data) => {
 //     152d	Activity Start Min
 //     152e	Activity End Hour
 //     152f	Activity End Min
-    tused_f153: o.offenderSentenceCalculationDates.tused,                                                          // 153	Top Up Supervision Expiry Date
+    tused_f153: moment(o.offenderSentenceCalculationDates.tused),
   };
 
   return model;
