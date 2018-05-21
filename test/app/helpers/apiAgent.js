@@ -101,7 +101,12 @@ describe('API Agent', () => {
     let config = {
       apiUrl: '',
       apiGatewayToken: 'dummy',
-      apiGatewayPrivateKey: fakeKey
+      apiGatewayPrivateKey: fakeKey,
+      oauth: {
+        grantType: 'client_credentials',
+        username: 'x_trusted_client',
+        password: 'x_client_password',
+      }
     };
 
     const eliteApiAgent = require('../../../app/helpers/eliteApiAgent');

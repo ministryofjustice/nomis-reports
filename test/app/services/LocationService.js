@@ -5,23 +5,31 @@ const express = require('express');
 
 const LocationRepository = require('../../../app/repositories/LocationRepository');
 const LocationService = require('../../../app/services/LocationService');
+const ProcessAgent = require('../../../app/helpers/MainProcessAgent');
 
-describe('A Location Service', () => {
+describe('Location Service', () => {
   let exampleSet = [
-    { locationId: 'ABC', description: 'ABCabc' },
-    { locationId: 'DEF', description: 'DEFdef' },
-    { locationId: 'GHI', description: 'GHIghi' },
+    { locationId: 'ABC', locationType: 'ABCabc' },
+    { locationId: 'DEF', locationType: 'DEFdef' },
+    { locationId: 'GHI', locationType: 'GHIghi' },
   ];
-  let exampleRecord = { locationId: 'TEST', description: 'TESTtest' };
-  let exampleInmateList = [
-    { offenderNo: 123, description: '123abcABC' },
-  ];
+  let exampleRecord = {
+    locationId: 'TEST',
+    locationType: 'TESTtest',
+    description: 'TESTtest',
+    userDescription: '',
+    agencyId: 'LEI',
+    currentOccupancy: 0,
+    operationalCapacity: 0,
+    locationUsage: '',
+    locationPrefix: '',
+    description: '',
+  };
 
   let server = express();
-  server.get('/locations', (req, res) => res.status(200).json(exampleSet));
+  server.get('/locations', (req, res) => res.status(200).json(req.query.query ? [] : exampleSet));
   server.get('/locations/TEST', (req, res) => res.status(200).json(exampleRecord));
-  server.get('/locations/FOO/inmates', (req, res) => res.status(200).json(exampleInmateList));
-  server.get('/locations/ECHO/inmates', (req, res) => res.status(200).json({ query: req.query }));
+  server.get('/locations/VOID', (req, res) => res.status(404).send());
 
   describe('for the Elite 2 API', () => {
     let fakeKey = [
@@ -34,33 +42,54 @@ describe('A Location Service', () => {
 
     let config = {
       elite2: {
+        apiUrl: '',
         apiGatewayToken: 'LOCATION-REPO-TOKEN',
         apiGatewayPrivateKey: fakeKey,
-        apiUrl: '',
-      },
+        oauth: {
+          grantType: 'client_credentials',
+          username: 'x_trusted_client',
+          password: 'x_client_password',
+        }
+      }
     };
 
-    let locationRepository = new LocationRepository(config, request(server));
-    let locationService = new LocationService(config, locationRepository);
+    let processAgent = new ProcessAgent(config, {
+      location: (config) => new LocationRepository(config, request(server))
+    });
+    let locationService = new LocationService(config, processAgent);
 
     it('should retrieve a list of locations from the remote', () =>
       locationService.list()
-        .then((data) => data.should.eql(exampleSet)));
+        .then((data) => data.should.eql(exampleSet.map(x => ({
+          id: `/locations/${x.locationId}`,
+          type: `/locations/types/${x.locationType}`,
+        })))));
 
     it('should retrieve a location from the remote for a known locationId', () =>
       locationService.getDetails('TEST')
-        .then((data) => data.should.eql(exampleRecord)));
+        .then((data) => data.should.eql({
+          id: `/locations/${exampleRecord.locationId}`,
+          type: `/locations/types/${exampleRecord.locationType}`,
+          label: exampleRecord.userDescription,
+          agency: `/agencies/${exampleRecord.agencyId}`,
+          currentOccupancy: exampleRecord.currentOccupancy,
+          operationalCapacity: exampleRecord.operationalCapacity,
+          parentLocation: undefined,
+          usage: exampleRecord.locationUsage,
+          code: exampleRecord.locationPrefix,
+          shortCode: exampleRecord.description,
+        })));
 
     it('should return nothing if the locationId is not known', () =>
       locationService.getDetails('VOID')
-        .then((data) => should.not.exist(data)));
+        .catch(err => {
+          should.exist(err);
 
-    it('should retrieve a list of inmates from the remote for a known locationId', () =>
-      locationService.listInmates('FOO')
-        .then((data) => data.should.eql(exampleInmateList)));
-
-    it('should pass the search parameters to the remote', () =>
-      locationService.listInmates('ECHO', { q: 'BAR' })
-        .then((data) => data.should.eql({ query: { q: 'BAR' }})));
+          err.status.should.equal(404);
+          err.message.should.contain('Location');
+          err.message.should.contain('VOID');
+          err.message.should.contain('not found');
+        })
+    );
   });
 });

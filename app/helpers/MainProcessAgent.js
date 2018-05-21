@@ -13,18 +13,6 @@ const RetryingRepository = require('./RetryingRepository');
 
 const log = require('../../server/log');
 
-const services = {
-  agency: config => new CachingRepository(new RetryingRepository(new AgencyRepository(config))),
-  booking: config => new CachingRepository(new RetryingRepository(new BookingRepository(config))),
-  caseNote: config => new CachingRepository(new RetryingRepository(new CaseNoteRepository(config))),
-  location: config => new CachingRepository(new RetryingRepository(new LocationRepository(config))),
-  offence: config => new CachingRepository(new RetryingRepository(new OffenceRepository(config))),
-  offender: config => new CachingRepository(new RetryingRepository(new OffenderRepository(config))),
-  prison: config => new CachingRepository(new RetryingRepository(new PrisonRepository(config))),
-  reports: config => new CachingRepository(new RetryingRepository(new ReportsRepository(config))),
-  user: config => new UserRepository(config),
-};
-
 const setJwt = (config) => (token) => {
   config.elite2.elite2Jwt = token;
 };
@@ -33,9 +21,20 @@ const removeJwt = (config) => {
   delete config.elite2.elite2Jwt;
 };
 
-function MainProcessAgent(config) {
+function MainProcessAgent(config, services) {
   this.requestId = 0;
   this.config = config;
+  this.services = services || {
+    agency: config => new CachingRepository(new RetryingRepository(new AgencyRepository(config))),
+    booking: config => new CachingRepository(new RetryingRepository(new BookingRepository(config))),
+    caseNote: config => new CachingRepository(new RetryingRepository(new CaseNoteRepository(config))),
+    location: config => new CachingRepository(new RetryingRepository(new LocationRepository(config))),
+    offence: config => new CachingRepository(new RetryingRepository(new OffenceRepository(config))),
+    offender: config => new CachingRepository(new RetryingRepository(new OffenderRepository(config))),
+    prison: config => new CachingRepository(new RetryingRepository(new PrisonRepository(config))),
+    reports: config => new CachingRepository(new RetryingRepository(new ReportsRepository(config))),
+    user: config => new UserRepository(config),
+  };
 }
 
 MainProcessAgent.prototype.login = function() {
@@ -63,7 +62,7 @@ MainProcessAgent.prototype.request = function(repository, method, ...params) {
     params: request.repository !== 'user' ? request.params : undefined
   }, 'MainProcessAgent makeRequest BEGIN');
 
-  let builder = services[request.repository];
+  let builder = this.services[request.repository];
 
   if (typeof builder !== 'function') {
     let error = new Error(`${request.repository} is an unknown Repository Builder`);
@@ -72,7 +71,7 @@ MainProcessAgent.prototype.request = function(repository, method, ...params) {
     return;
   }
 
-  return Promise.resolve(services[request.repository](request.config))
+  return Promise.resolve(builder(request.config))
     .then((repository) => repository[request.method].apply(repository, request.params))
     .then((response) => {
       log.debug({repository, method, params}, 'MainProcessAgent message SUCCESS');

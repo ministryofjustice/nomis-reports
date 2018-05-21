@@ -1,7 +1,6 @@
 const log = require('../../server/log');
 
 const ProcessAgent = require('../helpers/MainProcessAgent');
-//const BatchProcessor = require('../helpers/BatchProcessor');
 
 const describe = (name, promise, alt, map) =>
   promise
@@ -25,12 +24,7 @@ AgencyService.prototype.list = function (query, pageOffset, pageSize) {
       type: `/agencies/types/${x.agencyType}`
     })));
 };
-/*
-AgencyService.prototype.all = function (query, pageSize = 1000, batchSize = 5) {
-  let batch = new BatchProcessor({ batchSize });
-  return batch.run((pageOffset = 0) => this.list(query || {}, pageOffset, pageSize));
-};
-*/
+
 AgencyService.prototype.listTypes = function (query) {
   return this.list(query)
       .then((x) => x.reduce((a, b) => {
@@ -49,61 +43,58 @@ AgencyService.prototype.listByType = function (typeId, query) {
 };
 
 AgencyService.prototype.getDetails = function (agencyId) {
-  return Promise.all([
-    this.agent.request('agency', 'getDetails', agencyId)
-      .catch((err) => {
-        log.error(err, {agencyId}, 'AgencyService getDetails ERROR');
+  return this.agent.request('agency', 'getDetails', agencyId)
+    .catch((err) => {
+      log.debug(err, { agencyId }, 'AgencyService getDetails ERROR');
 
-        return { agencyId };
-      }),
-    describe('address', this.agent.request('agency', 'getContactDetails', agencyId), undefined),
-    describe('location', this.listLocations(agencyId), undefined),
-  ])
-  .then((data) => data.reduce((a, b) => Object.assign(a, b), {}))
-  .then((agency) => Object.assign(
-    {
-      id: `/agencies/${agency.agencyId}`,
-      type: `/agencies/types/${agency.agencyType}`,
-      label: agency.description,
-    },
-    agency))
-  .then((agency) => {
-    if (agency.address) {
-      if (agency.address.phones) {
-        agency.phoneNumber = agency.address.phones
-          .map((x) => ({
-            type: x.type,
-            number: x.number,
-            extension: x.ext,
-          }));
+      return { agencyId };
+    })
+    .then(data => {
+      if (!data) {
+        let err = new Error(`Agency <${agencyId}> not found`);
+        err.status = 404;
 
-          delete agency.address.phones;
+        throw err;
       }
 
-      delete agency.address.agencyId;
+      let agency = Object.assign({
+          id: `/agencies/${data.agencyId}`,
+          type: `/agencies/types/${data.agencyType}`,
+          label: data.description,
+        },
+        data);
 
-      agency.address.type = agency.address.addressType;
-      delete agency.address.addressType;
-    }
+      if (agency.address) {
+        if (agency.address.phones) {
+          agency.phoneNumber = agency.address.phones
+            .map((x) => ({
+              type: x.type,
+              number: x.number,
+              extension: x.ext,
+            }));
 
-    delete agency.agencyId;
-    delete agency.agencyType;
-    delete agency.description;
+            delete agency.address.phones;
+        }
 
-    if (agency.location.length === 0) {
-      delete agency.location;
-    }
+        delete agency.address.agencyId;
 
-    return agency;
-  });
-};
+        agency.address.type = agency.address.addressType;
+        delete agency.address.addressType;
+      }
 
-AgencyService.prototype.listLocations = function (agencyId, query, pageOffset, pageSize) {
-  return this.agent.request('agency', 'listLocations', agencyId, query, pageOffset, pageSize)
-    .then((x) => x.map((x) => ({
-      id: `/locations/${x.locationId}`,
-      type: `/locations/types/${x.locationType}`
-    }) ));
+      delete agency.agencyId;
+      delete agency.agencyType;
+      delete agency.description;
+
+      return this.agent.request('location', 'list', `agencyId:eq:${agencyId}`)
+        .then(locations => {
+          if (locations && locations.length) {
+            agency.locations = locations;
+          }
+
+          return agency;
+        });
+    });
 };
 
 module.exports = AgencyService;

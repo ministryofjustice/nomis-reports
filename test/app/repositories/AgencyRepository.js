@@ -5,13 +5,13 @@ const express = require('express');
 
 const AgencyRepository = require('../../../app/repositories/AgencyRepository');
 
-describe('An Agency Repository', () => {
+describe('Agency Repository', () => {
   let exampleSet = [
-    { agencyId: 'ABC', name: 'ABCabc' },
-    { agencyId: 'DEF', name: 'DEFdef' },
-    { agencyId: 'GHI', name: 'GHIghi' },
+    { agencyId: 'ABC', agencyType: 'ABCabc' },
+    { agencyId: 'DEF', agencyType: 'DEFdef' },
+    { agencyId: 'GHI', agencyType: 'GHIghi' },
   ];
-  let exampleRecord = { agencyId: 'TEST', name: 'TESTtest' };
+  let exampleRecord = { agencyId: 'TEST', agencyType: 'TESTtest' };
 
   let server = express();
   server.get('/agencies', (req, res) => res.status(200).json(exampleSet));
@@ -28,10 +28,15 @@ describe('An Agency Repository', () => {
 
     let config = {
       elite2: {
-        apiGatewayToken: 'AGENCY-REPO-TOKEN',
-        apiGatewayPrivateKey: fakeKey,
         apiUrl: '',
-      },
+        apiGatewayToken: 'LOCATION-REPO-TOKEN',
+        apiGatewayPrivateKey: fakeKey,
+        oauth: {
+          grantType: 'client_credentials',
+          username: 'x_trusted_client',
+          password: 'x_client_password',
+        }
+      }
     };
 
     let agencyRepository = new AgencyRepository(config, request(server));

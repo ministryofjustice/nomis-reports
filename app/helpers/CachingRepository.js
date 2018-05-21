@@ -67,10 +67,10 @@ const wrap = (repository, method, prefix, ds) => (...args) => {
 
 function CachingRepository(repository, ds) {
   ds = ds || datastore;
-  this.name = repository.name || repository.constructor.name;
+  let name = this.name = repository.name || repository.constructor.name;
 
   for (let method in repository) {
-    this[method] = wrap(repository, method, repository.name, ds);
+    this[method] = wrap(repository, method, name, ds);
   }
 };
 

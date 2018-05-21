@@ -5,22 +5,17 @@ const express = require('express');
 
 const LocationRepository = require('../../../app/repositories/LocationRepository');
 
-describe('A Location Repository', () => {
+describe('Location Repository', () => {
   let exampleSet = [
     { locationId: 'ABC', description: 'ABCabc' },
     { locationId: 'DEF', description: 'DEFdef' },
     { locationId: 'GHI', description: 'GHIghi' },
   ];
   let exampleRecord = { locationId: 'TEST', description: 'TESTtest' };
-  let exampleInmateList = [
-    { offenderNo: 123, description: '123abcABC' },
-  ];
 
   let server = express();
   server.get('/locations', (req, res) => res.status(200).json(exampleSet));
   server.get('/locations/TEST', (req, res) => res.status(200).json(exampleRecord));
-  server.get('/locations/FOO/inmates', (req, res) => res.status(200).json(exampleInmateList));
-  server.get('/locations/ECHO/inmates', (req, res) => res.status(200).json({ query: req.query }));
 
   describe('for the Elite 2 API', () => {
     let fakeKey = [
@@ -33,10 +28,15 @@ describe('A Location Repository', () => {
 
     let config = {
       elite2: {
+        apiUrl: '',
         apiGatewayToken: 'LOCATION-REPO-TOKEN',
         apiGatewayPrivateKey: fakeKey,
-        apiUrl: '',
-      },
+        oauth: {
+          grantType: 'client_credentials',
+          username: 'x_trusted_client',
+          password: 'x_client_password',
+        }
+      }
     };
 
     let locationRepository = new LocationRepository(config, request(server));
@@ -52,17 +52,5 @@ describe('A Location Repository', () => {
     it('should return nothing if the locationId is not known', () =>
       locationRepository.getDetails('VOID')
         .then((data) => should.not.exist(data)));
-
-    it('should return nothing if the locationId is not passed', () =>
-      locationRepository.getDetails()
-        .then((data) => should.not.exist(data)));
-
-    it('should retrieve a list of inmates from the remote for a known locationId', () =>
-      locationRepository.listInmates('FOO')
-        .then((data) => data.should.eql(exampleInmateList)));
-
-    it('should pass the search parameters to the remote', () =>
-      locationRepository.listInmates('ECHO', { q: 'BAR' })
-        .then((data) => data.should.eql({ query: { q: 'BAR' }})));
   });
 });

@@ -2,7 +2,7 @@ let should = require('chai').should();
 
 const generateApiGatewayToken = require('../../../app/helpers/apiGatewayAuth');
 
-describe('API Gateway Token Generation', () => {
+describe('API Gateway Auth', () => {
   let fakeKey = [
     '-----BEGIN PRIVATE KEY-----',
     'MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgPGJGAm4X1fvBuC1z',

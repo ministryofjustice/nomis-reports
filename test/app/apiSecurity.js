@@ -33,6 +33,16 @@ describe('API Security', () => {
         apiUrl: '',
         apiGatewayToken: 'ELITE2-API-TOKEN',
         apiGatewayPrivateKey: fakeKey,
+        oauth: {
+          grantType: 'client_credentials',
+          username: 'x_trusted_client',
+          password: 'x_client_password',
+        }
+      },
+
+      reports: {
+        apiUrl: '',
+        bearerToken: 'REPORTS-API-TOKEN',
       }
     };
 

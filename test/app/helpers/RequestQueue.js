@@ -2,7 +2,7 @@
 
 const RequestQueue = require('../../../app/helpers/RequestQueue');
 
-describe('RequestQueue', () => {
+describe('Request Queue', () => {
   it('should process sync jobs as they are added', () => {
     let processed = [];
 
@@ -52,7 +52,7 @@ describe('RequestQueue', () => {
     setTimeout(() => {
       q.queued().should.equal(0);
       processed.length.should.equal(3);
-    }, 0);
+    }, 40);
   });
 
 });

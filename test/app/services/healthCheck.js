@@ -4,17 +4,22 @@ const express = require('express');
 const apiHealthCheck = require('../../../app/services/healthCheck');
 const apiAgent = require('../../../app/helpers/apiAgent');
 
-describe('Remote API health checker', () => {
+describe('Health Check', () => {
   let server = express();
   server.get('/test/version', (req, res) => res.status(200).json({ hello: 'world' }));
-  server.get('/test/info/health', (req, res) => res.status(200).json({ hello: 'universe' }));
+  server.get('/test/health', (req, res) => res.status(200).json({ hello: 'galaxy' }));
+  server.get('/test/info', (req, res) => res.status(200).json({ hello: 'universe' }));
 
   let config = {
     apiUrl: '/test'
   };
 
   it('should make a request of /info/health', () =>
-    apiHealthCheck(apiAgent(request(server)), 'fake-api', config).infoHealth()
+    apiHealthCheck(apiAgent(request(server)), 'fake-api', config).health()
+      .then((response) => response.should.have.property('hello', 'galaxy')));
+
+  it('should make a request of /info/health', () =>
+    apiHealthCheck(apiAgent(request(server)), 'fake-api', config).info()
       .then((response) => response.should.have.property('hello', 'universe')));
 
   it('should make a request of /version', () =>
