@@ -22,6 +22,8 @@ describe('Caching Repository', () => {
   };
 
   TestRepository.prototype.getDetails = function (id, query) {
+    console.log('HERE');
+
     return this.agent.get(`/${id}`).query(query).send();
   };
 
