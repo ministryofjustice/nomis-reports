@@ -1,7 +1,7 @@
 const log = require('../../server/log');
 
 const ProcessAgent = require('../helpers/MainProcessAgent');
-const BatchProcessor = require('../helpers/BatchProcessor');
+//const BatchProcessor = require('../helpers/BatchProcessor');
 
 const describe = (name, promise, alt, map) =>
   promise
@@ -22,17 +22,17 @@ AgencyService.prototype.list = function (query, pageOffset, pageSize) {
   return this.agent.request('agency', 'list', query, pageOffset, pageSize)
     .then((x) => x.map((x) => ({
       id: `/agencies/${x.agencyId}`,
-      type: `/agencyType/${x.agencyType}`
+      type: `/agencies/types/${x.agencyType}`
     })));
 };
-
+/*
 AgencyService.prototype.all = function (query, pageSize = 1000, batchSize = 5) {
   let batch = new BatchProcessor({ batchSize });
   return batch.run((pageOffset = 0) => this.list(query || {}, pageOffset, pageSize));
 };
-
+*/
 AgencyService.prototype.listTypes = function (query) {
-  return this.all(query)
+  return this.list(query)
       .then((x) => x.reduce((a, b) => {
         if (!~a.indexOf(b.type)) {
           a.push(b.type);
@@ -43,9 +43,9 @@ AgencyService.prototype.listTypes = function (query) {
       .map((x) => ({ id: x })));
 };
 
-AgencyService.prototype.listByType = function (type, query) {
-  return this.all(query)
-    .then((x) => x.filter((x) => x.agencyType === type).map((x) => ({ id: `/agencies/${x.agencyId}` })));
+AgencyService.prototype.listByType = function (typeId, query) {
+  return this.list(query)
+    .then((x) => x.filter((x) => x.type === `/agencies/types/${typeId}`));
 };
 
 AgencyService.prototype.getDetails = function (agencyId) {
@@ -63,7 +63,7 @@ AgencyService.prototype.getDetails = function (agencyId) {
   .then((agency) => Object.assign(
     {
       id: `/agencies/${agency.agencyId}`,
-      type: `/agencyType/${agency.agencyType}`,
+      type: `/agencies/types/${agency.agencyType}`,
       label: agency.description,
     },
     agency))
@@ -102,7 +102,7 @@ AgencyService.prototype.listLocations = function (agencyId, query, pageOffset, p
   return this.agent.request('agency', 'listLocations', agencyId, query, pageOffset, pageSize)
     .then((x) => x.map((x) => ({
       id: `/locations/${x.locationId}`,
-      type: `/locationType/${x.locationType}`
+      type: `/locations/types/${x.locationType}`
     }) ));
 };
 
