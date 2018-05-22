@@ -1,11 +1,10 @@
 const AgencyRepository = require('../repositories/AgencyRepository');
 const BookingRepository = require('../repositories/BookingRepository');
-const LocationRepository = require('../repositories/LocationRepository');
-const OffenderRepository = require('../repositories/OffenderRepository');
 const CaseNoteRepository = require('../repositories/CaseNoteRepository');
-const PrisonRepository = require('../repositories/PrisonRepository');
-const ReportsRepository = require('../repositories/ReportsRepository');
+const LocationRepository = require('../repositories/LocationRepository');
 const OffenceRepository = require('../repositories/OffenceRepository');
+const OffenderRepository = require('../repositories/OffenderRepository');
+const ReportsRepository = require('../repositories/ReportsRepository');
 const UserRepository = require('../repositories/UserRepository');
 
 const CachingRepository = require('./CachingRepository');
@@ -31,9 +30,8 @@ function MainProcessAgent(config, services) {
     location: config => new CachingRepository(new RetryingRepository(new LocationRepository(config))),
     offence: config => new CachingRepository(new RetryingRepository(new OffenceRepository(config))),
     offender: config => new CachingRepository(new RetryingRepository(new OffenderRepository(config))),
-    prison: config => new CachingRepository(new RetryingRepository(new PrisonRepository(config))),
     reports: config => new CachingRepository(new RetryingRepository(new ReportsRepository(config))),
-    user: config => new UserRepository(config),
+    user: config => new RetryingRepository(new UserRepository(config)),
   };
 }
 
