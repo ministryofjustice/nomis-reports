@@ -52,7 +52,7 @@ describe('Request Queue', () => {
     setTimeout(() => {
       q.queued().should.equal(0);
       processed.length.should.equal(3);
-    }, 40);
+    }, 100);
   });
 
 });

@@ -18,69 +18,128 @@ describe('Caching Repository', () => {
   }
 
   TestRepository.prototype.list = function (query) {
-    return this.agent.get('/').query(query).send();
+    return this.agent.get('/').query(query).send().then(res => {
+      return res.status === 404 ? undefined : res && res.body;
+    });
   };
 
   TestRepository.prototype.getDetails = function (id, query) {
-    console.log('HERE');
-
-    return this.agent.get(`/${id}`).query(query).send();
+    return this.agent.get(`/${id}`).query(query).send().then(res => {
+      return res.status === 404 ? undefined : res && res.body;
+    });
   };
 
   TestRepository.prototype.getList = function (id, query) {
-    return this.agent.get(`/${id}/path`).query(query).send();
+    return this.agent.get(`/${id}/path`).query(query).send().then(res => {
+      return res.status === 404 ? undefined : res && res.body;
+    });
   };
 
   describe('for the Elite 2 API', () => {
     let ds = {
       data: {},
 
-      get(path) {
-        path = path.replace(__dirname, '');
+      getStore(cacheName) {
+        this.data[cacheName] = this.data[cacheName] || [];
 
-        return new Promise((resolve, reject) => this.data[path] ? resolve(this.data[path]) : reject(new Error('file does not exist')));
+        return this.data[cacheName];
       },
 
-      put(path, data) {
-        path = path.replace(__dirname, '');
-        this.data[path] = { path, data };
+      put(cacheName, cacheKey, data) {
+        return new Promise((resolve) => {
+          this.getStore(cacheName).push({ cacheName, cacheKey, data });
 
-        return new Promise((resolve) => resolve(this.data[path]));
+          resolve();
+        });
+      },
+
+      get(cacheName, cacheKey = '_') {
+        return new Promise((resolve, reject) => {
+          let found = this.getStore(cacheName).filter(x => x.cacheKey === cacheKey);
+
+          found.length === 1 ? resolve(found[0].data) : reject(new Error());
+        });
       }
     };
 
     let testRepository = new TestRepository(request(server));
     let cachingService = new CachingRepository(testRepository, ds);
 
+    beforeEach(() => {
+      ds.data = {};
+    });
 
-    it('should store a list document in the cache', () =>
+    it('should implement the wraped objects interface', () => {
+      cachingService.should.have.property('list');
+      cachingService.should.have.property('getDetails');
+      cachingService.should.have.property('getList');
+    });
+
+    it('should return the correct response', () =>
       cachingService.list()
-        .then((data) => should.exist(data) && data.should.eql())
-        .then(() => ds.data['TestRepository_list'].should.have.property('data', JSON.stringify()))
+        .then((data) => {
+          should.exist(data);
+          data.should.eql({ path: '/' });
+        })
+    );
+
+    it('should store a list documents in the cache', () =>
+      cachingService.list()
+        .then(() => ds.get('_TestRepository_list'))
+        .then(cache => cache.should.have.property('path'))
     );
 
     it('should store a response document in the cache', () =>
       cachingService.getDetails('TEST')
-        .then((data) => should.exist(data) && data.should.eql())
-        .then(() => ds.data['TestRepository_getDetails_TEST'].should.have.property('data', JSON.stringify()))
+        .then((data) => {
+          should.exist(data);
+          data.should.eql({ path: '/TEST' });
+        })
+        .then(() => ds.get('_TestRepository_getDetails', '_TEST'))
+        .then(cache => cache.should.have.property('path', '/TEST'))
     );
+
+    it('should retrieve a response document from the cache', () => {
+      ds.put('_TestRepository_getDetails', '_TEST', { foo: 'bar' });
+
+      return cachingService.getDetails('TEST')
+        .then((data) => {
+          should.exist(data);
+          data.should.eql({ "foo": "bar" });
+        })
+        .then(() => ds.get('_TestRepository_getDetails', '_TEST'))
+        .then(cache => cache.should.have.property('foo', 'bar'));
+    });
 
     it('should not create a cache object if the response was not OK', () =>
       cachingService.getDetails('VOID')
         .then((data) => should.not.exist(data))
-        .then(() => should.not.exist(ds.data['TestRepository_getDetails_VOID']))
+        .then(() => ds.get('_TestRepository_getDetails', '_VOID').catch((err) => Promise.resolve(err)))
+        .then(err => err.should.be.instanceOf(Error))
     );
 
     it('should include path params in the cachekey', () =>
       cachingService.getList('FOO')
-        .then((data) => should.exist(data) && data.should.eql())
-        .then(() => ds.data['TestRepository_getList_FOO'].should.have.property('data', JSON.stringify()))
+        .then((data) => {
+          should.exist(data);
+          data.should.eql({ path: '/FOO/path' });
+        })
+        .then(() => ds.get('_TestRepository_getList', '_FOO'))
+        .then(cache => cache.should.have.property('path', '/FOO/path'))
     );
 
     it('should include the search parameters in the cachekey', () =>
       cachingService.getList('ECHO', { q: 'BAR' })
-        .then((data) => should.exist(data) && data.should.eql({ query: { q: 'BAR' }}))
-        .then(() => ds.data['TestRepository_getList_ECHO_{"q":"BAR"}'].should.have.property('data', JSON.stringify({ query: { q: 'BAR' }})))
+        .then((data) => {
+          should.exist(data);
+          data.should.eql({ path: '/ECHO/path', query: { 'q': 'BAR' } });
+        })
+        .then(() => ds.get('_TestRepository_getList', '_ECHO_{"q":"BAR"}'))
+        .then(cache => {
+          cache.should.have.property('path', '/ECHO/path');
+          cache.should.have.property('query');
+          cache.query.should.have.property('q', 'BAR');
+        })
     );
   });
 });
