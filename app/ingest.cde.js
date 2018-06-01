@@ -42,7 +42,7 @@ const isCDEEntry = (data, extractDate) => {
         (~['CRT', 'TAP'].indexOf(lastMovement.movementTypeCode) && lastMovement.movementDirection === 'OUT') ?
           moment(lastMovement.movementDateTime) : extractDate;
 
-      return movementDate.diff(extractDate.subtract(7, 'days')) >= 0;
+      return movementDate.diff(extractDate.clone().subtract(7, 'days')) >= 0;
     }
 
     // In-Transit
@@ -57,13 +57,13 @@ const isCDEEntry = (data, extractDate) => {
       ~['ESCP', 'UAL', 'UAL_ECL'].indexOf(lastMovement.movementReasonCode) ?
         extractDate : moment(lastMovement.movementDateTime);
 
-    return movementDate.diff(extractDate.subtract(7, 'days')) >= 0;
+    return movementDate.diff(extractDate.clone().subtract(7, 'days')) >= 0;
   }
 };
 
 let reportName = 'CDE';
-let extractDate = moment('2016-01-01T00:00:00.000Z');
-let builder = CDEModel.build(extractDate);
+let extractDate = moment();
+let builder = CDEModel.build(extractDate.clone());
 let entryChecker = isCDEEntry;
 
 // start of routine

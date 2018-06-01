@@ -17,7 +17,7 @@ let setUpServices = (config) => {
 };
 
 const list = (req, res, next) =>
-  services.reports.listOffenders(req.params.offenderId)
+  services.reports.listOffenders({} /* query */, req.query.page, req.query.size)
     .then(data => res.json(data))
     .catch(helpers.failWithError(res, next));
 

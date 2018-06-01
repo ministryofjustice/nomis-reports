@@ -485,7 +485,7 @@ module.exports.build = sysdate => data => {
     last_movement_reason_code: o.lastMovement.movementReasonCode,
     last_movement_direction: o.lastMovement.movementDirection,
     last_movement_from_id: o.lastMovement.fromAgencyLocationId,
-    last_movement_to_id: o.lastMovement.toAgencyCodeLocationId,
+    last_movement_to_id: o.lastMovement.toAgencyLocationId,
     last_movement_date: moment(o.lastMovement.movementDateTime),
 
 //preferred_self_harm_alert_q

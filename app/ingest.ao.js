@@ -29,8 +29,8 @@ const isAOEntry = (data, extractDate) => {
 };
 
 let reportName = 'AO';
-let extractDate = moment('2016-01-01T00:00:00.000Z');
-let builder = AOModel.build(extractDate);
+let extractDate = moment();
+let builder = AOModel.build(extractDate.clone());
 let entryChecker = isAOEntry;
 
 // start of routine
