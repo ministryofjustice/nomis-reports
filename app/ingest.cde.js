@@ -82,7 +82,10 @@ let entries = 0;
 
 let getContent = (response) => response._embedded.offenders;
 
+let lastPage = 0;
 let setupQueue = (batch, totalPages) => {
+  lastPage = totalPages;
+
   let sets = [];
   for (let i = 0; i < totalPages; i++) {
     sets.push({ type: 'list', page: i + 1, size: batch.size });
@@ -137,7 +140,7 @@ rq = new RequestQueue((batch, done) => {
             }
           });
 
-          if (response.page.number === response.page.totalPages - 1) {
+          if (response.page.number === lastPage) {
             listComplete = true;
 
             if (totalEntries === 0) {
