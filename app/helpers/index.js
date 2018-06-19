@@ -1,5 +1,7 @@
 
+const url = require('url');
 const log = require('../../server/log');
+
 // helper methods
 
 const objToList = (obj) => {
@@ -67,6 +69,14 @@ const handleResponse = (fallback) => (res) => {
   return fallback;
 };
 
+const processLinks = (links) => {
+  let l = {};
+  for (let link in links) {
+    l[link] = url.parse(links[link].href).path;
+  }
+  return l;
+};
+
 module.exports = {
   objToList: objToList,
   objToFilteredList: objToFilteredList,
@@ -79,4 +89,5 @@ module.exports = {
   failWithError: failWithError,
   errorCheck: errorCheck,
   handleResponse: handleResponse,
+  processLinks: processLinks,
 };
