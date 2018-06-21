@@ -87,6 +87,7 @@ AgencyService.prototype.getDetails = function (agencyId) {
       delete agency.description;
 
       return this.agent.request('location', 'list', `agencyId:eq:${agencyId}`)
+        .catch(err => Promise.resolve([]))
         .then(locations => {
           if (locations && locations.length) {
             agency.locations = locations;
