@@ -1,18 +1,12 @@
-const apiAgent = require('../helpers/apiAgent');
+const custodyApiAgent = require('../helpers/custodyApiAgent');
 
 const helpers = require('../helpers');
 
 function ReportsRepository(config, agent) {
   this.config = Object.assign({ limit: 2000 }, config);
-  this.agent = apiAgent(agent, [
-      (request) => {
-        request.set('Authorization', `Bearer ${this.config.reports.bearerToken}`);
+  this.agent = custodyApiAgent(agent, undefined, this.config.custody);
 
-        return request;
-      }
-  ], this.config.reports);
-
-  let root = this.config.reports.apiUrl;
+  let root = this.config.custody.apiUrl;
 
   this.requests = {
     listAddresses: this.agent.get(`${root}/addresses`),

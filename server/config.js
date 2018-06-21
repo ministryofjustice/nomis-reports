@@ -49,15 +49,22 @@ module.exports = {
       grantType: get('OAUTH_GRANT_TYPE', 'client_credentials', { requireInProduction: true }),
       username: get('OAUTH_USERNAME', 'x_trusted_client', { requireInProduction: true }),
       password: get('OAUTH_PASSWORD', 'x_client_password', { requireInProduction: true }),
-    }
+    },
   },
 
-  reports: {
-    apiUrl: get('REPORT_API_URL', 'http://localhost:8080', { requireInProduction: true }),
+  custody: {
+    apiUrl: get('REPORT_API_URL', 'http://localhost:8080/api', { requireInProduction: true }),
+    apiGatewayToken: get('GW_TOKEN', '', { requireInProduction: true }),
+    apiGatewayPrivateKey: new Buffer(get('GW_KEY', ''), 'base64').toString('ascii'),
     bearerToken: get('OAUTH_BEARER_TOKEN', '', { requireInProduction: true }),
     timeout: {
-      response: 50000,
-      deadline: 40000
+      response: 20000,
+      deadline: 25000
+    },
+    oauth: {
+      grantType: get('REPORT_GRANT_TYPE', 'client_credentials', { requireInProduction: true }),
+      username: get('REPORT_USERNAME', 'x_trusted_client', { requireInProduction: true }),
+      password: get('REPORT_PASSWORD', 'x_client_password', { requireInProduction: true }),
     },
   }
 };

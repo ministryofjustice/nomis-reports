@@ -13,11 +13,16 @@ const RetryingRepository = require('./RetryingRepository');
 const log = require('../../server/log');
 
 const setJwt = (config) => (token) => {
-  config.elite2.elite2Jwt = token;
+  config.elite2.elite2Jwt = config.custody.custodyJwt = token;
+
+  return token;
 };
 
 const removeJwt = (config) => {
   delete config.elite2.elite2Jwt;
+  delete config.custody.custodyJwt;
+
+  return config;
 };
 
 function MainProcessAgent(config, services) {
@@ -38,11 +43,11 @@ function MainProcessAgent(config, services) {
 MainProcessAgent.prototype.login = function() {
   log.debug('MainProcessAgent login BEGIN');
 
-  return (this.config.elite2.elite2Jwt) ?
+  return (this.config.elite2.elite2Jwt && this.config.custody.custodyJwt) ?
           Promise.resolve() :
           this.request('user', 'login')
             .then(setJwt(this.config))
-            .then(() => log.debug('MainProcessAgent login SUCCESS'));
+            .then(token => log.debug(token, 'MainProcessAgent login SUCCESS'));
 };
 
 MainProcessAgent.prototype.request = function(repository, method, ...params) {
