@@ -17,8 +17,15 @@ let setUpServices = (config) => {
 };
 
 const list = (req, res, next) =>
-  services.reports.listOffenders({} /* query */, req.query.page, req.query.size)
-    .then(data => res.json(data))
+  services.reports.listOffenders(
+      Object.assign({}, req.query, { page: undefined, size: undefined }),
+      req.query.page,
+      req.query.size
+    )
+    .then(data => {
+      res.links(helpers.processLinks(data._links));
+      return res.json(data._embedded.offenders);
+    })
     .catch(helpers.failWithError(res, next));
 
 const retrieveDetails = (req, res, next) =>
