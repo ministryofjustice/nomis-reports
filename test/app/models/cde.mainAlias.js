@@ -1,10 +1,8 @@
 const moment = require('moment');
 
-const CDEModel = require('../../../app/models/CDE');
-const builder = CDEModel.build(moment('2018-01-01'));
+const modelHelpers = require('../../../app/models/helpers');
 
-
-describe('cde/court', () => {
+describe('cde/mainAlias', () => {
   describe('When the booking is linked to an alias', () => {
     let input = {
       nomsId: "X5815XX",
@@ -25,41 +23,39 @@ describe('cde/court', () => {
           sexCode: "M",
         }
       ],
-      bookings: [
-        {
-          bookingId: 8133,
-          bookingNo: "BM9421",
-          offenderId: 1021466,
-          rootOffenderId: 1013128,
-        }
-      ],
+      mainBooking: {
+        bookingId: 8133,
+        bookingNo: "BM9421",
+        offenderId: 1021466,
+        rootOffenderId: 1013128,
+      },
+
     };
 
-    let result = builder(input);
+    let result = modelHelpers.getMainAlias(input);
 
     it('Should select the offender\'s gender from the alias', () => {
-      result.should.have.property('gender_f5', input.aliases[0].sexCode);
+      result.should.have.property('sexCode', input.aliases[0].sexCode);
     });
 
     it('Should select the offender\'s surname from the alias', () => {
-      result.should.have.property('surname_f7', input.aliases[0].surname);
+      result.should.have.property('surname', input.aliases[0].surname);
     });
 
     it('Should select the offender\'s forename from the alias', () => {
-      result.should.have.property('forename1_f8', input.aliases[0].firstName);
+      result.should.have.property('firstName', input.aliases[0].firstName);
     });
 
     it('Should select the offender\'s middle names from the alias', () => {
-      result.should.have.property('forename2_f9', input.aliases[0].middleNames);
+      result.should.not.have.property('middleNames');
     });
 
     it('Should select the offender\'s date of birth from the alias', () => {
-      result.should.have.property('dob_f13');
-      result.dob_f13.format().should.equal(moment(input.aliases[0].dateOfBirth).format());
+      result.should.have.property('dateOfBirth', input.aliases[0].dateOfBirth);
     });
 
     it('Should select the offender\'s ethnicity from the alias', () => {
-      result.should.have.property('ethnicity_f15', input.aliases[0].raceCode);
+      result.should.not.have.property('raceCode');
     });
   });
 
@@ -83,41 +79,38 @@ describe('cde/court', () => {
           sexCode: "M",
         }
       ],
-      bookings: [
-        {
-          bookingId: 8133,
-          bookingNo: "BM9421",
-          offenderId: 1013128,
-          rootOffenderId: 1013128,
-        }
-      ],
+      mainBooking: {
+        bookingId: 8133,
+        bookingNo: "BM9421",
+        offenderId: 1013128,
+        rootOffenderId: 1013128,
+      },
     };
 
-    let result = builder(input);
+    let result = modelHelpers.getMainAlias(input);
 
     it('Should select the offender\'s gender from the alias', () => {
-      result.should.have.property('gender_f5', input.sexCode);
+      result.should.have.property('sexCode', input.sexCode);
     });
 
     it('Should select the offender\'s surname from the alias', () => {
-      result.should.have.property('surname_f7', input.surname);
+      result.should.have.property('surname', input.surname);
     });
 
     it('Should select the offender\'s forename from the alias', () => {
-      result.should.have.property('forename1_f8', input.firstName);
+      result.should.have.property('firstName', input.firstName);
     });
 
     it('Should select the offender\'s middle names from the alias', () => {
-      result.should.have.property('forename2_f9', input.middleNames);
+      result.should.have.property('middleNames', input.middleNames);
     });
 
     it('Should select the offender\'s date of birth from the alias', () => {
-      result.should.have.property('dob_f13');
-      result.dob_f13.format().should.equal(moment(input.dateOfBirth).format());
+      result.should.have.property('dateOfBirth', input.dateOfBirth);
     });
 
     it('Should select the offender\'s ethnicity from the alias', () => {
-      result.should.have.property('ethnicity_f15', input.raceCode);
+      result.should.have.property('raceCode', input.raceCode);
     });
   });
 
@@ -143,31 +136,30 @@ describe('cde/court', () => {
       ],
     };
 
-    let result = builder(input);
+    let result = modelHelpers.getMainAlias(input);
 
     it('Should select the offender\'s gender from the alias', () => {
-      result.should.have.property('gender_f5', input.sexCode);
+      result.should.have.property('sexCode', input.sexCode);
     });
 
     it('Should select the offender\'s surname from the alias', () => {
-      result.should.have.property('surname_f7', input.surname);
+      result.should.have.property('surname', input.surname);
     });
 
     it('Should select the offender\'s forename from the alias', () => {
-      result.should.have.property('forename1_f8', input.firstName);
+      result.should.have.property('firstName', input.firstName);
     });
 
     it('Should select the offender\'s middle names from the alias', () => {
-      result.should.have.property('forename2_f9', input.middleNames);
+      result.should.have.property('middleNames', input.middleNames);
     });
 
     it('Should select the offender\'s date of birth from the alias', () => {
-      result.should.have.property('dob_f13');
-      result.dob_f13.format().should.equal(moment(input.dateOfBirth).format());
+      result.should.have.property('dateOfBirth', input.dateOfBirth);
     });
 
     it('Should select the offender\'s ethnicity from the alias', () => {
-      result.should.have.property('ethnicity_f15', input.raceCode);
+      result.should.have.property('raceCode', input.raceCode);
     });
   });
 });
