@@ -246,7 +246,8 @@ helpers.getCourtOutcome = o =>
   getFirst(withList(o.courtEvents)
     .filter(ce =>
       ce.bookingId === o.mainBooking.bookingId &&
-      ce.directionCode === 'OUT'
+      ce.directionCode === 'OUT' &&
+      ce.caseId
     ));
 
 // main booking entire

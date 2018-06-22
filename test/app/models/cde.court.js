@@ -1,8 +1,8 @@
+let should = require('chai').should();
+
 const moment = require('moment');
 
-const CDEModel = require('../../../app/models/CDE');
-const builder = CDEModel.build(moment('2018-01-01'));
-
+const helpers = require('../../../app/models/helpers');
 
 describe('cde/court', () => {
   describe('When court order is most recent first', () => {
@@ -155,43 +155,46 @@ describe('cde/court', () => {
     };
 
     /*
-
-    SELECT vce.agy_loc_id court_code_f150,
-         vce.description court_name_f151
-    FROM (SELECT oc.offence_code,
-                 oc.result_code_1,
-                 ce.event_date,
-                 ce.event_id,
-                 ce.result_code,
-                 ce.outcome_reason_code,
-                 ce.agy_loc_id,
-                 al.description,
-                 MAX(ce.event_date) OVER (PARTITION BY oc.offender_book_id) max_event_date,
-                 MAX(ce.event_id) OVER(PARTITION BY oc.offender_book_id, ce.event_date) max_event_id
-            FROM offender_charges oc,
-                 court_event_charges cec,
-                 court_events ce,
-                 agency_locations al,
-                 offender_sentence_charges osc
-           WHERE cec.offender_charge_id = oc.offender_charge_id
-             AND ce.event_id = cec.event_id
-             AND al.agy_loc_id = ce.agy_loc_id
-             AND osc.offender_charge_id = oc.offender_charge_id
-             AND oc.offender_book_id = :p_offender_book_id) vce,
-         offence_result_codes orc
-   WHERE orc.result_code = vce.outcome_reason_code
-     AND vce.max_event_date = vce.event_date
-     AND vce.max_event_id = vce.event_id
-     AND rownum = 1
-
+    SELECT
+          ce.outcome_reason_code court_type_f149,
+          ce.event_id,
+          ce.event_date,
+    FROM
+          court_events ce
+    WHERE ce.direction_code = 'OUT'
+      AND ce.caseId IS NOT NULL
+    ORDER BY
+          ce.event_date DESC,
+          ce.event_id DESC
     */
 
-    it('Should select the correct court code', () => {
-      builder(input).should.have.property('court');
-      builder(input).court.should.have.property('type_f149', undefined);
-      builder(input).court.should.have.property('code_f150', undefined);
-      builder(input).court.should.have.property('name_f151', ''); // not filled as is reference data
+    it('Should identify the correct court outcome', () => {
+      helpers.getCourtOutcome(input).should.not.have.property('chargeId', 18709);
+    });
 
+    /*
+    SELECT oc.offence_code,
+           oc.result_code_1,
+           ce.event_date,
+           ce.event_id,
+           ce.result_code,
+           ce.outcome_reason_code,
+           ce.agy_loc_id court_code_f150,
+           '' as court_name_f151
+      FROM offender_charges oc,
+           court_event_charges cec,
+           court_events ce,
+           offender_sentence_charges osc
+     WHERE cec.offender_charge_id = oc.offender_charge_id
+       AND ce.event_id = cec.event_id
+       AND osc.offender_charge_id = oc.offender_charge_id
+     ORDER BY
+           ce.event_date DESC,
+           ce.event_id DESC
+    */
+
+    it('Should identify the most recent conviction correctly', () => {
+      helpers.getMostRecentConviction(input).should.have.property('chargeId', 18791);
     });
   });
 });
