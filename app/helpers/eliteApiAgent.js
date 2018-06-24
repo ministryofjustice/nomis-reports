@@ -1,4 +1,4 @@
-const nomisApiAgent = require('./nomisApiAgent');
+const apiAgent = require('./apiAgent');
 const qs = require('querystring');
 
 function eliteAuthHeaderPlugin (config) {
@@ -9,11 +9,11 @@ function eliteAuthHeaderPlugin (config) {
       token = 'Bearer ' + config.elite2Jwt.access_token;
     }
 
-    request.set('Elite-Authorization', token);
+    request.set('Authorization', token);
 
     return request;
   };
 }
 
 module.exports = (agent, plugins = [], opts = {}) =>
-  nomisApiAgent(agent, plugins.concat([ eliteAuthHeaderPlugin(opts) ]), opts);
+  apiAgent(agent, plugins.concat([ eliteAuthHeaderPlugin(opts) ]), opts);

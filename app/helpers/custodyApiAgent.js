@@ -1,4 +1,4 @@
-const nomisApiAgent = require('./nomisApiAgent');
+const apiAgent = require('./apiAgent');
 const qs = require('querystring');
 
 function custodyAuthHeaderPlugin (config) {
@@ -9,11 +9,11 @@ function custodyAuthHeaderPlugin (config) {
       token = 'Bearer ' + config.custodyJwt.access_token;
     }
 
-    request.set('Elite-Authorization', token);
+    request.set('Authorization', token);
 
     return request;
   };
 }
 
 module.exports = (agent, plugins = [], opts = {}) =>
-  nomisApiAgent(agent, plugins.concat([ custodyAuthHeaderPlugin(opts) ]), opts);
+  apiAgent(agent, plugins.concat([ custodyAuthHeaderPlugin(opts) ]), opts);

@@ -10,6 +10,7 @@ function ReportsRepository(config, agent) {
 
   this.requests = {
     listAddresses: this.agent.get(`${root}/addresses`),
+    listAlerts: this.agent.get(`${root}/alerts`),
     listAssessments: this.agent.get(`${root}/assessments`),
     listCharges: this.agent.get(`${root}/charges`),
     listHealthProblems: this.agent.get(`${root}/healthProblems`),
@@ -23,6 +24,7 @@ function ReportsRepository(config, agent) {
 
     getOffender: this.agent.get(`${root}/offenders/offenderId/:offenderId`),
     getOffenderAddresses: this.agent.get(`${root}/offenders/offenderId/:offenderId/addresses`),
+    getOffenderAlerts: this.agent.get(`${root}/offenders/offenderId/:offenderId/alerts`),
     getOffenderAssessments: this.agent.get(`${root}/offenders/offenderId/:offenderId/assessments`),
     getOffenderCharges: this.agent.get(`${root}/offenders/offenderId/:offenderId/charges`),
     getOffenderContactPersons: this.agent.get(`${root}/offenders/offenderId/:offenderId/contactPersons`),
@@ -43,6 +45,10 @@ function ReportsRepository(config, agent) {
 
 ReportsRepository.prototype.listAddresses = function (query, page, size) {
   return this.requests.listAddresses(Object.assign({}, query, { page, size })).then(helpers.handleResponse([]));
+};
+
+ReportsRepository.prototype.listAlerts = function (query, page, size) {
+  return this.requests.listAlerts(Object.assign({}, query, { page, size })).then(helpers.handleResponse([]));
 };
 
 ReportsRepository.prototype.listAssessments = function (query, page, size) {
@@ -95,6 +101,10 @@ ReportsRepository.prototype.getOffender = function (offenderId) {
 
 ReportsRepository.prototype.getOffenderAddresses = function (offenderId) {
   return this.requests.getOffenderAddresses({ offenderId }).then(helpers.handleResponse([]));
+};
+
+ReportsRepository.prototype.getOffenderAlerts = function (offenderId) {
+  return this.requests.getOffenderAlerts({ offenderId }).then(helpers.handleResponse([]));
 };
 
 ReportsRepository.prototype.getOffenderAssessments = function (offenderId) {
