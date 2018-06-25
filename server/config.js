@@ -30,7 +30,7 @@ module.exports = {
   nomis: {
     apiUrl: get('NOMIS_API_URL', 'http://localhost:8082/api', { requireInProduction: true }),
     apiGatewayToken: get('GW_TOKEN', '', { requireInProduction: true }),
-    apiGatewayPrivateKey: new Buffer(get('GW_KEY', ''), 'base64').toString('ascii'),
+    apiGatewayPrivateKey: new Buffer(get('GW_KEY', '', { requireInProduction: true }), 'base64').toString('ascii'),
     timeout: {
       response: 20000,
       deadline: 25000
@@ -39,8 +39,6 @@ module.exports = {
 
   elite2: {
     apiUrl: get('ELITE2_API_URL', 'http://localhost:8081/api', { requireInProduction: true }),
-    apiGatewayToken: get('GW_TOKEN', '', { requireInProduction: true }),
-    apiGatewayPrivateKey: new Buffer(get('GW_KEY', ''), 'base64').toString('ascii'),
     timeout: {
       response: 20000,
       deadline: 25000
@@ -54,9 +52,6 @@ module.exports = {
 
   custody: {
     apiUrl: get('REPORT_API_URL', 'http://localhost:8080/api', { requireInProduction: true }),
-    apiGatewayToken: get('GW_TOKEN', '', { requireInProduction: true }),
-    apiGatewayPrivateKey: new Buffer(get('GW_KEY', ''), 'base64').toString('ascii'),
-    bearerToken: get('OAUTH_BEARER_TOKEN', '', { requireInProduction: true }),
     timeout: {
       response: 20000,
       deadline: 25000
@@ -65,6 +60,7 @@ module.exports = {
       grantType: get('REPORT_GRANT_TYPE', 'client_credentials', { requireInProduction: true }),
       username: get('REPORT_USERNAME', 'x_trusted_client', { requireInProduction: true }),
       password: get('REPORT_PASSWORD', 'x_client_password', { requireInProduction: true }),
+      bearerToken: get('REPORT_BEARER_TOKEN', ''),
     },
   }
 };
