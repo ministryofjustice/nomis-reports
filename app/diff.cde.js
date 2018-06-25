@@ -7,16 +7,8 @@ const pointer = require('json-pointer');
 
 const log = require('../server/log');
 
-const cdeSource = './test/data/C_NOMIS_OFFENDER_30052018_01.dat';
-const jsonSource = './.extracts/reports/CDE/20180531.json';
-const jsonOutput = './.extracts/reports/diff.31.json';
-
-const inspect = (x) => {
-  log.info(x);
-  return x;
-};
-
-let fieldNum = 153;
+const CDE_DATE = moment().add(-1, 'days');
+const EXTRACT_DATE = moment();
 
 const cdeFields = [
   'sysdate_f1',                     // passed param
@@ -38,7 +30,7 @@ const cdeFields = [
   'marital_f17',                    // ref data label
   'maternity_status_f18',           // ref data label
   'location_f19',                   // ref data label
-  'incentive_band_f20',
+  'incentive_band_f20',             // ref data label
   'occupation_v21',
   'transfer_reason_f22',
   'first_reception_date_f23',       // 0 differences
@@ -211,10 +203,15 @@ const cdeColParser = {
   ['sentence.days_f30'](item) { return 1 * item; },
 };
 
+const inspect = (x) => {
+  log.info(x);
+  return x;
+};
+
 const upperCase = (x) =>
   typeof x === 'string' ? x.toUpperCase() : x;
 
-const readableDiff = (a, fieldNum) => diff => {
+const readableDiff = (a, diff) => {
   var val = diff.op !== 'add' ? pointer.get(a, diff.path) : '';
   diff.value = diff.value || '';
 
@@ -222,47 +219,9 @@ const readableDiff = (a, fieldNum) => diff => {
     diff.value = diff.value.trim();
   }
 
-
-  // ignore list
-  if (~[
-    // extract date
-    '/sysdate_f1',
-
-     // ref data id
-    '/gender_f5',
-    '/ethnicity_f15',
-    '/nationality_f14',
-    '/religion_f16',
-    '/marital_f17',
-    '/transfer_reason_f22',
-    '/sec_cat/level_f26',
-    '/reason_f135',
-    '/sending_estab_f134',
-    '/inmate_status_f25',
-    '/location_f19',
-    '/establishment_f2',
-
-    // country ref codes
-    '/prob/address5_f115',
-    '/nok/address5_f107',
-    '/reception/address5_f91',
-    '/home/address5_f98',
-    '/discharge/address5_f83',
-
-  ].indexOf(diff.path)
-      // diary Details
-      // || diff.path.indexOf('/diary_details_f145') === 0
-    ) {
-    return;
-  }
-
-  if (diff.path !== '/' + cdeFields[fieldNum - 1].replace(/\./g, '/')) {
-    //return;
-  }
-
   switch (diff.op) {
     case 'add':
-      return diff.value !== ''
+      return `${diff.value}` !== ''
               ? [ `(+) ${diff.path}`, `'${val}'`, `'${diff.value}'` ].join(',')
               : undefined;
     case 'replace':
@@ -270,27 +229,34 @@ const readableDiff = (a, fieldNum) => diff => {
         return;
       }
       if (diff.value !== '') {
-        return val !== diff.value
+        return `${val}` !== `${diff.value}`
               ? [ `(x) ${diff.path}`, `'${val}'`, `'${diff.value}'` ].join(',')
               : undefined;
       }
     case 'remove':
-      return val !== ''
+      return `${val}` !== ''
               ? [ `(-) ${diff.path}`, `'${val}'`, `'${diff.value}'` ].join(',')
               : undefined;
   }
 };
 
-const cde = { length: 0 };
-const diff = { length: 0 };
-let waitUntilFinished = false;
-
-const finish = () => {
-  log.debug(`Number of differences [${diff.length}]`);
-  fs.writeFileSync(jsonOutput, JSON.stringify(diff, null, '  '));
+const finish = diff => () => {
+  cdeFields.forEach(p => {
+    let field = p.replace(/\./g, '_');
+    let path = '/' + p.replace(/\./g, '/');
+    let data = diff[path];
+    if (data) {
+      log.debug(`${data.length} differences on ${field}`);
+      fs.writeFileSync(`./.extracts/reports/DIFF/${field}.${EXTRACT_DATE.format('YYYYMMDD')}.json`, JSON.stringify(data, null, '  '));
+    }
+  });
 };
 
-const checkDoc = (nomsId, fieldNum) => {
+const cde = { length: 0 };
+const diff = { length: 0 };
+
+let waitUntilFinished = false;
+const checkDoc = (nomsId) => {
   clearTimeout(waitUntilFinished);
 
   let x = cde[nomsId];
@@ -302,21 +268,26 @@ const checkDoc = (nomsId, fieldNum) => {
     cde.length--;
 
     let d = jsonPatch.compare(x.doc, x.line)
-      .map(readableDiff(x.doc, fieldNum))
+      .map(diff => ({ path: diff.path, value: readableDiff(x.doc, diff) }))
       .filter(x => x !== undefined);
 
     if (d && d.length > 0) {
-      diff[nomsId] = d;
-      diff.length++;
+      d.forEach(x => {
+        if (x.value) {
+          let n = (diff[x.path] = diff[x.path] || { length: 0 });
+          n[nomsId] = x.value;
+          n.length++;
+        }
+      });
     }
 
     //log.info({ nomsId, diff: diff.length, cde: cde.length }, 'diff');
 
-    waitUntilFinished = setTimeout(finish, 1000);
+    waitUntilFinished = setTimeout(finish(diff), 1000);
   }
 };
 
-const processStream = (type, fieldNum) => (x) => {
+const processStream = (type) => (x) => {
   let nomsId = x.nomis_id_f4;
 
   if (type === 'doc' && x.diary_details_f145) {
@@ -332,15 +303,15 @@ const processStream = (type, fieldNum) => (x) => {
 
   cde[nomsId][type] = x;
 
-  checkDoc(nomsId, fieldNum);
+  checkDoc(nomsId);
 };
 
-fs.createReadStream(jsonSource, 'utf8')
+fs.createReadStream(`./.extracts/reports/CDE/${EXTRACT_DATE.format('YYYYMMDD')}.json`, 'utf8')
   .pipe(jsonStream.parse('*'))
-  .on('data', processStream('doc', fieldNum))
+  .on('data', processStream('doc'))
   .on('error', err => log.error(err));
 
 csv({ noheader: true, headers: cdeFields, delimiter: '|', ignoreEmpty: false, colParser: cdeColParser })
-  .fromStream(fs.createReadStream(cdeSource, 'utf8'))
-  .subscribe(processStream('line', fieldNum))
+  .fromStream(fs.createReadStream(`./test/data/C_NOMIS_OFFENDER_${CDE_DATE.format('DDMMYYYY')}_01.dat`, 'utf8'))
+  .subscribe(processStream('line'))
   .on('error', err => log.error(err));
