@@ -276,10 +276,11 @@ helpers.getActiveOffenderAddresses = o =>
     ));
 
 helpers.mapOffenderIdentifiers = o =>
-  withList(o.identifiers)
-    .reduce((x, oi) => {
-      x[oi.identifierType] = oi.identifier;
-      return x;
+  withList(o.aliases).reduce((a, b) => a.concat(b.identifiers), [])
+    .concat(withList(o.identifiers))
+    .reduce((acc, oi) => {
+      (acc[oi.identifierType] = acc[oi.identifierType] || []).push(oi.identifier);
+      return acc;
     }, {});
 
 helpers.getFirstOffenderTransfer = o =>
@@ -495,7 +496,9 @@ helpers.getFirstConviction = o =>
 helpers.getMostRecentConviction = o =>
   getFirst(withList(o.courtEvents)
     .filter(ce => (
-      ce.bookingId === o.mainBooking.bookingId
+      ce.bookingId === o.mainBooking.bookingId &&
+      ce.courtEventCharges && ce.courtEventCharges.length > 0 &&
+      ce.courtEventCharges[0].sentences && ce.courtEventCharges[0].sentences.length > 0
     )));
 
 helpers.getFirstSentence = o =>

@@ -1,0 +1,182 @@
+{
+
+  "maternity_status_f18": "helpers.getMaternityStatus(o, o.sysdate)",
+
+  "incentive_band_f20": "IEPLevel",
+
+  "occupation_v21": "employments",
+
+  "transfer_reason_f22": "firstOffenderTransfer",
+
+  "custody_status_f24": "helpers.getCustodyStatus(o)",
+
+  "inmate_status_f25": "imprisonmentStatus",
+
+  "sentence": {
+    "years_f28": "offenderSentenceCalculations",
+    "months_f29": "offenderSentenceCalculations",
+    "days_f30": "offenderSentenceCalculations",
+  },
+
+  "previous_prison_no_f31": "previousBookingNos",
+  "earliest_release_date_f32": "helpers.earliestReleaseDate(o)",
+
+  "check_hold": {
+    "governor_f33": "checkHoldAlerts",
+    "allocation_36": "checkHoldAlerts",
+    "security_37": "checkHoldAlerts",
+    "medical_38": "checkHoldAlerts",
+    "parole_39": "checkHoldAlerts",
+  },
+  "f2052_status_42": "checkHoldAlerts",
+  "vulnerable_prisoner_alert_f47": "checkHoldAlerts",
+
+  "date_of_first_conviction_40": "firstConviction",
+  "date_first_sentenced_f41": "firstSentence",
+
+  "highest_ranked_offence_f43": "helpers.highestRankedOffence(o)",
+
+  "pending_transfers_f45": "pendingOffenderTransfer",
+  "received_from_f46": "pendingOffenderTransfer",
+
+  "emplmnt_status": {
+    "discharge_f49": "helpers.dischargeEmployment(o)",
+    "reception_f50": "helpers.receptionEmployment(o)",
+  },
+
+  "schedule_1_sex_offender_f51": "MAPPA",
+
+  "sex_offender_f52": "isSexOffender",
+
+  "height_metres_f54": "physicals.physicalAttributes",
+
+  "adult_yp_f11": "physicals.profileDetails",
+  "nationality_f14": "physicals.profileDetails",
+  "religion_f16": "physicals.profileDetails",
+  "marital_f17": "physicals.profileDetails",
+  "complexion_f55": "physicals.profileDetails",
+  "hair_f56": "physicals.profileDetails",
+  "left_eye_f57": "physicals.profileDetails",
+  "right_eye_f58": "physicals.profileDetails",
+  "build_f59": "physicals.profileDetails",
+  "face_f60": "physicals.profileDetails",
+  "facial_hair_f61": "physicals.profileDetails",
+
+  "marks": {
+    "head_f62": "physicals.identifyingMarks",
+    "body_f63": "physicals.identifyingMarks",
+  },
+
+  "sentence_length_f64": "offenderSentenceLength",
+
+  "release": {
+    "date_f65": "releaseDetails",
+    "name_f66": "releaseDetails",
+  },
+
+  "sec_cat": {
+    "level_f26": "offenderSecurityCategory",
+    "next_review_f27": "offenderSecurityCategory",
+  },
+  "date_sec_cat_changed_f74": "offenderSecurityCategory",
+
+  "rule_45_yoi_rule_46_f75": "checkHoldAlerts",
+  "f2052sh": {
+    "alert_f76": "checkHoldAlerts",
+    "start_f77": "checkHoldAlerts",
+  },
+
+  "discharge": {
+    "nfa_f78": "offenderDischargeAddress",
+    "address1_f79": "offenderDischargeAddress",
+    "address2_f80": "offenderDischargeAddress",
+    "address3_f81": "offenderDischargeAddress",
+    "address4_f82": "offenderDischargeAddress",
+    "address5_f83": "offenderDischargeAddress",
+    "address6_f84": "offenderDischargeAddress",
+    "address7_f85": "offenderDischargeAddress",
+  },
+
+  "reception":{
+    "nfa_f86": "offenderReceptionAddress",
+    "address1_f87": "offenderReceptionAddress",
+    "address2_f88": "offenderReceptionAddress",
+    "address3_f89": "offenderReceptionAddress",
+    "address4_f90": "offenderReceptionAddress",
+    "address5_f91": "offenderReceptionAddress",
+    "address6_f92": "offenderReceptionAddress",
+    "address7_f93": "offenderReceptionAddress",
+  },
+
+  "home": {
+    "address1_f94": "offenderHomeAddress",
+    "address2_f95": "offenderHomeAddress",
+    "address3_f96": "offenderHomeAddress",
+    "address4_f97": "offenderHomeAddress",
+    "address5_f98": "offenderHomeAddress",
+    "address6_f99": "offenderHomeAddress",
+    "address7_f100": "offenderHomeAddress",
+  },
+
+  "nok": {
+    "name_f101": "nextOfKin",
+    "nfa_f102": "nextOfKin",
+    "address1_f103": "nextOfKin",
+    "address2_f104": "nextOfKin",
+    "address3_f105": "nextOfKin",
+    "address4_f106": "nextOfKin",
+    "address5_f107": "nextOfKin",
+    "address6_f108": "nextOfKin",
+    "address7_f109": "nextOfKin",
+  },
+
+  "supervising_service_f53": "offenderManager",
+  "prob": {
+    "name_f110": "offenderManager",
+    "address1_f111": "offenderManager",
+    "address2_f112": "offenderManager",
+    "address3_f113": "offenderManager",
+    "address4_f114": "offenderManager",
+    "address5_f115": "offenderManager",
+    "address6_f116": "offenderManager",
+    "address7_f117": "offenderManager",
+  },
+
+  "sending_estab_f134": "lastOffenderTransfer",
+  "reason_f135": "lastOffenderTransfer",
+
+  "movement": {
+    "date_f136": "lastOffenderMovement",
+    "hour_f137": "lastOffenderMovement",
+    "min_f138": "lastOffenderMovement",
+    "sec_f139": "lastOffenderMovement",
+    "code_f140": "lastOffenderMovement",
+  },
+
+  "first_out_mov_post_adm_f143": "firstOffenderOutMovement",
+
+  "diary_details_f145": "diaryDetails",
+
+  "licence_type_f146": "offenderLicense",
+
+  "other_offences_f147": "charges",
+
+  "active_alerts_f148": "activeAlerts",
+
+  "court_f141": "offenderCourtEscort",
+  "escort_f142": "offenderCourtEscort",
+
+  "court": {
+    "type_f149": "courtOutcome",
+    "code_f150": "mostRecentConviction",
+  },
+
+  "sed_f67": "offenderSentenceCalculationDates",
+  "hdced_f68": "offenderSentenceCalculationDates",
+  "hdcad_f69": "offenderSentenceCalculationDates",
+  "ped_f70": "offenderSentenceCalculationDates",
+  "crd_f71": "offenderSentenceCalculationDates",
+  "npd_f72": "offenderSentenceCalculationDates",
+  "led_f73": "offenderSentenceCalculationDates",
+  "tused_f153": "offenderSentenceCalculationDates",
+}

@@ -177,7 +177,7 @@ rq = new RequestQueue((batch, done) => {
             done();
           })
           .catch((err) => {
-            log.error(err, `${reportName} RequestQueue ON ERROR`);
+            log.error(err, `${reportName} ${batch.offenderId} RequestQueue ON ERROR`);
             done();
           });
       }

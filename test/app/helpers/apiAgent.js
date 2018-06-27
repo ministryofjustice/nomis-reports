@@ -112,11 +112,7 @@ describe('API Agent', () => {
     const eliteApiAgent = require('../../../app/helpers/eliteApiAgent');
     const eliteAuthHeaderApiAgent = eliteApiAgent(supertest(server), undefined, config);
 
-    it('Should include the Elite-Authorization header', () =>
-      eliteAuthHeaderApiAgent.get('/fake-api/header/Elite-Authorization')()
-        .then((response) => should.exist(response.body['Elite-Authorization'])));
-
-    it('Should still include the Authorization header', () =>
+    it('Should include the Authorization header', () =>
       eliteAuthHeaderApiAgent.get('/fake-api/header/Authorization')()
         .then((response) => should.exist(response.body.Authorization)));
   });
