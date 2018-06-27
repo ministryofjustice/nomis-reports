@@ -1,11 +1,7 @@
-let should = require('chai').should();
-
-const moment = require('moment');
-
 const helpers = require('../../../app/models/helpers');
 
-describe('cde/court', () => {
-  describe('When court order is most recent first', () => {
+describe('cde/mostRecentConviction', () => {
+  describe('When court events list contains a conviction', () => {
     let input = {
       bookings: [
         {
@@ -178,22 +174,6 @@ describe('cde/court', () => {
     };
 
     /*
-    SELECT
-          ce.outcome_reason_code court_type_f149
-    FROM
-          court_events ce
-    WHERE ce.direction_code = 'OUT'
-      AND ce.caseId IS NOT NULL
-    ORDER BY
-          ce.event_date DESC,
-          ce.event_id DESC
-    */
-
-    it.skip('Should identify the correct court outcome', () => {
-      helpers.getCourtOutcome(input).should.not.have.property('chargeId', 18709);
-    });
-
-    /*
     SELECT ce.agy_loc_id court_code_f150,
            '' as court_name_f151
       FROM offender_charges oc,
@@ -208,7 +188,7 @@ describe('cde/court', () => {
            ce.event_id DESC
     */
 
-    it('Should identify the most recent conviction correctly', () => {
+    it('Should identify the conviction correctly', () => {
       let result = helpers.getMostRecentConviction(input);
       result.should.have.property('eventId', 993546);
       result.should.have.property('agencyLocationId', 'EASBMC');
