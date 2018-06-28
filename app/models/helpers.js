@@ -268,13 +268,6 @@ helpers.getOffenderSentenceLength = o =>
   moment(o.offenderSentenceCalculations.effectiveSentenceEndDate)
     .diff(moment(o.offenderSentence.startDate), 'days') + 1;
 
-helpers.getActiveOffenderAddresses = o =>
-  withList(o.addresses)
-    .filter(oa => (
-      !oa.endDate &&
-      oa.active
-    ));
-
 helpers.mapOffenderIdentifiers = o =>
   withList(o.aliases).reduce((a, b) => a.concat(b.identifiers), [])
     .concat(withList(o.identifiers))
@@ -303,12 +296,15 @@ helpers.getFirstOffenderOutMovement = o =>
       m.movementDirection === 'OUT'
     )));
 
-helpers.getOffenderCourtEscort = o =>
-  getFirst(withList(o.movements)
-    .filter(m => (
-      m.movementTypeCode === 'CRT' &&
-      m.movementDirection === 'OUT'
-    )));
+helpers.getOffenderCourtEscort = o => {
+  let m = getFirst(withList(o.movements));
+
+  return (
+    m.movementTypeCode === 'CRT' &&
+    m.movementDirection === 'OUT' &&
+    m.escort_code
+  ) ? m : {};
+};
 
 helpers.receptionEmployment = o =>
   getLast(o.offenderEmployments);
@@ -324,36 +320,46 @@ helpers.otherOffences = o =>
     .filter((o, i) => i !== 0);
 
 helpers.getOffenderHomeAddress = o =>
-  getFirst(withList(o.offenderAddresses)
-    .filter(a => (a.addressUsage === 'HOME')));
+  getFirst(withList(o.addresses)
+    .filter(a => a.addressUsages
+      .filter(au => (
+        au.active &&
+        au.usage === 'HOME'
+      )).length > 0));
 
 helpers.getOffenderReceptionAddress = o =>
-  getFirst(withList(o.offenderAddresses)
-    .filter(a => (a.addressUsage === 'RECEP')));
+  getFirst(withList(o.addresses)
+    .filter(a => a.addressUsages
+      .filter(au => (
+        au.active &&
+        au.usage === 'RECEP'
+      )).length > 0));
 
 helpers.getOffenderDischargeAddress = o =>
-  getFirst(withList(o.offenderAddresses)
-    .filter(a => (~['RELEASE','DNF','DUT','DST','DPH','DSH','DAP','DBA','DOH','DBH'].indexOf(a.addressUsage))));
+  getFirst(withList(o.addresses)
+    .filter(a => a.addressUsages
+      .filter(au => (
+        au.active &&
+        ~['RELEASE','DNF','DUT','DST','DPH','DSH','DAP','DBA','DOH','DBH'].indexOf(au.usage)
+      )).length > 0));
 
 helpers.getActiveAlerts = o =>
   withList(o.alerts)
-    .filter(oa => !oa.expired);
+    .filter(oa => oa.alertStatus === 'ACTIVE');
 
 // Multi Agency Public Protection Alert
 helpers.getMAPPAAlerts = o =>
   getFirst(withList(o.alerts)
     .filter(oa => (
-      !oa.expired &&
-      oa.alertType === 'P'
+      oa.alertType === 'P' &&
+      oa.alertStatus === 'ACTIVE'
     )));
 
 helpers.getNotForReleaseAlerts = o =>
   getFirst(withList(o.alerts)
     .filter(oa => (
-      !oa.expired &&
-      oa.alertType === 'X' /*&&
+      oa.alertType === 'X' &&
       oa.alertStatus === 'ACTIVE'
-      */
     )));
 
 helpers.getAge = o =>
@@ -462,12 +468,12 @@ helpers.getCheckHoldAlerts = o =>
     .reduce((x, oa) => {
       let fa = formatAlert(oa);
       switch (fa) {
-        case 'T-TG': return x.T_TG = fa;
-        case 'T-TAH': return x.T_TAH = fa;
-        case 'T-TSE': return x.T_TSE = fa;
-        case 'T-TM': return x.T_TM = fa;
-        case 'T-TPR': return x.T_TPR = fa;
-        case 'H-HA': return x.H_HA = fa;
+        case 'T-TG': x.T_TG = fa; break;
+        case 'T-TAH': x.T_TAH = fa; break;
+        case 'T-TSE': x.T_TSE = fa; break;
+        case 'T-TM': x.T_TM = fa; break;
+        case 'T-TPR': x.T_TPR = fa; break;
+        case 'H-HA': x.H_HA = fa; break;
       }
 
       if (oa.alertType === 'V') {

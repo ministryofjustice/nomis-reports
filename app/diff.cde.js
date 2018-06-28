@@ -7,8 +7,8 @@ const pointer = require('json-pointer');
 
 const log = require('../server/log');
 
-const CDE_DATE = moment('2018-06-25').add(-1, 'days');
-const EXTRACT_DATE = moment('2018-06-25');
+const CDE_DATE = moment('2018-06-27').add(-1, 'days');
+const EXTRACT_DATE = moment('2018-06-27');
 
 const cdeFields = [
   'sysdate_f1',                     // passed param
