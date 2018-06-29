@@ -35,6 +35,8 @@ const model = helpers.pipe([
   ['physicals', helpers.getPhysicals],
   ['IEPLevel', helpers.getIEPLevel],
   ['employments', helpers.getEmployment],
+  ['dischargeEmployment', helpers.dischargeEmployment],
+  ['receptionEmployment', helpers.receptionEmployment],
   ['imprisonmentStatus', helpers.getImprisonmentStatus],
   ['releaseDetails', helpers.getReleaseDetails],
   ['isSexOffender', helpers.isSexOffender],
@@ -42,6 +44,10 @@ const model = helpers.pipe([
   ['mostRecentConviction', helpers.getMostRecentConviction],
   ['firstSentence', helpers.getFirstSentence],
   ['courtOutcome', helpers.getCourtOutcome],
+  ['highestRankedOffence', helpers.highestRankedOffence],
+  ['otherOffences', helpers.otherOffences],
+  ['earliestReleaseDate', helpers.earliestReleaseDate],
+  ['custodyStatus', helpers.getCustodyStatus],
 ]);
 
 module.exports.build = sysdate => data => {
@@ -71,7 +77,7 @@ module.exports.build = sysdate => data => {
     occupation_v21: o.employments.occupationsCode,
     transfer_reason_f22: helpers.formatTransferReasonCode(o.firstOffenderTransfer),
     first_reception_date_f23: helpers.optionalDate(o.mainBooking.startDate),
-    custody_status_f24: helpers.getCustodyStatus(o),
+    custody_status_f24: o.custodyStatus,
     inmate_status_f25: o.imprisonmentStatus.imprisonmentStatusCode,
 
     sec_cat: {
@@ -86,7 +92,7 @@ module.exports.build = sysdate => data => {
     },
 
     previous_prison_no_f31: o.previousBookingNos,
-    earliest_release_date_f32: helpers.earliestReleaseDate(o),
+    earliest_release_date_f32: o.earliestReleaseDate,
 
     check_hold: {
       governor_f33: o.checkHoldAlerts.T_TG,
@@ -101,7 +107,7 @@ module.exports.build = sysdate => data => {
     date_of_first_conviction_40: helpers.optionalDate(o.firstConviction.startDateTime),
     date_first_sentenced_f41: helpers.optionalDate(o.firstSentence.startDate),
     f2052_status_42: o.checkHoldAlerts.H_HA,
-    highest_ranked_offence_f43: helpers.highestRankedOffence(o).offenceCode,
+    highest_ranked_offence_f43: o.highestRankedOffence.offenceCode,
     // 44	Status Rank (to be left blank)
     pending_transfers_f45: o.pendingOffenderTransfer.toAgencyLocationId,
     received_from_f46: o.pendingOffenderTransfer.fromAgencyLocationId,
@@ -109,8 +115,8 @@ module.exports.build = sysdate => data => {
     pnc_f48: o.offenderIdentifiers.PNC,
 
     emplmnt_status: {
-      discharge_f49: helpers.dischargeEmployment(o).employmentPostCode,
-      reception_f50: helpers.receptionEmployment(o).employmentPostCode,
+      discharge_f49: o.dischargeEmployment.employmentPostCode,
+      reception_f50: o.receptionEmployment.employmentPostCode,
     },
 
     schedule_1_sex_offender_f51: helpers.formatAlert(o.MAPPA),
@@ -241,7 +247,7 @@ module.exports.build = sysdate => data => {
 // 144	Employed
     diary_details_f145: helpers.withList(o.diaryDetails).map(odd => helpers.formatOffenderDiaryDetail(odd, o)),
     licence_type_f146: helpers.formatLicenseType(o.offenderLicense),
-    other_offences_f147: helpers.otherOffences(o).map(x => x.offenceCode).sort(),
+    other_offences_f147: o.otherOffences.map(x => x.offenceCode).sort(),
     active_alerts_f148: o.activeAlerts.map(helpers.formatAlert),
 
     court: {

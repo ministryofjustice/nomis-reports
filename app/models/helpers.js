@@ -198,7 +198,7 @@ helpers.getEmployment = o =>
   getFirst(withList(o.employments)
     .filter(oe => (
       oe.bookingId === o.mainBooking.bookingId &&
-      (oe.terminationDate || moment(oe.terminationDate).diff(o.mainBooking.startDate) > 0)
+      (!oe.terminationDate || moment(oe.terminationDate).diff(o.mainBooking.startDate) > 0)
     )));
 
 helpers.getImprisonmentStatus = o =>
