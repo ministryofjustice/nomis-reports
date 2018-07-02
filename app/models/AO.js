@@ -1,5 +1,5 @@
 const moment = require('moment');
-const helpers = require('../helpers');
+const helpers = require('./helpers');
 
 const model = helpers.pipe([
   ['mainBooking', helpers.getMainBooking],

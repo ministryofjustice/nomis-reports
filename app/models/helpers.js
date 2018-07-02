@@ -19,7 +19,11 @@ const getSentenceLengthValues = l => {
 helpers.pipe = p => ({
   apply(x) {
     return p.reduce((x, fn) => {
-      x[fn[0]] = fn[1](x);
+      try {
+        x[fn[0]] = fn[1](x);
+      } catch (err) {
+        console.log(fn[0], err);
+      };
       return x;
     }, Object.assign({}, x));
   }
@@ -249,7 +253,8 @@ helpers.getCourtOutcome = o =>
     ));
 
 helpers.mapOffenderIdentifiers = o =>
-  withList(o.aliases).reduce((a, b) => a.concat(b.identifiers), [])
+  withList(o.aliases)
+    .reduce((acc, oa) => acc.concat(withList(oa.identifiers)), [])
     .concat(withList(o.identifiers))
     .reduce((acc, oi) => {
       (acc[oi.identifierType] = acc[oi.identifierType] || []).push(oi.identifier);

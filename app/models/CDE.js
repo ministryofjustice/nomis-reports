@@ -8,7 +8,6 @@ const model = helpers.pipe([
   ['offenderIdentifiers', helpers.mapOffenderIdentifiers],
   ['offenderSecurityCategory', helpers.getOffenderSecurityCategory],
   ['offenderSentenceCalculations', helpers.getOffenderSentenceCalculations],
-  ['offenderSentences', helpers.getOffenderSentences],
   ['offenderSentence', helpers.getOffenderSentence],
   ['offenderSentenceLength', helpers.getOffenderSentenceLength],
   ['offenderLicense', helpers.getOffenderLicense],
