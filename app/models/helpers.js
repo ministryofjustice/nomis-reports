@@ -124,11 +124,11 @@ helpers.getMainBooking = o =>
 
 helpers.getPreviousBookings = o =>
   withList(o.bookings)
-    .reduce((a, b) => {
-      if (b.bookingNo !== o.mainBooking.bookingNo && !~a.indexOf(b.bookingNo)) {
-        a.push(b.bookingNo);
+    .reduce((out, b) => {
+      if (b.bookingNo !== o.mainBooking.bookingNo && !~out.indexOf(b.bookingNo)) {
+        out.push(b.bookingNo);
       }
-      return a;
+      return out;
     }, []);
 
 //TODO: activeFlag or active?
@@ -138,7 +138,11 @@ helpers.getNumberOfActiveBookings = o =>
 
 helpers.getMainAlias = o =>
   withList(o.aliases)
-    .reduce((x, oa) => (o.mainBooking && (oa.offenderId === o.mainBooking.offenderId) ? oa : x), {
+    .reduce((out, oa) => (
+      o.mainBooking &&
+      (oa.offenderId === o.mainBooking.offenderId)
+        ? oa : out
+    ), {
       nomsId: o.nomsId,
       firstName: o.firstName,
       middleNames: o.middleNames,
@@ -261,6 +265,7 @@ helpers.mapOffenderIdentifiers = o =>
       return acc;
     }, {});
 
+//TODO: does this also need to be attached to the current active sentence
 helpers.getMostRecentConviction = o =>
   getFirst(withList(o.courtEvents)
     .filter(ce => (
@@ -303,40 +308,44 @@ helpers.getPhysicals = o => {
   };
 };
 
+helpers.getActiveOffenderSentence = o =>
+  withList(o.sentences)
+    .reduce((out, os) => (
+      os.isActive &&
+      os.bookingId === o.mainBooking.bookingId &&
+      (!out.startDate || moment(os.startDate).diff(out.startDate) < 0)
+        ? os : out
+    ), {}) || {};
+
 helpers.getOffenderSentenceCalculations = o =>
   getFirst(withList(o.sentenceCalculations)
-    .filter(s => (
-      s.bookingId === o.mainBooking.bookingId
+    .filter(sc => (
+      sc.bookingId === o.offenderSentence.bookingId
     )));
 
-helpers.getOffenderSentence = o =>
-  withList(o.sentences)
-    .reduce((a, b) => (
-      a.bookingId === o.mainBooking.bookingId &&
-      !a.startDate || moment(b.startDate).diff(a.startDate) < 0 ? b : a
-    ), {}) || {};
-
-//TODO: does this have an active property?
-helpers.getOffenderSentence2 = o =>
-  withList(o.sentences)
-    .reduce((a, b) => (
-      a.bookingId === o.mainBooking.bookingId &&
-      a.sentenceStatus === 'A' &&
-      !a.startDate || moment(b.startDate).diff(a.startDate) < 0 ? b : a
-    ), {}) || {};
-
-
-
 helpers.getOffenderSentenceLength = o =>
-  moment(o.offenderSentenceCalculations.effectiveSentenceEndDate)
-    .diff(moment(o.offenderSentence.startDate), 'days') + 1;
+  o.offenderSentence &&
+  o.offenderSentence.startDate &&
+  o.offenderSentenceCalculations &&
+  o.offenderSentenceCalculations.effectiveSentenceEndDate
+    ? moment(o.offenderSentenceCalculations.effectiveSentenceEndDate)
+        .diff(moment(o.offenderSentence.startDate), 'days') + 1 : undefined;
 
 helpers.getOffenderLicense = o =>
   getFirst(withList(o.sentences)
     .filter(s => (
-      s.bookingId === o.mainBooking.bookingId &&
+      s.bookingId === o.offenderSentence.bookingId &&
       s.sentenceCategory === 'LICENCE'
     )));
+
+  helpers.getFirstSentence = o =>
+    getFirst(withList(
+      getFirst(withList(
+        getLast(withList(o.courtEvents)
+          .filter(ce => withList(getFirst(withList(ce.courtEventCharges)).sentences).length > 0)
+        ).courtEventCharges
+      )).sentences
+    ).filter(s => s.isActive));
 
 
 
@@ -500,8 +509,8 @@ helpers.getOffenderMainOffence = o =>
 //TODO: what date do we need to use?
 helpers.getFirstOffenderOffence = o =>
   withList(o.offenderCharges)
-    .reduce((a, b) => (
-      !a.startDate || moment(b.startDate).diff(a.startDate) < 0 ? b : a
+    .reduce((out, oc) => (
+      (!out.startDate || moment(oc.startDate).diff(out.startDate) < 0) ? oc : out
     ), {}) || {};
 
 helpers.otherOffences = o =>
@@ -662,13 +671,6 @@ const getSexOffences = helpers.getSexOffences = o =>
 helpers.isSexOffender = o =>
   getSexOffences(o).length > 0;
 
-helpers.getFirstSentence = o =>
-  getFirst(withList(getFirst(withList(
-    getLast(withList(o.courtEvents)
-      .filter(ce => withList(getFirst(withList(ce.courtEventCharges)).sentences).length > 0))
-        .courtEventCharges)).sentences)
-          .filter(s => s.isActive));
-
 
 
 
@@ -694,29 +696,30 @@ helpers.getFirstSentenceAndCounts = o =>
 
 
 helpers.getOffenceGroups = o =>
-  withList(o.charges).reduce((x, oc) => {
-    x.drugOffences = ~withList(oc.offenceIndicatorCodes).indexOf('D') ? true : x.drugOffences;
-    x.harassmentOffences = ~withList(oc.offenceIndicatorCodes).indexOf('H') ? true : x.harassmentOffences;
-    x.raciallyAggravated = ~withList(oc.offenceIndicatorCodes).indexOf('RA') ? true : x.raciallyAggravated;
-    x.religiouslyAggravated = ~withList(oc.offenceIndicatorCodes).indexOf('REA') ? true : x.religiouslyAggravated;
-    x.sexual = ~withList(oc.offenceIndicatorCodes).indexOf('S') ? true : x.sexual;
-    x.riskToChildren = ~withList(oc.offenceIndicatorCodes).indexOf('S1') ? true : x.riskToChildren;
-    x.sexOffenderRegister = ~withList(oc.offenceIndicatorCodes).indexOf('SOR') ? true : x.sexOffenderRegister;
-    x.violent = ~withList(oc.offenceIndicatorCodes).indexOf('V') ? true : x.violent;
-    x.victimOffences = ~withList(oc.offenceIndicatorCodes).indexOf('VO') ? true : x.victimOffences;
+  withList(o.charges)
+    .reduce((x, oc) => {
+      x.drugOffences = ~withList(oc.offenceIndicatorCodes).indexOf('D') ? true : x.drugOffences;
+      x.harassmentOffences = ~withList(oc.offenceIndicatorCodes).indexOf('H') ? true : x.harassmentOffences;
+      x.raciallyAggravated = ~withList(oc.offenceIndicatorCodes).indexOf('RA') ? true : x.raciallyAggravated;
+      x.religiouslyAggravated = ~withList(oc.offenceIndicatorCodes).indexOf('REA') ? true : x.religiouslyAggravated;
+      x.sexual = ~withList(oc.offenceIndicatorCodes).indexOf('S') ? true : x.sexual;
+      x.riskToChildren = ~withList(oc.offenceIndicatorCodes).indexOf('S1') ? true : x.riskToChildren;
+      x.sexOffenderRegister = ~withList(oc.offenceIndicatorCodes).indexOf('SOR') ? true : x.sexOffenderRegister;
+      x.violent = ~withList(oc.offenceIndicatorCodes).indexOf('V') ? true : x.violent;
+      x.victimOffences = ~withList(oc.offenceIndicatorCodes).indexOf('VO') ? true : x.victimOffences;
 
-    return x;
-  }, {
-    drugOffences: false,
-    harassmentOffences: false,
-    raciallyAggravated: false,
-    religiouslyAggravated: false,
-    sexual: false,
-    riskToChildren: false,
-    sexOffenderRegister: false,
-    violent: false,
-    victimOffences: false,
-  });
+      return x;
+    }, {
+      drugOffences: false,
+      harassmentOffences: false,
+      raciallyAggravated: false,
+      religiouslyAggravated: false,
+      sexual: false,
+      riskToChildren: false,
+      sexOffenderRegister: false,
+      violent: false,
+      victimOffences: false,
+    });
 
 helpers.getCSRALevel = o =>
   getFirst((o.assessments || [])
