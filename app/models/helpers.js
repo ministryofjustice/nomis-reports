@@ -6,6 +6,16 @@ const getFirst = helpers.getFirst = a => a[0] || {};
 const getLast = helpers.getLast = a => a[a.length - 1] || {};
 const withList = helpers.withList = a => a || [];
 
+const getSentenceLengthValues = l => {
+  let x = (l || '').split(/\//gmi);
+
+  return {
+    years: x[0] ? parseInt(x[0], 10) : 0,
+    months: x[1] ? parseInt(x[1], 10) : 0,
+    days: x[2] ? parseInt(x[2], 10) : 0,
+  };
+};
+
 helpers.pipe = p => ({
   apply(x) {
     return p.reduce((x, fn) => {
@@ -23,6 +33,11 @@ const optionalTime = helpers.optionalTime = d =>
 
 helpers.optionalHeight = n =>
   n ? parseFloat((n / 100).toFixed(2)) : 0;
+
+
+
+
+// formatters
 
 helpers.formatTransferReasonCode = trn =>
   trn ? [trn.movementType, trn.movementReasonCode]
@@ -93,6 +108,13 @@ helpers.formatOffenderDiaryDetail = (odd, o) =>
     not_for_release_alert_145f: formatAlert(o.notForRelease),
   });
 
+
+
+
+
+
+// filters
+
 helpers.getMainBooking = o =>
   getFirst(withList(o.bookings));
 
@@ -104,6 +126,11 @@ helpers.getPreviousBookings = o =>
       }
       return a;
     }, []);
+
+//TODO: activeFlag or active?
+helpers.getNumberOfActiveBookings = o =>
+  withList(o.bookings)
+    .filter(b => b.activeFlag);
 
 helpers.getMainAlias = o =>
   withList(o.aliases)
@@ -139,6 +166,14 @@ helpers.receptionEmployment = o =>
 helpers.dischargeEmployment = o =>
   getFirst(o.offenderEmployments);
 
+//TODO: is endDate relevant to all?
+helpers.getOffenderAddresses = o =>
+  withList(o.addresses)
+    .filter(a => (
+      !a.endDate &&
+      withList(a.addressUsages).filter(au => au.active).length > 0
+    ));
+
 helpers.getOffenderHomeAddress = o =>
   getFirst(withList(o.addresses)
     .filter(a => withList(a.addressUsages)
@@ -163,6 +198,15 @@ helpers.getOffenderDischargeAddress = o =>
         ~['RELEASE','DNF','DUT','DST','DPH','DSH','DAP','DBA','DOH','DBH'].indexOf(au.usage)
       )).length > 0));
 
+helpers.getOffenderDischargeAddress2 = o =>
+  getFirst(withList(o.addresses)
+    .filter(a => withList(a.addressUsages)
+      .filter(au => (
+        au.active &&
+        !~[ 'HOME', 'RECEP' ].indexOf(au.usage)
+      )).length > 0));
+
+//TODO: does this have an active property?
 helpers.getActiveAlerts = o =>
   withList(o.alerts)
     .filter(oa => oa.alertStatus === 'ACTIVE');
@@ -220,39 +264,39 @@ helpers.getMostRecentConviction = o =>
       ce.courtEventCharges[0].sentences && ce.courtEventCharges[0].sentences.length > 0
     )));
 
-    helpers.getPhysicals = o => {
-      let physicals = getFirst(withList(o.physicals)
-        .filter(op => (
-          op.bookingId === o.mainBooking.bookingId
-        )));
+helpers.getPhysicals = o => {
+  let physicals = getFirst(withList(o.physicals)
+    .filter(op => (
+      op.bookingId === o.mainBooking.bookingId
+    )));
 
-      return {
-        profileDetails: withList(physicals.profileDetails)
-            .reduce((x, opd) => {
-              x[opd.profileType] = opd.profileCode;
-              return x;
-            }, {}),
-        identifyingMarks: (x => {
-          x.BODY = [...(x.BODY || [])];
-          x.HEAD = [...(x.HEAD || [])];
+  return {
+    profileDetails: withList(physicals.profileDetails)
+        .reduce((x, opd) => {
+          x[opd.profileType] = opd.profileCode;
           return x;
-        })(withList(physicals.identifyingMarks)
-            .reduce((x, oim) => {
-              let area = (~[ 'EAR', 'FACE', 'HEAD', 'LIP', 'NECK', 'NOSE' ].indexOf(oim.bodyPartCode)) ? 'HEAD' : 'BODY';
-              /*
-              area = (~[
-                'ANKLE', 'ARM', 'ELBOW', 'FINGER', 'FOOT', 'HAND', 'KNEE', 'LEG', 'SHOULDER', 'THIGH', 'TOE', 'TORSO'
-              ].indexOf(oim.bodyPartCode)) ? 'BODY' : 'HEAD';
-              */
+        }, {}),
+    identifyingMarks: (x => {
+      x.BODY = [...(x.BODY || [])];
+      x.HEAD = [...(x.HEAD || [])];
+      return x;
+    })(withList(physicals.identifyingMarks)
+        .reduce((x, oim) => {
+          let area = (~[ 'EAR', 'FACE', 'HEAD', 'LIP', 'NECK', 'NOSE' ].indexOf(oim.bodyPartCode)) ? 'HEAD' : 'BODY';
+          /*
+          area = (~[
+            'ANKLE', 'ARM', 'ELBOW', 'FINGER', 'FOOT', 'HAND', 'KNEE', 'LEG', 'SHOULDER', 'THIGH', 'TOE', 'TORSO'
+          ].indexOf(oim.bodyPartCode)) ? 'BODY' : 'HEAD';
+          */
 
-              (x[area] = x[area] || new Set()).add(oim);
+          (x[area] = x[area] || new Set()).add(oim);
 
-              return x;
-            }, {})),
-        physicalAttributes: withList(physicals.physicalAttributes)
-            .reduce((x, opa) => (x || opa), false),
-      };
-    };
+          return x;
+        }, {})),
+    physicalAttributes: withList(physicals.physicalAttributes)
+        .reduce((x, opa) => (x || opa), false),
+  };
+};
 
 helpers.getOffenderSentenceCalculations = o =>
   getFirst(withList(o.sentenceCalculations)
@@ -266,6 +310,17 @@ helpers.getOffenderSentence = o =>
       a.bookingId === o.mainBooking.bookingId &&
       !a.startDate || moment(b.startDate).diff(a.startDate) < 0 ? b : a
     ), {}) || {};
+
+//TODO: does this have an active property?
+helpers.getOffenderSentence2 = o =>
+  withList(o.sentences)
+    .reduce((a, b) => (
+      a.bookingId === o.mainBooking.bookingId &&
+      a.sentenceStatus === 'A' &&
+      !a.startDate || moment(b.startDate).diff(a.startDate) < 0 ? b : a
+    ), {}) || {};
+
+
 
 helpers.getOffenderSentenceLength = o =>
   moment(o.offenderSentenceCalculations.effectiveSentenceEndDate)
@@ -281,10 +336,19 @@ helpers.getOffenderLicense = o =>
 
 
 
+
+
+
+
+
+
+
+
 helpers.getFirstConviction = o =>
   getLast(withList(o.courtEvents));
 
 // Multi Agency Public Protection Alert
+//TODO: does this have an active property?
 helpers.getMAPPAAlerts = o =>
   getFirst(withList(o.alerts)
     .filter(oa => (
@@ -292,19 +356,13 @@ helpers.getMAPPAAlerts = o =>
       oa.alertStatus === 'ACTIVE'
     )));
 
+//TODO: does this have an active property?
 helpers.getNotForReleaseAlerts = o =>
   getFirst(withList(o.alerts)
     .filter(oa => (
       oa.alertType === 'X' &&
       oa.alertStatus === 'ACTIVE'
     )));
-
-helpers.getOffenderTransfers = o =>
-  withList(o.movements)
-    .filter(oem => (
-      oem.bookingId === o.mainBooking.bookingId &&
-      oem.movementTypeCode === 'TRN'
-    ));
 
 helpers.getCharges = o =>
   withList(o.charges)
@@ -320,14 +378,14 @@ helpers.getContactPersons = o =>
       !getFirst(withList(ocp.addresses)).endDate
     ));
 
-helpers.getMaternityStatus = (o, sysdate) =>
+helpers.getMaternityStatus = o =>
   getFirst(withList(o.healthProblems)
     .filter(hp => (
       hp.bookingId === o.mainBooking.bookingId &&
       hp.problemType === 'MATSTAT' &&
       hp.problemStatus === 'ON' &&
     //hp.domain === 'HEALTH_PBLM' &&
-      (!hp.endDate || moment(hp.endDate).diff(sysdate) > 0)
+      (!hp.endDate || moment(hp.endDate).diff(o.sysdate) > 0)
     )));
 
 helpers.getReleaseDetails = o =>
@@ -336,6 +394,7 @@ helpers.getReleaseDetails = o =>
       ord.bookingId === o.mainBooking.bookingId
     ));
 
+//TODO: does this have an active property?
 helpers.getOffenderSecurityCategory = o =>
   getFirst(withList(o.assessments)
     .filter(oa => (
@@ -348,35 +407,46 @@ helpers.getOffenderSecurityCategory = o =>
       oa.assessmentType.determineSupLevelFlag
     )));
 
+//TODO: does this have an active property?
+helpers.getOffenderSecurityCategory2 = o =>
+  getFirst(withList(o.assessments)
+    .filter(oa => (
+      oa.calcSupLevelType === 'Y' &&
+      oa.evaluationResultCode === 'APP' &&
+      oa.assessStatus === 'A' &&
+      oa.assessmentType &&
+      oa.assessmentType.assessmentClass === 'TYPE' &&
+      oa.assessmentType.assessmentCode === 'CATEGORY'
+    )));
+
 helpers.getIEPLevel = o =>
   getFirst(withList(o.ieps)
     .filter(op => (
       op.bookingId === o.mainBooking.bookingId
     ))
-    .map(iep => iep.iepLevel)) || { iepLevel: 'STD' };
+    .map(iep => iep.iepLevel));
 
 helpers.getImprisonmentStatus = o =>
   getFirst(withList(o.imprisonmentStatuses)
     .filter(op => (
       op.bookingId === o.mainBooking.bookingId
-    ))
-  ) || { imprisonmentStatusCode: 'Unknown Sentenced'};
+    )));
+
+//TODO: is status relevant?
+helpers.getImprisonmentStatus2 = o =>
+  getFirst(withList(o.imprisonmentStatuses)
+    .filter(op => (
+      op.bookingId === o.mainBooking.bookingId &&
+      op.latestStatus
+    )));
 
 // main booking entire
 
-helpers.getFirstOffenderTransfer = o =>
-  getLast(o.offenderTransfers);
-
-helpers.getLastOffenderTransfer = o =>
-  getFirst(o.offenderTransfers
-    .filter(m => m.active)); // TODO: movement date before extract date?
-
-helpers.getPendingOffenderTransfer = o =>
-  getLast(o.offenderTransfers
-    .filter(m => m.active)); // TODO: movement date after extract date?
-
 helpers.getLastOffenderMovement = o =>
   getFirst(withList(o.movements));
+
+helpers.getFirstOffenderMovement = o =>
+  getLast(withList(o.movements));
 
 helpers.getFirstOffenderOutMovement = o =>
   getLast(withList(o.movements)
@@ -394,8 +464,40 @@ helpers.getOffenderCourtEscort = o => {
   ) ? m : {};
 };
 
+helpers.getOffenderTransfers = o =>
+  withList(o.movements)
+    .filter(oem => (
+      oem.bookingId === o.mainBooking.bookingId &&
+      oem.movementTypeCode === 'TRN'
+    ));
+
+helpers.getFirstOffenderTransfer = o =>
+  getLast(o.offenderTransfers);
+
+helpers.getLastOffenderTransfer = o =>
+  getFirst(o.offenderTransfers
+    .filter(m => m.active)); // TODO: movement date before extract date?
+
+helpers.getPendingOffenderTransfer = o =>
+  getLast(o.offenderTransfers
+    .filter(m => m.active)); // TODO: movement date after extract date?
+
 helpers.highestRankedOffence = o =>
   getFirst(o.offenderCharges);
+
+//TODO: does this have an active property?
+helpers.getOffenderMainOffence = o =>
+  getFirst(withList(o.offenderCharges)
+    .filter(oc => (
+      oc.chargeStatus === 'A'
+    )));
+
+//TODO: what date do we need to use?
+helpers.getFirstOffenderOffence = o =>
+  withList(o.offenderCharges)
+    .reduce((a, b) => (
+      !a.startDate || moment(b.startDate).diff(a.startDate) < 0 ? b : a
+    ), {}) || {};
 
 helpers.otherOffences = o =>
   withList(o.offenderCharges)
@@ -479,9 +581,33 @@ helpers.getOffenderSentenceCalculationDates = o =>
     tused: optionalDate(osc.tusedOverridedDate || osc.tusedCalculatedDate)
   }))(o.offenderSentenceCalculations);
 
+helpers.getOffenderSentenceCalculationDates2 = o =>
+  (osc => ({
+    effectiveSentenceLength: getSentenceLengthValues(osc.effectiveSentenceLength),
+    judiciallyImposedSentenceLength: getSentenceLengthValues(osc.judiciallyImposedSentenceLength),
+    effectiveSentenceEndDate: osc.effectiveSentenceEndDate,
+    sed: moment(osc.sedOverridedDate || osc.sedCalculatedDate),
+    hdced: moment(osc.hdcedOverridedDate || osc.hdcedCalculatedDate),
+    hdcad: moment(osc.hdcadOverridedDate || osc.hdcadCalculatedDate),
+    etd: moment(osc.etdOverridedDate || osc.etdCalculatedDate),
+    mtd: moment(osc.mtdOverridedDate || osc.mtdCalculatedDate),
+    ltd: moment(osc.ltdOverridedDate || osc.ltdCalculatedDate),
+    crd: moment(osc.crdOverridedDate || osc.crdCalculatedDate),
+    ped: moment(osc.pedOverridedDate || osc.pedCalculatedDate),
+    apd: moment(osc.apdOverridedDate || osc.apdCalculatedDate),
+    npd: moment(osc.npdOverridedDate || osc.npdCalculatedDate),
+    ard: moment(osc.ardOverridedDate || osc.ardCalculatedDate),
+    led: moment(osc.ledOverridedDate || osc.ledCalculatedDate),
+    tused: moment(osc.tusedOverridedDate || osc.tusedCalculatedDate),
+    prrd: moment(osc.prrdOverridedDate || osc.prrdCalculatedDate),
+    ersed: moment(osc.ersedOverridedDate || osc.ersedCalculatedDate),
+    tersed: moment(osc.tersedOverridedDate || osc.tersedCalculatedDate),
+    rotl: moment(osc.rotlOverridedDate || osc.rotlCalculatedDate),
+    tariff: moment(osc.tariffOverridedDate || osc.tariffCalculatedDate),
+  }))(o.offenderSentenceCalculations);
+
 helpers.earliestReleaseDate =  o =>
   (scd => [
-    moment('2999-12-31'),
     scd.hdced,
     scd.hdcad,
     scd.etd,
@@ -492,7 +618,29 @@ helpers.earliestReleaseDate =  o =>
     scd.apd,
     scd.npd,
     scd.ard
-  ].sort((a, b) => a.diff(b))[0])(o.offenderSentenceCalculationDates);
+  ]
+  .sort((a, b) => a.diff(b))[0])(o.offenderSentenceCalculationDates);
+
+helpers.earliestReleaseDate2 =  o =>
+  (scd => [
+    { date: moment(o.releaseDetails.releaseDate),
+      label: `REL-${o.releaseDetails.movementReasonCode}`,
+      description: `Assessed Release - ${o.releaseDetails.description ? o.releaseDetails.description : 'Reason Not Stated'}`
+    },
+      { date: scd.hdced, label: 'hdced', description: '' },
+      { date: scd.hdcad, label: 'hdcad', description: 'Home Detention Curfew Approved Date' },
+      { date: scd.etd, label: 'etd', description: '' },
+      { date: scd.mtd, label: 'mtd', description: 'Mid Term Release Date' },
+      { date: scd.ltd, label: 'ltd', description: '' },
+      { date: scd.crd, label: 'crd', description: 'Conditional Release Date' },
+      { date: scd.ped, label: 'ped', description: '' },
+      { date: scd.apd, label: 'apd', description: 'Approved Parole Date' },
+      { date: scd.npd, label: 'npd', description: 'Non Parole Release Date' },
+      { date: scd.ard, label: 'ard', description: 'Automatic Release Date' },
+      { date: scd.prrd, label: 'prrd', description: 'Post Recall Release Date' },
+      { date: scd.ard, label: 'ard', description: '' },
+  ]
+  .sort((a, b) => a.date.diff(b.date))[0])(o.offenderSentenceCalculationDates);
 
 helpers.getNFA = oa => {
   if (~['RELEASE', 'HOME', 'RECEP'].indexOf(oa.addressUsage)) {
@@ -502,9 +650,12 @@ helpers.getNFA = oa => {
   return oa.addressUsage;
 };
 
-helpers.isSexOffender = o =>
+const getSexOffences = helpers.getSexOffences = o =>
   withList(o.charges)
-    .filter(oc => ~withList(oc.offenceIndicatorCodes).indexOf('S')).length > 0;
+    .filter(oc => ~withList(oc.offenceIndicatorCodes).indexOf('S'));
+
+helpers.isSexOffender = o =>
+  getSexOffences(o).length > 0;
 
 helpers.getFirstSentence = o =>
   getFirst(withList(getFirst(withList(
@@ -512,5 +663,118 @@ helpers.getFirstSentence = o =>
       .filter(ce => withList(getFirst(withList(ce.courtEventCharges)).sentences).length > 0))
         .courtEventCharges)).sentences)
           .filter(s => s.isActive));
+
+
+
+
+
+
+
+helpers.getFirstSentenceAndCounts = o =>
+  (o.sentences || [])
+    .filter(s => s.bookingId === o.mainBooking.bookingId)
+    .reduce((a, b) => ({
+      firstSentenced: b.courtDate < a.courtDate ? b.courtDate : a.courtDate || b.courtDate,
+      firstActiveSentenceStart: b.sentenceStatus === 'A' && b.startDate < a.startDate ? b.startDate : a.startDate || b.startDate,
+      sentences: a.sentences + 1,
+      activeSentences: b.sentenceStatus === 'A' ? a.activeSentences + 1 : a.activeSentences,
+      activeFineDefaultSentences:
+        b.sentenceStatus === 'A' && b.sentenceCalcType === 'A/FINE' ? a.activeFineDefaultSentences + 1 : a.activeFineDefaultSentences,
+    }), { sentences: 0, activeSentences: 0, activeFineDefaultSentences: 0}) || {};
+
+
+
+
+
+
+
+helpers.getOffenceGroups = o =>
+  withList(o.charges).reduce((x, oc) => {
+    x.drugOffences = ~withList(oc.offenceIndicatorCodes).indexOf('D') ? true : x.drugOffences;
+    x.harassmentOffences = ~withList(oc.offenceIndicatorCodes).indexOf('H') ? true : x.harassmentOffences;
+    x.raciallyAggravated = ~withList(oc.offenceIndicatorCodes).indexOf('RA') ? true : x.raciallyAggravated;
+    x.religiouslyAggravated = ~withList(oc.offenceIndicatorCodes).indexOf('REA') ? true : x.religiouslyAggravated;
+    x.sexual = ~withList(oc.offenceIndicatorCodes).indexOf('S') ? true : x.sexual;
+    x.riskToChildren = ~withList(oc.offenceIndicatorCodes).indexOf('S1') ? true : x.riskToChildren;
+    x.sexOffenderRegister = ~withList(oc.offenceIndicatorCodes).indexOf('SOR') ? true : x.sexOffenderRegister;
+    x.violent = ~withList(oc.offenceIndicatorCodes).indexOf('V') ? true : x.violent;
+    x.victimOffences = ~withList(oc.offenceIndicatorCodes).indexOf('VO') ? true : x.victimOffences;
+
+    return x;
+  }, {
+    drugOffences: false,
+    harassmentOffences: false,
+    raciallyAggravated: false,
+    religiouslyAggravated: false,
+    sexual: false,
+    riskToChildren: false,
+    sexOffenderRegister: false,
+    violent: false,
+    victimOffences: false,
+  });
+
+helpers.getCSRALevel = o =>
+  getFirst((o.assessments || [])
+    .filter(oa => (
+      oa.assessmentType &&
+      oa.assessmentType.assessmentClass === 'TYPE' &&
+      oa.assessmentType.cellSharingAlertFlag
+    )));
+
+
+helpers.getImprisonmentStatusCategory = ois => {
+  switch (ois.bandCode) {
+    case 0: return 'Dead';
+    case 1: return 'Indefinite Sentence';
+    case 2:
+    case 3: return 'Sentenced';
+    case 4:
+    case 5:
+    case 6:
+    case 7: return 'Convicted Unsentenced';
+    case 8:
+    case 11: return 'Immigration Detainees';
+    case 9:
+    case 10: return 'Civil Prisoners';
+    case 12:
+    case 13:
+    case 14: return 'Remand';
+    default:
+      return ois.imprisonmentStatus === 'Unknown' ? 'Unknown' : 'Other';
+  }
+};
+
+helpers.formatSentenceLength = o => {
+  if (o.offenderImprisonmentStatus.bandCode === 1 ||
+      !o.sentenceCalculationDates ||
+      !o.sentenceCalculationDates.effectiveSentenceEndDate) {
+    return 'Indefinate';
+  }
+
+  let sentence = o.sentenceCalculationDates.effectiveSentenceEndDate;
+
+  if (sentence.years >= 4) {
+    return '4 years or over';
+  }
+
+  if (sentence.years >= 1) {
+    return '12 months to less than 4 years';
+  }
+
+  if (sentence.years > 6 || (sentence.months === 6 && sentence.days > 0)) {
+          return 'More than 6 months to less than 12 months';
+  }
+
+  if (sentence.months === 6) {
+    return '6 months';
+  }
+
+  return 'Less than 6 months';
+};
+
+
+
+
+
 
 module.exports = helpers;

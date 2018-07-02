@@ -48,6 +48,7 @@ const model = helpers.pipe([
   ['otherOffences', helpers.otherOffences],
   ['earliestReleaseDate', helpers.earliestReleaseDate],
   ['custodyStatus', helpers.getCustodyStatus],
+  ['maternityStatus', helpers.getMaternityStatus],
 ]);
 
 module.exports.build = sysdate => data => {
@@ -71,7 +72,7 @@ module.exports.build = sysdate => data => {
     ethnicity_f15: o.mainAlias.raceCode,
     religion_f16: o.physicals.profileDetails.RELF,
     marital_f17: o.physicals.profileDetails.MARITAL,
-    maternity_status_f18: helpers.getMaternityStatus(o, o.sysdate).problemCode,
+    maternity_status_f18: o.maternityStatus.problemCode,
     location_f19: o.mainBooking.livingUnitId,
     incentive_band_f20: o.IEPLevel.iepLevel,
     occupation_v21: o.employments.occupationsCode,

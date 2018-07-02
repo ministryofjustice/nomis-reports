@@ -1,357 +1,41 @@
 const moment = require('moment');
 const helpers = require('../helpers');
 
-const getFirst = a => a[0] || {};
-const getLast = a => a[a.length - 1] || {};
-const withList = a => a || [];
-
-const getCharges = o =>
-  (o.charges || [])
-    .filter(oc => (
-      oc.bookingId === o.mainBooking.bookingId
-    ));
-
-const getContactPersons = o =>
-  (o.contactPersons || [])
-    .filter(ocp => (
-      ocp.bookingId === o.mainBooking.bookingId
-    ));
-
-const getMainOffence = o =>
-  getFirst((o.offenderCharges || [])
-    .filter(oc => (
-      oc.chargeStatus === 'A'
-    )));
-
-const getFirstCharge = o =>
-  getLast(o.offenderCharges);
-
-const getReleaseDetails = o =>
-  (o.releaseDetails || []).filter(ord => (
-    ord.bookingId === o.mainBooking.bookingId
-  ));
-
-const getSentenceCalculations = o =>
-  (o.sentenceCalculations || []).filter(s => (
-    s.bookingId === o.mainBooking.bookingId
-  )).reduce((a, b) => (!a.effectiveSentenceEndDate || moment(b.effectiveSentenceEndDate).diff(a.effectiveSentenceEndDate) > 0 ? b : a), moment(0)) || {};
-
-const getSentence = o =>
-  (o.sentences || []).filter(s => (
-    s.sentenceStatus === 'A' &&
-    s.bookingId === o.mainBooking.bookingId
-  )).reduce((a, b) => (!a.startDate || moment(b.startDate).diff(a.startDate) > 0 ? b : a), moment(0)) || {};
-
-const getFirstSentenceAndCounts = o =>
-  (o.sentences || [])
-    .filter(s => s.bookingId === o.mainBooking.bookingId)
-    .reduce((a, b) => ({
-      firstSentenced: b.courtDate < a.courtDate ? b.courtDate : a.courtDate || b.courtDate,
-      firstActiveSentenceStart: b.sentenceStatus === 'A' && b.startDate < a.startDate ? b.startDate : a.startDate || b.startDate,
-      sentences: a.sentences + 1,
-      activeSentences: b.sentenceStatus === 'A' ? a.activeSentences + 1 : a.activeSentences,
-      activeFineDefaultSentences:
-        b.sentenceStatus === 'A' && b.sentenceCalcType === 'A/FINE' ? a.activeFineDefaultSentences + 1 : a.activeFineDefaultSentences,
-    }), { sentences: 0, activeSentences: 0, activeFineDefaultSentences: 0}) || {};
-
-const getOffenderAddresses = o =>
-  (o.addresses || []).filter(oa => (
-    oa.ownerClass === 'OFF' &&
-    !oa.endDate && oa.active
-  ));
-
-const getIdentifiers = o =>
-  (o.identifiers || []).reduce((x, oi) => { x[oi.identifierType] = oi.identifier; return x; }, {});
-
-const getMaternityStatus = (o, sysdate) =>
-  getFirst((o.healthProblems || []).filter(hp => (
-    hp.bookingId === o.mainBooking.bookingId &&
-    hp.problemType === 'MATSTAT' &&
-    hp.problemStatus === 'ON' &&
-  //hp.domain === 'HEALTH_PBLM' &&
-    (!hp.endDate || moment(hp.endDate).diff(sysdate) > 0)
-  )));
-
-const getSecurityCategory2 = o =>
-  getFirst((o.assessments || []).filter(oa => (
-    oa.calcSupLevelType === 'Y' &&
-    oa.evaluationResultCode === 'APP' &&
-    oa.assessStatus === 'A' &&
-    oa.assessmentType &&
-    oa.assessmentType.assessmentClass === 'TYPE' &&
-    oa.assessmentType.assessmentCode === 'CATEGORY'
-  )));
-
-const lastMovement = o =>
-  getFirst(o.movements);
-
-const firstMovement = o =>
-  getLast(o.movements);
-
-const getHomeAddress = o =>
-  getFirst((o.offenderAddresses || []).filter(a => (a.addressUsage === 'HOME')));
-
-const getReceptionAddress = o =>
-  getFirst((o.offenderAddresses || []).filter(a => (a.addressUsage === 'RECEP')));
-
-const getDischargeAddress2 = o =>
-  getFirst((o.offenderAddresses || []).filter(a => (!~[ 'HOME', 'RECEP' ].indexOf(a.addressUsage))));
-
-const getMainBooking = o =>
-  getFirst(o.bookings);
-
-const getNumberOfActiveBookings = o =>
-  (o.bookings || []).filter(b => b.activeFlag).length || 0;
-
-const getAge = o =>
-  moment().diff(moment(o.dateOfBirth), 'years');
-
-const getNextOfKin = o =>
-  getFirst((o.offenderContactPersons || []).filter(ocp => ocp.nextOfKin));
-
-const formatAlert = oa =>
-  oa ? [oa.alertType, oa.alertCode].filter(x => !!x).join('-') : undefined;
-
-const formatIdentifyingMark = oim =>
-  oim ? [oim.markType, oim.bodyPartCode].filter(x => !!x).join(' ') : undefined;
-
-const earliestReleaseDate =  o =>
-  (scd => [
-    { date: moment(o.releaseDetails.releaseDate),
-      label: `REL-${o.releaseDetails.movementReasonCode}`,
-      description: `Assessed Release - ${o.releaseDetails.description ? o.releaseDetails.description : 'Reason Not Stated'}`
-    },
-      { date: scd.hdced, label: 'hdced', description: '' },
-      { date: scd.hdcad, label: 'hdcad', description: 'Home Detention Curfew Approved Date' },
-      { date: scd.etd, label: 'etd', description: '' },
-      { date: scd.mtd, label: 'mtd', description: 'Mid Term Release Date' },
-      { date: scd.ltd, label: 'ltd', description: '' },
-      { date: scd.crd, label: 'crd', description: 'Conditional Release Date' },
-      { date: scd.ped, label: 'ped', description: '' },
-      { date: scd.apd, label: 'apd', description: 'Approved Parole Date' },
-      { date: scd.npd, label: 'npd', description: 'Non Parole Release Date' },
-      { date: scd.ard, label: 'ard', description: 'Automatic Release Date' },
-      { date: scd.prrd, label: 'prrd', description: 'Post Recall Release Date' },
-      { date: scd.ard, label: 'ard', description: '' },
-  ].sort((a, b) => a.date.diff(b.date))[0])(o.sentenceCalculationDates);
-
-const getSentenceLengthValues = l => {
-  let x = (l || '').split(/\//gmi);
-
-  return {
-    years: x[0] ? parseInt(x[0], 10) : 0,
-    months: x[1] ? parseInt(x[1], 10) : 0,
-    days: x[2] ? parseInt(x[2], 10) : 0,
-  };
-};
-
-const sentenceCalculationDates = o =>
-  (osc => ({
-    effectiveSentenceLength: getSentenceLengthValues(osc.effectiveSentenceLength),
-    judiciallyImposedSentenceLength: getSentenceLengthValues(osc.judiciallyImposedSentenceLength),
-    effectiveSentenceEndDate: osc.effectiveSentenceEndDate,
-    sed: moment(osc.sedOverridedDate || osc.sedCalculatedDate),
-    hdced: moment(osc.hdcedOverridedDate || osc.hdcedCalculatedDate),
-    hdcad: moment(osc.hdcadOverridedDate || osc.hdcadCalculatedDate),
-    etd: moment(osc.etdOverridedDate || osc.etdCalculatedDate),
-    mtd: moment(osc.mtdOverridedDate || osc.mtdCalculatedDate),
-    ltd: moment(osc.ltdOverridedDate || osc.ltdCalculatedDate),
-    crd: moment(osc.crdOverridedDate || osc.crdCalculatedDate),
-    ped: moment(osc.pedOverridedDate || osc.pedCalculatedDate),
-    apd: moment(osc.apdOverridedDate || osc.apdCalculatedDate),
-    npd: moment(osc.npdOverridedDate || osc.npdCalculatedDate),
-    ard: moment(osc.ardOverridedDate || osc.ardCalculatedDate),
-    led: moment(osc.ledOverridedDate || osc.ledCalculatedDate),
-    tused: moment(osc.tusedOverridedDate || osc.tusedCalculatedDate),
-    prrd: moment(osc.prrdOverridedDate || osc.prrdCalculatedDate),
-    ersed: moment(osc.ersedOverridedDate || osc.ersedCalculatedDate),
-    tersed: moment(osc.tersedOverridedDate || osc.tersedCalculatedDate),
-    rotl: moment(osc.rotlOverridedDate || osc.rotlCalculatedDate),
-    tariff: moment(osc.tariffOverridedDate || osc.tariffCalculatedDate),
-  }))(o.offenderSentenceCalculations);
-
-const getCheckHoldAlerts = o =>
-  (o.activeAlerts || []).reduce((x, oa) => {
-    let fa = formatAlert(oa);
-    switch (fa) {
-      case 'T-TG': return x.T_TG = fa;
-      case 'T-TAH': return x.T_TAH = fa;
-      case 'T-TSE': return x.T_TSE = fa;
-      case 'T-TM': return x.T_TM = fa;
-      case 'T-TPR': return x.T_TPR = fa;
-      case 'H-HA': return x.H_HA = fa;
-    }
-
-    if (oa.alertType === 'V') {
-      if (~['V45','VOP','V46','V49G','V49P'].indexOf(oa.alertCode)) {
-        x.V_45_46 = 'Y';
-      } else {
-        x.VUL = 'Y';
-      }
-    }
-
-    if (fa === 'H-HA') {
-      x.SH_STS = 'Y';
-      x.SH_Date = oa.alertDate;
-    }
-
-    return x;
-  }, { VUL: 'N', V_45_46: 'N', SH_STS: 'N' });
-
-const getOffenceGroups = o =>
-  withList(o.charges).reduce((x, oc) => {
-    x.drugOffences = ~withList(oc.offenceIndicatorCodes).indexOf('D') ? true : x.drugOffences;
-    x.harassmentOffences = ~withList(oc.offenceIndicatorCodes).indexOf('H') ? true : x.harassmentOffences;
-    x.raciallyAggravated = ~withList(oc.offenceIndicatorCodes).indexOf('RA') ? true : x.raciallyAggravated;
-    x.religiouslyAggravated = ~withList(oc.offenceIndicatorCodes).indexOf('REA') ? true : x.religiouslyAggravated;
-    x.sexual = ~withList(oc.offenceIndicatorCodes).indexOf('S') ? true : x.sexual;
-    x.riskToChildren = ~withList(oc.offenceIndicatorCodes).indexOf('S1') ? true : x.riskToChildren;
-    x.sexOffenderRegister = ~withList(oc.offenceIndicatorCodes).indexOf('SOR') ? true : x.sexOffenderRegister;
-    x.violent = ~withList(oc.offenceIndicatorCodes).indexOf('V') ? true : x.violent;
-    x.victimOffences = ~withList(oc.offenceIndicatorCodes).indexOf('VO') ? true : x.victimOffences;
-
-    return x;
-  }, {
-    drugOffences: false,
-    harassmentOffences: false,
-    raciallyAggravated: false,
-    religiouslyAggravated: false,
-    sexual: false,
-    riskToChildren: false,
-    sexOffenderRegister: false,
-    violent: false,
-    victimOffences: false,
-  });
-
-const getPhysicals = o => {
-  let physicals = getFirst((o.physicals || []).filter(op => (op.bookingId === o.mainBooking.bookingId)));
-
-  return {
-    profileDetails: (physicals.profileDetails || [])
-        .reduce((x, opd) => { x[opd.profileType] = opd.profileCode; return x; }, {}),
-    identifyingMarks: (x => {
-      x.BODY = [...(x.BODY || [])];
-      x.HEAD = [...(x.HEAD || [])];
-      return x;
-    })((physicals.identifyingMarks || [])
-        .reduce((x, oim) => {
-          let area = (~[ 'EAR', 'FACE', 'HEAD', 'LIP', 'NECK', 'NOSE' ].indexOf(oim.bodyPartCode)) ? 'HEAD' : 'BODY';
-
-          (x[area] = x[area] || new Set()).add(formatIdentifyingMark(oim));
-
-          return x;
-        }, {})),
-    physicalAttributes: (physicals.physicalAttributes || [])
-        .reduce((x, opa) => (x || opa), false),
-  };
-};
-
-const getIEPLevel = o =>
-  getFirst((o.IEPs || [])
-    .filter(op => (op.bookingId === o.mainBooking.bookingId))
-    .map(iep => iep.iepLevel.iepLevel));
-
-const getCSRALevel = o =>
-  getFirst((o.assessments || [])
-    .filter(oa => (
-      oa.assessmentType &&
-      oa.assessmentType.assessmentClass === 'TYPE' &&
-      oa.assessmentType.cellSharingAlertFlag
-    )));
-
-const getImprisonmentStatus2 = o =>
-  getFirst((o.imprisonmentStatuses || [])
-    .filter(op => (
-      op.bookingId === o.mainBooking.bookingId &&
-      op.latestStatus
-    )));
-
-
-const getImprisonmentStatusCategory = ois => {
-  switch (ois.bandCode) {
-    case 0: return 'Dead';
-    case 1: return 'Indefinite Sentence';
-    case 2:
-    case 3: return 'Sentenced';
-    case 4:
-    case 5:
-    case 6:
-    case 7: return 'Convicted Unsentenced';
-    case 8:
-    case 11: return 'Immigration Detainees';
-    case 9:
-    case 10: return 'Civil Prisoners';
-    case 12:
-    case 13:
-    case 14: return 'Remand';
-    default:
-      return ois.imprisonmentStatus === 'Unknown' ? 'Unknown' : 'Other';
-  }
-};
-
-const formatSentenceLength = o => {
-  if (o.offenderImprisonmentStatus.bandCode === 1 ||
-      !o.sentenceCalculationDates ||
-      !o.sentenceCalculationDates.effectiveSentenceEndDate) {
-    return 'Indefinate';
-  }
-
-  let sentence = o.sentenceCalculationDates.effectiveSentenceEndDate;
-
-  if (sentence.years >= 4) {
-    return '4 years or over';
-  }
-
-  if (sentence.years >= 1) {
-    return '12 months to less than 4 years';
-  }
-
-  if (sentence.years > 6 || (sentence.months === 6 && sentence.days > 0)) {
-          return 'More than 6 months to less than 12 months';
-  }
-
-  if (sentence.months === 6) {
-    return '6 months';
-  }
-
-  return 'Less than 6 months';
-};
+const model = helpers.pipe([
+  ['mainBooking', helpers.getMainBooking],
+  ['activeBookings', helpers.getActiveBookings],
+  ['offenderIdentifiers', helpers.getIdentifiers],
+  ['offenderAddresses', helpers.getOffenderAddresses],
+  ['offenderCharges', helpers.getOffenderCharges],
+  ['offenderContactPersons', helpers.getOffenderContactPersons],
+  ['offenderSentence', helpers.getOffenderSentence],
+  ['offenderSentenceCalculations', helpers.getOffenderSentenceCalculations],
+  ['offenderSentenceCalculationDates', helpers.getOffenderSentenceCalculationDates],
+  ['homeAddress', helpers.getOffenderHomeAddress],
+  ['receptionAddress', helpers.getOffenderReceptionAddress],
+  ['dischargeAddress', helpers.getOffenderDischargeAddress2],
+  ['nextOfKin', helpers.getNextOfKin],
+  ['securityCategory', helpers.getSecurityCategory2],
+  ['csraLevel', helpers.getCSRALevel],
+  ['checkHoldAlerts', helpers.getCheckHoldAlerts],
+  ['firstSentenceAndCounts', helpers.getFirstSentenceAndCounts],
+  ['lastMovement', helpers.getLastOffenderMovement],
+  ['firstMovement', helpers.getFirstOffenderMovement],
+  ['mainOffence', helpers.getMainOffence],
+  ['firstOffence', helpers.getFirstCharge],
+  ['offenderImprisonmentStatus', helpers.getImprisonmentStatus2],
+  ['releaseDetails', helpers.getReleaseDetails],
+  ['earliestReleaseDate', helpers.getEarliestReleaseDate],
+  ['physicals', helpers.getPhysicals],
+  ['IEPLevel', helpers.getIEPLevel],
+  ['offenceGroups', helpers.getOffenceGroups],
+  ['maternityStatus', helpers.getMaternityStatus]
+]);
 
 module.exports.build = sysdate => data => {
-  let o = [
-    ['sysdate', () => sysdate],
-    ['mainBooking', getMainBooking],
-    ['activeBookings', getNumberOfActiveBookings],
-    ['offenderIdentifiers', getIdentifiers],
-    ['offenderAddresses', getOffenderAddresses],
-    ['offenderCharges', getCharges],
-    ['offenderContactPersons', getContactPersons],
-    ['offenderSentence', getSentence],
-    ['offenderSentenceCalculations', getSentenceCalculations],
-    ['sentenceCalculationDates', sentenceCalculationDates],
-    ['homeAddress', getHomeAddress],
-    ['receptionAddress', getReceptionAddress],
-    ['dischargeAddress', getDischargeAddress2],
-    ['nextOfKin', getNextOfKin],
-    ['securityCategory', getSecurityCategory2],
-    ['csraLevel', getCSRALevel],
-    ['checkHoldAlerts', getCheckHoldAlerts],
-    ['firstSentenceAndCounts', getFirstSentenceAndCounts],
-    ['lastMovement', lastMovement],
-    ['firstMovement', firstMovement],
-    ['mainOffence', getMainOffence],
-    ['firstOffence', getFirstCharge],
-    ['offenderImprisonmentStatus', getImprisonmentStatus2],
-    ['releaseDetails', getReleaseDetails],
-    ['earliestReleaseDate', earliestReleaseDate],
-    ['physicals', getPhysicals],
-    ['IEPLevel', getIEPLevel],
-    ['offenceGroups', getOffenceGroups]
-  ].reduce((x, p) => { x[p[0]] = p[1](x); return x; }, Object.assign({}, data));
+  let o = model.apply(Object.assign({ sysdate }, data));
 
-  o.maternityStatus = getMaternityStatus(o, o.sysdate);
-
-  let model = {
+  return {
 //record_number: o.record_number,
     sysdate: o.sysdate,
 
@@ -362,13 +46,13 @@ module.exports.build = sysdate => data => {
     cro_no: o.offenderIdentifiers.CRO,
     pncid_no: o.offenderIdentifiers.PNC,
     dob: moment(o.dateOfBirth),
-    age: getAge(o),
+    age: helpers.getAge(o.mainAlias),
     gender: o.sexCode,
     race: o.raceCode,
     surname: o.surname,
     forename1: o.firstName,
     forename2: o.middleName,
-    offenders_active_bookings: o.activeBookings,
+    offenders_active_bookings: o.activeBookings.length,
     living_unit_id: o.mainBooking.livingUnitId,
     agy_loc_id: o.mainBooking.agencyLocationId,
     in_out_status: o.mainBooking.inOutStatus,
@@ -404,15 +88,15 @@ module.exports.build = sysdate => data => {
     home_no_fixed_address: o.homeAddress.noFixedAddress,
 
 //pivotted_offender_addresses_q
-    next_of_kin_flat: getFirst(withList(o.nextOfKin.addresses)).flat,
-    next_of_kin_premise: getFirst(withList(o.nextOfKin.addresses)).premise,
-    next_of_kin_street: getFirst(withList(o.nextOfKin.addresses)).street,
-    next_of_kin_locality: getFirst(withList(o.nextOfKin.addresses)).locality,
-    next_of_kin_city: getFirst(withList(o.nextOfKin.addresses)).city,
-    next_of_kin_county: getFirst(withList(o.nextOfKin.addresses)).county,
-    next_of_kin_postal_code: getFirst(withList(o.nextOfKin.addresses)).postalCode,
-    next_of_kin_country: getFirst(withList(o.nextOfKin.addresses)).country,
-    next_of_kin_no_fixed_address: getFirst(withList(o.nextOfKin.addresses)).noFixedAddress,
+    next_of_kin_flat: (o.nextOfKin && o.nextOfKin.primaryAddress && o.nextOfKin.primaryAddress.flat),
+    next_of_kin_premise: (o.nextOfKin && o.nextOfKin.primaryAddress && o.nextOfKin.primaryAddress.premise),
+    next_of_kin_street: (o.nextOfKin && o.nextOfKin.primaryAddress && o.nextOfKin.primaryAddress.street),
+    next_of_kin_locality: (o.nextOfKin && o.nextOfKin.primaryAddress && o.nextOfKin.primaryAddress.locality),
+    next_of_kin_city: (o.nextOfKin && o.nextOfKin.primaryAddress && o.nextOfKin.primaryAddress.city),
+    next_of_kin_county: (o.nextOfKin && o.nextOfKin.primaryAddress && o.nextOfKin.primaryAddress.county),
+    next_of_kin_postal_code: (o.nextOfKin && o.nextOfKin.primaryAddress && o.nextOfKin.primaryAddress.postalCode),
+    next_of_kin_country: (o.nextOfKin && o.nextOfKin.primaryAddress && o.nextOfKin.primaryAddress.country),
+    next_of_kin_no_fixed_address: (o.nextOfKin && o.nextOfKin.primaryAddress && o.nextOfKin.primaryAddress.noFixedAddress),
 
 //pivotted_offender_addresses_q
     discharge_flat: o.dischargeAddress.flat,
@@ -471,8 +155,8 @@ module.exports.build = sysdate => data => {
     rotl: o.sentenceCalculationDates.rotl,
     tariff: o.sentenceCalculationDates.tariff,
     status_rank: o.offenderImprisonmentStatus.statusRank,
-    sentence_length_banded: formatSentenceLength(o),
-    imprisonment_status_category: getImprisonmentStatusCategory(o.offenderImprisonmentStatus),
+    sentence_length_banded: helpers.formatSentenceLength(o),
+    imprisonment_status_category: helpers.getImprisonmentStatusCategory(o.offenderImprisonmentStatus),
     jisl_years: o.sentenceCalculationDates.judiciallyImposedSentenceLength.years,
     jisl_months: o.sentenceCalculationDates.judiciallyImposedSentenceLength.months,
     jisl_days: o.sentenceCalculationDates.judiciallyImposedSentenceLength.days,
@@ -515,6 +199,4 @@ module.exports.build = sysdate => data => {
     rehab_provider: r.provider,
 */
   };
-
-  return model;
 };
