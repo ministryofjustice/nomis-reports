@@ -1,7 +1,3 @@
-let should = require('chai').should();
-
-const moment = require('moment');
-
 const helpers = require('../../../app/models/helpers');
 
 describe('cde/physicals', () => {

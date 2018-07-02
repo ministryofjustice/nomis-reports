@@ -34,6 +34,12 @@ const retrieveDetails = (req, res, next) =>
     .then(data => res.json(data))
     .catch(helpers.failWithError(res, next));
 
+const retrieveOffenderByNomsId = (req, res, next) =>
+  services.reports
+    .getDetailsByNomsId(req.params.nomsId)
+    .then(data => res.json(data))
+    .catch(helpers.failWithError(res, next));
+
 const retrieveAODetails = (req, res, next) =>
   services.reports
     .getDetails(req.params.offenderId)
@@ -54,7 +60,8 @@ router.use((req, res, next) => {
 });
 
 router.get('/', list);
-router.get('/:offenderId/', retrieveDetails);
+router.get('/:offenderId', retrieveDetails);
+router.get('/nomsId/:nomsId', retrieveOffenderByNomsId);
 router.get('/:offenderId/ao', retrieveAODetails);
 router.get('/:offenderId/cde', retrieveCDEDetails);
 

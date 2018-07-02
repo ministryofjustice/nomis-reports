@@ -23,6 +23,7 @@ function ReportsRepository(config, agent) {
     listSentences: this.agent.get(`${root}/sentences`),
 
     getOffender: this.agent.get(`${root}/offenders/offenderId/:offenderId`),
+    getOffenderByNomsId: this.agent.get(`${root}/offenders/nomsId/:nomsId`),
     getOffenderAddresses: this.agent.get(`${root}/offenders/offenderId/:offenderId/addresses`),
     getOffenderAlerts: this.agent.get(`${root}/offenders/offenderId/:offenderId/alerts`),
     getOffenderAssessments: this.agent.get(`${root}/offenders/offenderId/:offenderId/assessments`),
@@ -97,6 +98,10 @@ ReportsRepository.prototype.listSentences = function (query, page, size) {
 
 ReportsRepository.prototype.getOffender = function (offenderId) {
   return this.requests.getOffender({ offenderId }).then(helpers.handleResponse());
+};
+
+ReportsRepository.prototype.getOffenderByNomsId = function (nomsId) {
+  return this.requests.getOffenderByNomsId({ nomsId }).then(helpers.handleResponse());
 };
 
 ReportsRepository.prototype.getOffenderAddresses = function (offenderId) {

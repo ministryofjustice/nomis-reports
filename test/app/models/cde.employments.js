@@ -1,6 +1,5 @@
 const helpers = require('../../../app/models/helpers');
 
-
 describe('cde/employments', () => {
 
   // helpers.getEmployment

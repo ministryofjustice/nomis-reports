@@ -22,7 +22,7 @@ const optionalTime = helpers.optionalTime = d =>
   d ? moment(d).format('HH:mm:ss') : undefined;
 
 helpers.optionalHeight = n =>
-  n ? n / 100 : undefined;
+  n ? parseFloat((n / 100).toFixed(2)) : 0;
 
 helpers.formatTransferReasonCode = trn =>
   trn ? [trn.movementType, trn.movementReasonCode]
@@ -118,12 +118,12 @@ helpers.getMainAlias = o =>
       offenderId: o.offenderId,
     }) || {};
 
-helpers.getOffenderTransfers = o =>
-  withList(o.movements)
-    .filter(oem => (
-      oem.bookingId === o.mainBooking.bookingId &&
-      oem.movementTypeCode === 'TRN'
-    ));
+helpers.getEmployment = o =>
+  getFirst(withList(o.employments)
+    .filter(oe => (
+      oe.bookingId === o.mainBooking.bookingId &&
+      (!oe.terminationDate || moment(oe.terminationDate).diff(o.mainBooking.startDate) > 0)
+    )));
 
 helpers.getOffenderEmployments = o =>
   withList(o.employments)
@@ -131,6 +131,179 @@ helpers.getOffenderEmployments = o =>
       oe.bookingId === o.mainBooking.bookingId &&
       oe.employmentDate &&
       !oe.terminationDate
+    ));
+
+helpers.receptionEmployment = o =>
+  getLast(o.offenderEmployments);
+
+helpers.dischargeEmployment = o =>
+  getFirst(o.offenderEmployments);
+
+helpers.getOffenderHomeAddress = o =>
+  getFirst(withList(o.addresses)
+    .filter(a => withList(a.addressUsages)
+      .filter(au => (
+        au.active &&
+        au.usage === 'HOME'
+      )).length > 0));
+
+helpers.getOffenderReceptionAddress = o =>
+  getFirst(withList(o.addresses)
+    .filter(a => withList(a.addressUsages)
+      .filter(au => (
+        au.active &&
+        au.usage === 'RECEP'
+      )).length > 0));
+
+helpers.getOffenderDischargeAddress = o =>
+  getFirst(withList(o.addresses)
+    .filter(a => withList(a.addressUsages)
+      .filter(au => (
+        au.active &&
+        ~['RELEASE','DNF','DUT','DST','DPH','DSH','DAP','DBA','DOH','DBH'].indexOf(au.usage)
+      )).length > 0));
+
+helpers.getActiveAlerts = o =>
+  withList(o.alerts)
+    .filter(oa => oa.alertStatus === 'ACTIVE');
+
+helpers.getCheckHoldAlerts = o =>
+  withList(o.activeAlerts)
+    .reduce((x, oa) => {
+      let fa = formatAlert(oa);
+      switch (fa) {
+        case 'T-TG': x.T_TG = fa; break;
+        case 'T-TAH': x.T_TAH = fa; break;
+        case 'T-TSE': x.T_TSE = fa; break;
+        case 'T-TM': x.T_TM = fa; break;
+        case 'T-TPR': x.T_TPR = fa; break;
+        case 'H-HA': x.H_HA = fa; break;
+      }
+
+      if (oa.alertType === 'V') {
+        if (~['V45','VOP','V46','V49G','V49P'].indexOf(oa.alertCode)) {
+          x.V_45_46 = 'Y';
+        } else {
+          x.VUL = 'Y';
+        }
+      }
+
+      if (fa === 'H-HA') {
+        x.SH_STS = 'Y';
+        x.SH_Date = oa.alertDate;
+      }
+
+      return x;
+    }, { VUL: 'N', V_45_46: 'N', SH_STS: 'N' });
+
+helpers.getCourtOutcome = o =>
+  getFirst(withList(o.courtEvents)
+    .filter(ce =>
+      ce.bookingId === o.mainBooking.bookingId &&
+      ce.directionCode === 'OUT' &&
+      ce.caseId
+    ));
+
+helpers.mapOffenderIdentifiers = o =>
+  withList(o.aliases).reduce((a, b) => a.concat(b.identifiers), [])
+    .concat(withList(o.identifiers))
+    .reduce((acc, oi) => {
+      (acc[oi.identifierType] = acc[oi.identifierType] || []).push(oi.identifier);
+      return acc;
+    }, {});
+
+helpers.getMostRecentConviction = o =>
+  getFirst(withList(o.courtEvents)
+    .filter(ce => (
+      ce.bookingId === o.mainBooking.bookingId &&
+      ce.courtEventCharges && ce.courtEventCharges.length > 0 &&
+      ce.courtEventCharges[0].sentences && ce.courtEventCharges[0].sentences.length > 0
+    )));
+
+    helpers.getPhysicals = o => {
+      let physicals = getFirst(withList(o.physicals)
+        .filter(op => (
+          op.bookingId === o.mainBooking.bookingId
+        )));
+
+      return {
+        profileDetails: withList(physicals.profileDetails)
+            .reduce((x, opd) => {
+              x[opd.profileType] = opd.profileCode;
+              return x;
+            }, {}),
+        identifyingMarks: (x => {
+          x.BODY = [...(x.BODY || [])];
+          x.HEAD = [...(x.HEAD || [])];
+          return x;
+        })(withList(physicals.identifyingMarks)
+            .reduce((x, oim) => {
+              let area = (~[ 'EAR', 'FACE', 'HEAD', 'LIP', 'NECK', 'NOSE' ].indexOf(oim.bodyPartCode)) ? 'HEAD' : 'BODY';
+              /*
+              area = (~[
+                'ANKLE', 'ARM', 'ELBOW', 'FINGER', 'FOOT', 'HAND', 'KNEE', 'LEG', 'SHOULDER', 'THIGH', 'TOE', 'TORSO'
+              ].indexOf(oim.bodyPartCode)) ? 'BODY' : 'HEAD';
+              */
+
+              (x[area] = x[area] || new Set()).add(oim);
+
+              return x;
+            }, {})),
+        physicalAttributes: withList(physicals.physicalAttributes)
+            .reduce((x, opa) => (x || opa), false),
+      };
+    };
+
+helpers.getOffenderSentenceCalculations = o =>
+  getFirst(withList(o.sentenceCalculations)
+    .filter(s => (
+      s.bookingId === o.mainBooking.bookingId
+    )));
+
+helpers.getOffenderSentence = o =>
+  withList(o.sentences)
+    .reduce((a, b) => (
+      a.bookingId === o.mainBooking.bookingId &&
+      !a.startDate || moment(b.startDate).diff(a.startDate) < 0 ? b : a
+    ), {}) || {};
+
+helpers.getOffenderSentenceLength = o =>
+  moment(o.offenderSentenceCalculations.effectiveSentenceEndDate)
+    .diff(moment(o.offenderSentence.startDate), 'days') + 1;
+
+helpers.getOffenderLicense = o =>
+  getFirst(withList(o.sentences)
+    .filter(s => (
+      s.bookingId === o.mainBooking.bookingId &&
+      s.sentenceCategory === 'LICENCE'
+    )));
+
+
+
+
+helpers.getFirstConviction = o =>
+  getLast(withList(o.courtEvents));
+
+// Multi Agency Public Protection Alert
+helpers.getMAPPAAlerts = o =>
+  getFirst(withList(o.alerts)
+    .filter(oa => (
+      oa.alertType === 'P' &&
+      oa.alertStatus === 'ACTIVE'
+    )));
+
+helpers.getNotForReleaseAlerts = o =>
+  getFirst(withList(o.alerts)
+    .filter(oa => (
+      oa.alertType === 'X' &&
+      oa.alertStatus === 'ACTIVE'
+    )));
+
+helpers.getOffenderTransfers = o =>
+  withList(o.movements)
+    .filter(oem => (
+      oem.bookingId === o.mainBooking.bookingId &&
+      oem.movementTypeCode === 'TRN'
     ));
 
 helpers.getCharges = o =>
@@ -163,18 +336,6 @@ helpers.getReleaseDetails = o =>
       ord.bookingId === o.mainBooking.bookingId
     ));
 
-helpers.getOffenderSentences = o =>
-  withList(o.sentences)
-    .filter(s => (
-      s.bookingId === o.mainBooking.bookingId
-    ));
-
-helpers.getOffenderSentenceCalculations = o =>
-  getFirst(withList(o.sentenceCalculations)
-    .filter(s => (
-      s.bookingId === o.mainBooking.bookingId
-    )));
-
 helpers.getOffenderSecurityCategory = o =>
   getFirst(withList(o.assessments)
     .filter(oa => (
@@ -194,13 +355,6 @@ helpers.getIEPLevel = o =>
     ))
     .map(iep => iep.iepLevel)) || { iepLevel: 'STD' };
 
-helpers.getEmployment = o =>
-  getFirst(withList(o.employments)
-    .filter(oe => (
-      oe.bookingId === o.mainBooking.bookingId &&
-      (!oe.terminationDate || moment(oe.terminationDate).diff(o.mainBooking.startDate) > 0)
-    )));
-
 helpers.getImprisonmentStatus = o =>
   getFirst(withList(o.imprisonmentStatuses)
     .filter(op => (
@@ -208,73 +362,7 @@ helpers.getImprisonmentStatus = o =>
     ))
   ) || { imprisonmentStatusCode: 'Unknown Sentenced'};
 
-helpers.getPhysicals = o => {
-  let physicals = getFirst(withList(o.physicals)
-    .filter(op => (
-      op.bookingId === o.mainBooking.bookingId
-    )));
-
-  return {
-    profileDetails: withList(physicals.profileDetails)
-        .reduce((x, opd) => {
-          x[opd.profileType] = opd.profileCode;
-          return x;
-        }, {}),
-    identifyingMarks: (x => {
-      x.BODY = [...(x.BODY || [])];
-      x.HEAD = [...(x.HEAD || [])];
-      return x;
-    })(withList(physicals.identifyingMarks)
-        .reduce((x, oim) => {
-          let area = (~[ 'EAR', 'FACE', 'HEAD', 'LIP', 'NECK', 'NOSE' ].indexOf(oim.bodyPartCode)) ? 'HEAD' : 'BODY';
-          /*
-          area = (~[
-            'ANKLE', 'ARM', 'ELBOW', 'FINGER', 'FOOT', 'HAND', 'KNEE', 'LEG', 'SHOULDER', 'THIGH', 'TOE', 'TORSO'
-          ].indexOf(oim.bodyPartCode)) ? 'BODY' : 'HEAD';
-          */
-
-          (x[area] = x[area] || new Set()).add(oim);
-
-          return x;
-        }, {})),
-    physicalAttributes: withList(physicals.physicalAttributes)
-        .reduce((x, opa) => (x || opa), false),
-  };
-};
-
-helpers.getCourtOutcome = o =>
-  getFirst(withList(o.courtEvents)
-    .filter(ce =>
-      ce.bookingId === o.mainBooking.bookingId &&
-      ce.directionCode === 'OUT' &&
-      ce.caseId
-    ));
-
 // main booking entire
-
-helpers.getOffenderSentence = o =>
-  withList(o.offenderSentences)
-    .reduce((a, b) => (
-      !a.startDate || moment(b.startDate).diff(a.startDate) < 0 ? b : a
-    ), {}) || {};
-
-helpers.getOffenderLicense = o =>
-  getFirst(withList(o.offenderSentences)
-    .filter(s => (
-      s.sentenceCategory === 'LICENCE'
-    )));
-
-helpers.getOffenderSentenceLength = o =>
-  moment(o.offenderSentenceCalculations.effectiveSentenceEndDate)
-    .diff(moment(o.offenderSentence.startDate), 'days') + 1;
-
-helpers.mapOffenderIdentifiers = o =>
-  withList(o.aliases).reduce((a, b) => a.concat(b.identifiers), [])
-    .concat(withList(o.identifiers))
-    .reduce((acc, oi) => {
-      (acc[oi.identifierType] = acc[oi.identifierType] || []).push(oi.identifier);
-      return acc;
-    }, {});
 
 helpers.getFirstOffenderTransfer = o =>
   getLast(o.offenderTransfers);
@@ -306,61 +394,12 @@ helpers.getOffenderCourtEscort = o => {
   ) ? m : {};
 };
 
-helpers.receptionEmployment = o =>
-  getLast(o.offenderEmployments);
-
-helpers.dischargeEmployment = o =>
-  getFirst(o.offenderEmployments);
-
 helpers.highestRankedOffence = o =>
   getFirst(o.offenderCharges);
 
 helpers.otherOffences = o =>
   withList(o.offenderCharges)
     .filter((o, i) => i !== 0);
-
-helpers.getOffenderHomeAddress = o =>
-  getFirst(withList(o.addresses)
-    .filter(a => a.addressUsages
-      .filter(au => (
-        au.active &&
-        au.usage === 'HOME'
-      )).length > 0));
-
-helpers.getOffenderReceptionAddress = o =>
-  getFirst(withList(o.addresses)
-    .filter(a => a.addressUsages
-      .filter(au => (
-        au.active &&
-        au.usage === 'RECEP'
-      )).length > 0));
-
-helpers.getOffenderDischargeAddress = o =>
-  getFirst(withList(o.addresses)
-    .filter(a => a.addressUsages
-      .filter(au => (
-        au.active &&
-        ~['RELEASE','DNF','DUT','DST','DPH','DSH','DAP','DBA','DOH','DBH'].indexOf(au.usage)
-      )).length > 0));
-
-helpers.getActiveAlerts = o =>
-  withList(o.alerts)
-    .filter(oa => oa.alertStatus === 'ACTIVE');
-
-// Multi Agency Public Protection Alert
-helpers.getMAPPAAlerts = o =>
-  getFirst(withList(o.alerts)
-    .filter(oa => (
-      oa.alertType === 'P' &&
-      oa.alertStatus === 'ACTIVE'
-    )));
-
-helpers.getNotForReleaseAlerts = o =>
-  getFirst(withList(o.alerts)
-    .filter(oa => (
-      oa.alertType === 'X' &&
-      oa.alertStatus === 'ACTIVE'
-    )));
 
 helpers.getAge = o =>
   moment().diff(moment(o.dateOfBirth), 'years');
@@ -463,49 +502,9 @@ helpers.getNFA = oa => {
   return oa.addressUsage;
 };
 
-helpers.getCheckHoldAlerts = o =>
-  withList(o.activeAlerts)
-    .reduce((x, oa) => {
-      let fa = formatAlert(oa);
-      switch (fa) {
-        case 'T-TG': x.T_TG = fa; break;
-        case 'T-TAH': x.T_TAH = fa; break;
-        case 'T-TSE': x.T_TSE = fa; break;
-        case 'T-TM': x.T_TM = fa; break;
-        case 'T-TPR': x.T_TPR = fa; break;
-        case 'H-HA': x.H_HA = fa; break;
-      }
-
-      if (oa.alertType === 'V') {
-        if (~['V45','VOP','V46','V49G','V49P'].indexOf(oa.alertCode)) {
-          x.V_45_46 = 'Y';
-        } else {
-          x.VUL = 'Y';
-        }
-      }
-
-      if (fa === 'H-HA') {
-        x.SH_STS = 'Y';
-        x.SH_Date = oa.alertDate;
-      }
-
-      return x;
-    }, { VUL: 'N', V_45_46: 'N', SH_STS: 'N' });
-
 helpers.isSexOffender = o =>
   withList(o.charges)
     .filter(oc => ~withList(oc.offenceIndicatorCodes).indexOf('S')).length > 0;
-
-helpers.getFirstConviction = o =>
-  getLast(withList(o.courtEvents));
-
-helpers.getMostRecentConviction = o =>
-  getFirst(withList(o.courtEvents)
-    .filter(ce => (
-      ce.bookingId === o.mainBooking.bookingId &&
-      ce.courtEventCharges && ce.courtEventCharges.length > 0 &&
-      ce.courtEventCharges[0].sentences && ce.courtEventCharges[0].sentences.length > 0
-    )));
 
 helpers.getFirstSentence = o =>
   getFirst(withList(getFirst(withList(

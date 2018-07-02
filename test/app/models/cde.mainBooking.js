@@ -1,5 +1,3 @@
-const moment = require('moment');
-
 const modelHelpers = require('../../../app/models/helpers');
 
 

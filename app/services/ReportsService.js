@@ -52,6 +52,10 @@ ReportsService.prototype.getDetails = function (offenderId) {
   .then((data) => data.reduce((a, b) => Object.assign(a, b), {}));
 };
 
+ReportsService.prototype.getDetailsByNomsId = function (nomsId) {
+  return this.getOffenderByNomsId(nomsId).then(o => this.getDetails(o.offenderId));
+};
+
 
 
 
@@ -102,6 +106,10 @@ ReportsService.prototype.listSentences = function (query, page, size) {
 
 
 
+
+ReportsService.prototype.getOffenderByNomsId = function (nomsId) {
+  return this.agent.request('reports', 'getOffenderByNomsId', nomsId);
+};
 
 ReportsService.prototype.getOffender = function (offenderId) {
   return this.agent.request('reports', 'getOffender', offenderId);

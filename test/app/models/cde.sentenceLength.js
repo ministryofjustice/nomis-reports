@@ -1,19 +1,17 @@
+let should = require('chai').should();
+
 const moment = require('moment');
 
-const CDEModel = require('../../../app/models/CDE');
-const builder = CDEModel.build(moment('2018-01-01'));
+const helpers = require('../../../app/models/helpers');
 
-describe('cde/court', () => {
-  describe('When the booking is linked to an alias', () => {
+describe('cde/sentenceLength', () => {
+  describe('When an offender has a series of sentence calculations', () => {
     let input = {
-      bookings: [
-        {
-          bookingId: 8133,
-        }
-      ],
+
       mainBooking: {
         bookingId: 8133,
       },
+
       sentenceCalculations: [
         {
           sentenceCalculationId: 6421,
@@ -36,6 +34,7 @@ describe('cde/court', () => {
           judiciallyImposedSentenceLength: "02/00/00"
         }
       ],
+
       sentences: [
         {
           bookingId: 8133,
@@ -80,18 +79,21 @@ describe('cde/court', () => {
       ],
     };
 
-    let result = builder(input);
+    it('should retrieve the main booking sentence calculation dates', () => {
+      helpers.getOffenderSentenceCalculations(input)
+        .should.have.property('sentenceCalculationId', 6350);
+    });
 
-    it('Should select the offender\'s date of birth from the alias', () => {
-      /*
-      sentence: {
-        years_f28: "02",
-        months_f29: "00",
-        days_f30: "00"
-      },
-      */
+    it('should retrieve earliest starting sentence', () => {
+      helpers.getOffenderSentence(input)
+        .should.have.property('startDate', '2008-11-25');
+    });
 
-      result.should.have.property('sentence_length_f64', 730);
+    it('should identify the correct sentence length', () => {
+      input.offenderSentenceCalculations = helpers.getOffenderSentenceCalculations(input);
+      input.offenderSentence = helpers.getOffenderSentence(input);
+
+      helpers.getOffenderSentenceLength(input).should.equal(730);
     });
   });
 

@@ -7,8 +7,8 @@ const pointer = require('json-pointer');
 
 const log = require('../server/log');
 
-const CDE_DATE = moment('2018-06-27').add(-1, 'days');
-const EXTRACT_DATE = moment('2018-06-27');
+const CDE_DATE = moment('2018-06-29').add(-1, 'days');
+const EXTRACT_DATE = moment('2018-06-29');
 
 const cdeFields = [
   'sysdate_f1',                     // passed param
@@ -201,6 +201,12 @@ const cdeColParser = {
   ['sentence.years_f28'](item) { return 1 * item; },
   ['sentence.months_f29'](item) { return 1 * item; },
   ['sentence.days_f30'](item) { return 1 * item; },
+
+  ['discharge.address1_f79'](item) { return item.replace(/\s\s/gmi, ' '); },
+  ['home.address1_f94'](item) { return item.replace(/\s\s/gmi, ' '); },
+  ['nok.address1_f103'](item) { return item.replace(/\s\s/gmi, ' '); },
+  ['prob.address1_f111'](item) { return item.replace(/\s\s/gmi, ' '); },
+  ['reception.address1_f87'](item) { return item.replace(/\s\s/gmi, ' '); },
 };
 
 const inspect = (x) => {
