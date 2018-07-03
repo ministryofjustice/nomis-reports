@@ -89,9 +89,52 @@ describe('cde/activeAlerts', () => {
       result.should.have.property('T_TPR', 'T-TPR');
       result.should.not.have.property('H_HA');
       result.should.have.property('V_45_46', 'Y');
-      result.should.have.property('VUL', 'N');
       result.should.have.property('SH_STS', 'N');
       result.should.not.have.property('SH_Date');
+    });
+  });
+
+  describe('When an offender has a vulnerable type alert', () => {
+    let input = {
+      activeAlerts: [
+        { alertType: "V" },
+      ],
+    };
+
+    it('Should flag as vulnerable', () => {
+      let result = helpers.getCheckHoldAlerts(input);
+
+      result.should.have.property('V_45_46', 'N');
+      result.should.have.property('VUL', 'Y');
+    });
+  });
+
+  describe('When an offender does not have a vulnerable type alert', () => {
+    let input = {
+      activeAlerts: [
+        { alertType: "T" },
+      ],
+    };
+
+    it('Should not flag as vulnerable', () => {
+      let result = helpers.getCheckHoldAlerts(input);
+
+      result.should.have.property('V_45_46', 'N');
+      result.should.have.property('VUL', 'N');
+    });
+  });
+
+  describe('When an offender has one of the specific vulnerable alert codes', () => {
+    let input = {
+      activeAlerts: [
+        { alertType: "V", alertCode: "VOP" },
+      ],
+    };
+
+    it('Should flag the rule 45 (yoi rule 46) flag', () => {
+      let result = helpers.getCheckHoldAlerts(input);
+
+      result.should.have.property('V_45_46', 'Y');
     });
   });
 });

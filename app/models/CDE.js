@@ -44,8 +44,8 @@ const model = helpers.pipe([
   ['firstSentence', helpers.getFirstSentence],
   ['courtOutcome', helpers.getCourtOutcome],
   ['highestRankedOffence', helpers.highestRankedOffence],
-  ['otherOffences', helpers.otherOffences],
-  ['earliestReleaseDate', helpers.earliestReleaseDate],
+  ['otherOffences', helpers.getOtherOffences],
+  ['earliestReleaseDate', helpers.getEarliestReleaseDate],
   ['custodyStatus', helpers.getCustodyStatus],
   ['maternityStatus', helpers.getMaternityStatus],
 ]);

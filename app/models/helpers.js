@@ -74,7 +74,7 @@ helpers.formatSupervisingService = om =>
         om.primaryAddress.postalCode
       ]
       .filter(x => !!x)
-      .join(' ') : undefined;
+      .join(', ') : undefined;
 
 const formatAlert = helpers.formatAlert = oa =>
   oa ? [oa.alertType, oa.alertCode]
@@ -131,8 +131,8 @@ helpers.getPreviousBookings = o =>
       return out;
     }, []);
 
-//TODO: activeFlag or active?
-helpers.getNumberOfActiveBookings = o =>
+//TODO: .activeFlag to .isActive or .active?
+helpers.getActiveBookings = o =>
   withList(o.bookings)
     .filter(b => b.activeFlag);
 
@@ -233,10 +233,10 @@ helpers.getCheckHoldAlerts = o =>
       }
 
       if (oa.alertType === 'V') {
+        x.VUL = 'Y';
+
         if (~['V45','VOP','V46','V49G','V49P'].indexOf(oa.alertCode)) {
           x.V_45_46 = 'Y';
-        } else {
-          x.VUL = 'Y';
         }
       }
 
@@ -513,7 +513,7 @@ helpers.getFirstOffenderOffence = o =>
       (!out.startDate || moment(oc.startDate).diff(out.startDate) < 0) ? oc : out
     ), {}) || {};
 
-helpers.otherOffences = o =>
+helpers.getOtherOffences = o =>
   withList(o.offenderCharges)
     .filter((o, i) => i !== 0);
 
@@ -620,7 +620,7 @@ helpers.getOffenderSentenceCalculationDates2 = o =>
     tariff: moment(osc.tariffOverridedDate || osc.tariffCalculatedDate),
   }))(o.offenderSentenceCalculations);
 
-helpers.earliestReleaseDate =  o =>
+helpers.getEarliestReleaseDate =  o =>
   (scd => [
     scd.hdced,
     scd.hdcad,
@@ -635,7 +635,7 @@ helpers.earliestReleaseDate =  o =>
   ]
   .sort((a, b) => a.diff(b))[0])(o.offenderSentenceCalculationDates);
 
-helpers.earliestReleaseDate2 =  o =>
+helpers.getEarliestReleaseDate2 =  o =>
   (scd => [
     { date: moment(o.releaseDetails.releaseDate),
       label: `REL-${o.releaseDetails.movementReasonCode}`,
