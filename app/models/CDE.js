@@ -1,5 +1,36 @@
 const moment = require('moment');
 const helpers = require('./helpers');
+const refData = require('./refData');
+
+const modelAddress = (base, n, a) => {
+  if (!base && !a) {
+    return;
+  }
+
+  let out = Object.assign({}, base);
+
+  if (a) {
+    out[`address1_f${n}`] = helpers.formatAddressLine1(a);
+    out[`address2_f${n + 1}`] = a.locality;
+
+    if (a.city) {
+      out[`address3_f${n + 2}`] = a.city.description;
+    }
+
+    if (a.county) {
+      out[`address4_f${n + 3}`] = a.county.description;
+    }
+
+    if (a.country) {
+      out[`address5_f${n + 4}`] = a.country.description;
+    }
+
+    out[`address6_f${n + 5}`] = a.postalCode;
+    out[`address7_f${n + 6}`] = a.phoneNo;
+  }
+
+  return out;
+};
 
 const model = helpers.pipe([
   ['mainBooking', helpers.getMainBooking],
@@ -49,6 +80,8 @@ const model = helpers.pipe([
   ['custodyStatus', helpers.getCustodyStatus],
   ['maternityStatus', helpers.getMaternityStatus],
 ]);
+
+
 
 module.exports.build = sysdate => data => {
   let o = model.apply(Object.assign({ sysdate }, data));
@@ -127,7 +160,7 @@ module.exports.build = sysdate => data => {
     hair_f56: o.physicals.profileDetails.HAIR,
     left_eye_f57: o.physicals.profileDetails.L_EYE_C,
     right_eye_f58: o.physicals.profileDetails.R_EYE_C,
-    build_f59: o.physicals.profileDetails.BUILD,
+    build_f59: refData.build(o.physicals.profileDetails.BUILD),
     face_f60: o.physicals.profileDetails.FACE,
     facial_hair_f61: o.physicals.profileDetails.FACIAL_HAIR,
 
@@ -158,60 +191,25 @@ module.exports.build = sysdate => data => {
       start_f77: o.checkHoldAlerts.SH_Date,
     },
 
-    discharge: {
-      nfa_f78: helpers.getNFA(o.offenderDischargeAddress),
-      address1_f79: helpers.formatAddressLine1(o.offenderDischargeAddress),
-      address2_f80: o.offenderDischargeAddress.locality,
-      address3_f81: o.offenderDischargeAddress.cityCode,
-      address4_f82: o.offenderDischargeAddress.countyCode,
-      address5_f83: o.offenderDischargeAddress.countryCode,
-      address6_f84: o.offenderDischargeAddress.postalCode,
-      address7_f85: o.offenderDischargeAddress.phoneNo,
-    },
+    discharge: modelAddress({
+        nfa_f78: helpers.getNFA(o.offenderDischargeAddress)
+      }, 79, o.offenderDischargeAddress),
 
-    reception:{
-      nfa_f86: helpers.getNFA(o.offenderReceptionAddress),
-      address1_f87: helpers.formatAddressLine1(o.offenderReceptionAddress),
-      address2_f88: o.offenderReceptionAddress.locality,
-      address3_f89: o.offenderReceptionAddress.cityCode,
-      address4_f90: o.offenderReceptionAddress.countyCode,
-      address5_f91: o.offenderReceptionAddress.countryCode,
-      address6_f92: o.offenderReceptionAddress.postalCode,
-      address7_f93: o.offenderReceptionAddress.phoneNo,
-    },
+    reception: modelAddress({
+        nfa_f86: helpers.getNFA(o.offenderReceptionAddress)
+      }, 87, o.offenderReceptionAddress),
 
-    home: {
-      address1_f94: helpers.formatAddressLine1(o.offenderHomeAddress),
-      address2_f95: o.offenderHomeAddress.locality,
-      address3_f96: o.offenderHomeAddress.cityCode,
-      address4_f97: o.offenderHomeAddress.countyCode,
-      address5_f98: o.offenderHomeAddress.countryCode,
-      address6_f99: o.offenderHomeAddress.postalCode,
-      address7_f100: o.offenderHomeAddress.phoneNo,
-    },
+    home: modelAddress({
+      }, 94, o.offenderHomeAddress),
 
-    nok: {
-      name_f101: helpers.formatContactPersonName(o.nextOfKin),
-      nfa_f102: helpers.formatContactPersonRelationship(o.nextOfKin),
-      address1_f103: (o.nextOfKin && o.nextOfKin.primaryAddress && helpers.formatAddressLine1(o.nextOfKin.primaryAddress)),
-      address2_f104: (o.nextOfKin && o.nextOfKin.primaryAddress && o.nextOfKin.primaryAddress.locality),
-      address3_f105: (o.nextOfKin && o.nextOfKin.primaryAddress && o.nextOfKin.primaryAddress.cityCode),
-      address4_f106: (o.nextOfKin && o.nextOfKin.primaryAddress && o.nextOfKin.primaryAddress.countyCode),
-      address5_f107: (o.nextOfKin && o.nextOfKin.primaryAddress && o.nextOfKin.primaryAddress.countryCode),
-      address6_f108: (o.nextOfKin && o.nextOfKin.primaryAddress && o.nextOfKin.primaryAddress.postalCode),
-      address7_f109: (o.nextOfKin && o.nextOfKin.primaryAddress && o.nextOfKin.primaryAddress.phoneNo),
-    },
+    nok: modelAddress({
+        name_f101: helpers.formatContactPersonName(o.nextOfKin),
+        nfa_f102: helpers.formatContactPersonRelationship(o.nextOfKin)
+      }, 103, o.nextOfKin ? o.nextOfKin.primaryAddress : undefined),
 
-    prob: {
-      name_f110: helpers.formatContactPersonName(o.offenderManager),
-      address1_f111: (o.offenderManager && o.offenderManager.primaryAddress && helpers.formatAddressLine1(o.offenderManager.primaryAddress)),
-      address2_f112: (o.offenderManager && o.offenderManager.primaryAddress && o.offenderManager.primaryAddress.locality),
-      address3_f113: (o.offenderManager && o.offenderManager.primaryAddress && o.offenderManager.primaryAddress.cityCode),
-      address4_f114: (o.offenderManager && o.offenderManager.primaryAddress && o.offenderManager.primaryAddress.countyCode),
-      address5_f115: (o.offenderManager && o.offenderManager.primaryAddress && o.offenderManager.primaryAddress.countryCode),
-      address6_f116: (o.offenderManager && o.offenderManager.primaryAddress && o.offenderManager.primaryAddress.postalCode),
-      address7_f117: (o.offenderManager && o.offenderManager.primaryAddress && o.offenderManager.primaryAddress.phoneNo),
-    },
+    prob: modelAddress({
+        name_f110: helpers.formatContactPersonName(o.offenderManager)
+      }, 111, o.offenderManager ? o.offenderManager.primaryAddress : undefined),
 
     f118: "",  // 118	Remark Type Allocation
     f119: "",  // 119	Remarks Allocation
@@ -242,7 +240,7 @@ module.exports.build = sysdate => data => {
     },
 
     court_f141: o.offenderCourtEscort.toAgencyLocationId,
-    escort_f142: o.offenderCourtEscort.escortCode,
+    escort_f142: refData.escort(o.offenderCourtEscort.escortCode),
     first_out_mov_post_adm_f143: helpers.optionalDate(o.firstOffenderOutMovement.movementDateTime),
 // 144	Employed
     diary_details_f145: helpers.withList(o.diaryDetails).map(odd => helpers.formatOffenderDiaryDetail(odd, o)),
@@ -251,7 +249,7 @@ module.exports.build = sysdate => data => {
     active_alerts_f148: o.activeAlerts.map(helpers.formatAlert),
 
     court: {
-      type_f149: o.courtOutcome.outcomeReasonCode,
+      type_f149: refData.courtOutcome(o.courtOutcome.outcomeReasonCode),
       code_f150: o.mostRecentConviction.agencyLocationId,
       name_f151: "",
     },

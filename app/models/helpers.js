@@ -59,7 +59,7 @@ helpers.formatLicenseType = os =>
     .join('-') : undefined;
 
 const formatAddressLine1 = helpers.formatAddressLine1 = a =>
-  a ? [a.flat, a.premise, a.street]
+  a && (a.flat || a.premise || a.street) ? [a.flat, a.premise, a.street]
     .filter(x => !!x)
     .join(' ') : undefined;
 
@@ -347,7 +347,57 @@ helpers.getOffenderLicense = o =>
       )).sentences
     ).filter(s => s.isActive));
 
+// movement related
 
+helpers.getLastOffenderMovement = o =>
+  getFirst(withList(o.movements)
+    .filter(m => (
+      m.bookingId === o.mainBooking.bookingId
+    )));
+
+helpers.getFirstOffenderMovement = o =>
+  getLast(withList(o.movements)
+    .filter(m => (
+      m.bookingId === o.mainBooking.bookingId
+    )));
+
+helpers.getFirstOffenderOutMovement = o =>
+  getLast(withList(o.movements)
+    .filter(m => (
+      m.bookingId === o.mainBooking.bookingId &&
+      m.movementDirection === 'OUT'
+    )));
+
+helpers.getOffenderCourtEscort = o => {
+  let m = getFirst(withList(o.movements)
+    .filter(m => (
+      m.bookingId === o.mainBooking.bookingId
+    )));
+
+  return (
+    m.movementTypeCode === 'CRT' &&
+    m.movementDirection === 'OUT' &&
+    m.escort_code
+  ) ? m : {};
+};
+
+helpers.getOffenderTransfers = o =>
+  withList(o.movements)
+    .filter(oem => (
+      oem.bookingId === o.mainBooking.bookingId &&
+      oem.movementTypeCode === 'TRN'
+    ));
+
+helpers.getFirstOffenderTransfer = o =>
+  getLast(o.offenderTransfers);
+
+helpers.getLastOffenderTransfer = o =>
+  getFirst(o.offenderTransfers
+    .filter(m => m.active)); // TODO: movement date before extract date?
+
+helpers.getPendingOffenderTransfer = o =>
+  getLast(o.offenderTransfers
+    .filter(m => m.active)); // TODO: movement date after extract date?
 
 
 
@@ -455,46 +505,6 @@ helpers.getImprisonmentStatus2 = o =>
     )));
 
 // main booking entire
-
-helpers.getLastOffenderMovement = o =>
-  getFirst(withList(o.movements));
-
-helpers.getFirstOffenderMovement = o =>
-  getLast(withList(o.movements));
-
-helpers.getFirstOffenderOutMovement = o =>
-  getLast(withList(o.movements)
-    .filter(m => (
-      m.movementDirection === 'OUT'
-    )));
-
-helpers.getOffenderCourtEscort = o => {
-  let m = getFirst(withList(o.movements));
-
-  return (
-    m.movementTypeCode === 'CRT' &&
-    m.movementDirection === 'OUT' &&
-    m.escort_code
-  ) ? m : {};
-};
-
-helpers.getOffenderTransfers = o =>
-  withList(o.movements)
-    .filter(oem => (
-      oem.bookingId === o.mainBooking.bookingId &&
-      oem.movementTypeCode === 'TRN'
-    ));
-
-helpers.getFirstOffenderTransfer = o =>
-  getLast(o.offenderTransfers);
-
-helpers.getLastOffenderTransfer = o =>
-  getFirst(o.offenderTransfers
-    .filter(m => m.active)); // TODO: movement date before extract date?
-
-helpers.getPendingOffenderTransfer = o =>
-  getLast(o.offenderTransfers
-    .filter(m => m.active)); // TODO: movement date after extract date?
 
 helpers.highestRankedOffence = o =>
   getFirst(o.offenderCharges);
