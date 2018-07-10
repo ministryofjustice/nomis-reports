@@ -40,7 +40,7 @@ BatchProcessor.prototype.run = function(func) {
       return Promise.resolve(Array.from(out));
     })
     .then(() => {
-      log.info({ size: out.size}, 'BatchProcessor run DONE');
+      log.debug({ size: out.size}, 'BatchProcessor run DONE');
 
       return Promise.resolve(Array.from(out));
     });

@@ -1,4 +1,3 @@
-const fs = require('fs');
 const moment = require('moment');
 
 const RequestQueue = require('./helpers/RequestQueue');
@@ -78,11 +77,11 @@ const processAOJob = (job, complete) =>
   services.reports.getDetails(job.offenderId)
     .then(AOModel.build(moment()))
     .then((data) => {
-      log.info({ job, data }, `RequestQueue ON AO RESPONSE`);
+      log.info({ job, data }, `sync ON AO RESPONSE`);
       complete();
     })
     .catch((err) => {
-      log.error(err, `RequestQueue ON AO ERROR`);
+      log.error(err, `sync ON AO ERROR`);
       complete();
     });
 
@@ -90,16 +89,16 @@ const processCDEJob = (job, complete) =>
   services.reports.getDetails(job.offenderId)
     .then(CDEModel.build(moment()))
     .then((data) => {
-      log.info({ job, data }, `RequestQueue ON CDE RESPONSE`);
+      log.info({ job, data }, `sync ON CDE RESPONSE`);
       complete();
     })
     .catch((err) => {
-      log.error(err, `RequestQueue ON CDE ERROR`);
+      log.error(err, `sync ON CDE ERROR`);
       complete();
     });
 
 let rq = new RequestQueue((job, done) => {
-    log.info({ offenderId: job.offenderId }, `RequestQueue ON DATA`);
+    log.info({ offenderId: job.offenderId }, `sync ON DATA`);
 
     let complete = () => { complete = () => done(); };
 

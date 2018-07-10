@@ -20,6 +20,8 @@ module.exports = {
   name: pkg.name,
   version: pkg.version,
 
+  logLevel: get('LOG_LEVEL', 'debug'),
+
   dev: dev,
   buildDate: env.BUILD_DATE,
   commitId: env.COMMIT_ID,

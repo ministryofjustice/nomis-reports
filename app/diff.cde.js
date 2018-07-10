@@ -7,8 +7,8 @@ const pointer = require('json-pointer');
 
 const log = require('../server/log');
 
-const CDE_DATE = moment('2018-07-02').add(-1, 'days');
-const EXTRACT_DATE = moment('2018-07-02');
+const CDE_DATE = moment('2018-07-10').add(-2, 'days');
+const EXTRACT_DATE = moment('2018-07-10');
 
 const cdeFields = [
   'sysdate_f1',                     // passed param
@@ -76,7 +76,7 @@ const cdeFields = [
   'marks.body_f63',                 // 0 differences
   'sentence_length_f64',
   'release.date_f65',
-  'releasename_f66',
+  'release.name_f66',
   'sed_f67',
   'hdced_f68',
   'hdcad_f69',
@@ -252,7 +252,7 @@ const finish = diff => () => {
     let path = '/' + p.replace(/\./g, '/');
     let data = diff[path];
     if (data) {
-      log.debug(`${data.length} differences on ${field}`);
+      log.info(`${data.length} differences on ${field}`);
       fs.writeFileSync(`./.extracts/reports/DIFF/${field}.${EXTRACT_DATE.format('YYYYMMDD')}.json`, JSON.stringify(data, null, '  '));
     }
   });

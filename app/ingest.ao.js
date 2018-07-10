@@ -62,7 +62,7 @@ let setupQueue = (batch, totalPages) => {
 
 let startJob = () => {
   setInterval(() => {
-    log.info(Object.assign({}, rq.report(), { start: now }), `${reportName} RequestQueue ON PROGRESS`);
+    log.info(Object.assign({}, rq.report(), { start: now }), `${reportName} INGEST ON PROGRESS`);
 
     if (jobDone) {
       process.exit();
@@ -78,13 +78,13 @@ let startJob = () => {
 const completeJob = () => {
   ws.write('\n]\n');
 
-  log.info(Object.assign({}, rq.report(), { start: now, end: new Date() }), `${reportName} RequestQueue ON COMPLETE`);
+  log.info(Object.assign({}, rq.report(), { start: now, end: new Date() }), `${reportName} INGEST ON COMPLETE`);
 
   jobDone = true;
 };
 
 rq = new RequestQueue((batch, done) => {
-    log.info({ batch }, `${reportName} RequestQueue ON DATA`);
+    log.info({ batch }, `${reportName} INGEST ON DATA`);
 
     if (batch.type === 'list') {
       services.reports.listOffenders({}, batch.page, batch.size)
@@ -115,7 +115,7 @@ rq = new RequestQueue((batch, done) => {
           done();
         })
         .catch((err) => {
-          log.error(err, `${reportName} RequestQueue ON ERROR`);
+          log.error(err, `${reportName} INGEST ON ERROR`);
           done();
         });
       }
@@ -141,7 +141,7 @@ rq = new RequestQueue((batch, done) => {
             done();
           })
           .catch((err) => {
-            log.error(err, `${reportName} RequestQueue ON ERROR`);
+            log.error(err, `${reportName} INGEST ON ERROR`);
             done();
           });
       }

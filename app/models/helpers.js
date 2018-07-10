@@ -36,7 +36,7 @@ const optionalTime = helpers.optionalTime = d =>
   d ? moment(d).format('HH:mm:ss') : undefined;
 
 helpers.optionalHeight = n =>
-  n ? parseFloat((n / 100).toFixed(2)) : 0;
+  n ? (n / 100).toFixed(1) : '';
 
 
 
@@ -58,26 +58,26 @@ helpers.formatLicenseType = os =>
     .filter(x => !!x)
     .join('-') : undefined;
 
-const formatAddressLine1 = helpers.formatAddressLine1 = a =>
+const formatAddressLine1 = helpers.formatAddressLine1 = (a , j) =>
   a && (a.flat || a.premise || a.street) ? [a.flat, a.premise, a.street]
     .filter(x => !!x)
-    .join(' ') : undefined;
+    .join(j ? j : ' ') : undefined;
 
 helpers.formatSupervisingService = om =>
   om && om.primaryAddress
     ? [
-        formatAddressLine1(om.primaryAddress),
+        formatAddressLine1(om.primaryAddress, ', '),
         om.primaryAddress.locality,
-        om.primaryAddress.cityCode,
-        om.primaryAddress.countyCode,
-        om.primaryAddress.countryCode,
+        (om.primaryAddress.cityCode || {}).description,
+        (om.primaryAddress.countyCode || {}).description,
+        (om.primaryAddress.countryCode || {}).description,
         om.primaryAddress.postalCode
       ]
       .filter(x => !!x)
       .join(', ') : undefined;
 
 const formatAlert = helpers.formatAlert = oa =>
-  oa ? [oa.alertType, oa.alertCode]
+  oa ? [oa.alertType, (oa.alertCode || {}).code]
     .filter(x => !!x)
     .join('-') : undefined;
 
@@ -148,8 +148,8 @@ helpers.getMainAlias = o =>
       middleNames: o.middleNames,
       surname: o.surname,
       dateOfBirth: o.dateOfBirth,
-      sexCode: o.sexCode,
-      raceCode: o.raceCode,
+      ethnicity: o.ethnicity,
+      gender: o.gender,
       offenderId: o.offenderId,
     }) || {};
 
@@ -283,7 +283,14 @@ helpers.getPhysicals = o => {
   return {
     profileDetails: withList(physicals.profileDetails)
         .reduce((x, opd) => {
-          x[opd.profileType] = opd.profileCode;
+          if (opd.profileCode) {
+             x[opd.profileType] = {
+              code: opd.profileCode,
+              description: opd.profileType === 'YOUTH'
+                  ? (opd.profileCode === 'Y' ? 'YP' : 'A')
+                  : opd.profileDescription,
+            };
+          }
           return x;
         }, {}),
     identifyingMarks: (x => {
@@ -320,7 +327,7 @@ helpers.getActiveOffenderSentence = o =>
 helpers.getOffenderSentenceCalculations = o =>
   getFirst(withList(o.sentenceCalculations)
     .filter(sc => (
-      sc.bookingId === o.offenderSentence.bookingId
+      sc.bookingId === o.mainBooking.bookingId
     )));
 
 helpers.getOffenderSentenceLength = o =>
@@ -335,7 +342,8 @@ helpers.getOffenderLicense = o =>
   getFirst(withList(o.sentences)
     .filter(s => (
       s.bookingId === o.offenderSentence.bookingId &&
-      s.sentenceCategory === 'LICENCE'
+      s.sentenceCategory === 'LICENCE' &&
+      s.sentenceStatus === 'A'
     )));
 
   helpers.getFirstSentence = o =>
@@ -349,56 +357,51 @@ helpers.getOffenderLicense = o =>
 
 // movement related
 
-helpers.getLastOffenderMovement = o =>
-  getFirst(withList(o.movements)
-    .filter(m => (
-      m.bookingId === o.mainBooking.bookingId
-    )));
+helpers.getLastSequentialTransfer = o =>
+  getLast(
+    withList(o.movements)
+      .filter(oem => (
+        oem.bookingId === o.mainBooking.bookingId &&
+        oem.movementTypeCode === 'TRN'
+      ))
+      .sort((a, b) => a.sequenceNumber - b.sequenceNumber) // ASC
+  );
 
-helpers.getFirstOffenderMovement = o =>
-  getLast(withList(o.movements)
-    .filter(m => (
-      m.bookingId === o.mainBooking.bookingId
-    )));
-
-helpers.getFirstOffenderOutMovement = o =>
-  getLast(withList(o.movements)
-    .filter(m => (
-      m.bookingId === o.mainBooking.bookingId &&
-      m.movementDirection === 'OUT'
-    )));
-
-helpers.getOffenderCourtEscort = o => {
-  let m = getFirst(withList(o.movements)
-    .filter(m => (
-      m.bookingId === o.mainBooking.bookingId
-    )));
-
-  return (
-    m.movementTypeCode === 'CRT' &&
-    m.movementDirection === 'OUT' &&
-    m.escort_code
-  ) ? m : {};
-};
-
-helpers.getOffenderTransfers = o =>
+helpers.getActiveTransfers = o =>
   withList(o.movements)
     .filter(oem => (
       oem.bookingId === o.mainBooking.bookingId &&
-      oem.movementTypeCode === 'TRN'
-    ));
+      oem.movementTypeCode === 'TRN' &&
+      oem.active
+    ))
+    .sort((a, b) => a.sequenceNumber - b.sequenceNumber); // ASC
 
-helpers.getFirstOffenderTransfer = o =>
-  getLast(o.offenderTransfers);
+helpers.getLastSequentialMovement = o =>
+  getLast(
+    withList(o.movements)
+      .filter(oem => (
+        oem.bookingId === o.mainBooking.bookingId
+      ))
+      .sort((a, b) => a.sequenceNumber - b.sequenceNumber) // ASC
+  );
 
-helpers.getLastOffenderTransfer = o =>
-  getFirst(o.offenderTransfers
-    .filter(m => m.active)); // TODO: movement date before extract date?
+helpers.getLastSequentialMovementIfTransfer = o => {
+  let oem = helpers.getLastSequentialMovement(o);
 
-helpers.getPendingOffenderTransfer = o =>
-  getLast(o.offenderTransfers
-    .filter(m => m.active)); // TODO: movement date after extract date?
+  return (oem && oem.movementTypeCode === 'TRN' ? oem : {});
+};
 
+helpers.getLastSequentialMovementIfOut = o => {
+  let oem = helpers.getLastSequentialMovement(o);
+
+  return (oem && oem.movementDirection === 'OUT' ? oem : {});
+};
+
+helpers.getEarliestMovementDate = o =>
+  withList(o.offenderCharges)
+    .reduce((out, oem) => (
+      (!out.movementDateTime || moment(oem.movementDateTime).diff(out.movementDateTime) < 0) ? oem : out
+    ), {}) || {};
 
 
 

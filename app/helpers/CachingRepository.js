@@ -5,13 +5,15 @@ const isObject = (x) => x != null && typeof x === 'object' && Array.isArray(x) =
 
 const datastore = {
   root: {},
-  timeout: 1000 * 60, // * 60, // 1sec -> 60secs -> 60mins -> 0hrs -> 0days
+  timeout: 1000 * 60 * 60 * 24, // 1sec -> 60secs -> 60mins -> 0hrs -> 0days
 
   getStore(cacheName) {
-    this.root[cacheName] = this.root[cacheName] || new Datastore({ filename: `.cache/${cacheName}.db`, autoload: true });
+    this.root[cacheName] = this.root[cacheName] || new Datastore({
+      filename: `.cache/${cacheName}.db`,
+      autoload: true,
+      timestampData: true
+    });
 
-    // Example of using expireAfterSeconds to remove documents 1 hour
-    // after their creation (db's timestampData option is true here)
     this.root[cacheName]
       .ensureIndex({ fieldName: 'createdAt', expireAfterSeconds: this.timeout });
 

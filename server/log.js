@@ -10,7 +10,7 @@ module.exports = new Logger({
   streams: [
     {
       stream: process.stdout,
-      level: 'debug',
+      level: config.logLevel,
     }
   ]
 });
