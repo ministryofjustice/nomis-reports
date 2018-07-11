@@ -1,6 +1,6 @@
 const helpers = require('../../../app/models/helpers');
 
-describe('cde/sentenceLength', () => {
+describe('cde/sentenceCalculations', () => {
 
   describe('When an offender has a series of sentence calculations for the active sentence', () => {
     let input = {
@@ -10,7 +10,7 @@ describe('cde/sentenceLength', () => {
         { sentenceCalculationId: 6350, bookingId: 8133 }
       ],
 
-      offenderSentence: { bookingId: 8133 },
+      mainBooking: { bookingId: 8133 },
     };
 
     it('should retrieve the first sentence calculation dates', () => {
@@ -27,7 +27,7 @@ describe('cde/sentenceLength', () => {
         { sentenceCalculationId: 6350, bookingId: 8133 }
       ],
 
-      offenderSentence: { bookingId: 8133 },
+      mainBooking: { bookingId: 8133 },
     };
 
     it('should retrieve the active sentence calculation dates', () => {
@@ -44,7 +44,7 @@ describe('cde/sentenceLength', () => {
         { sentenceCalculationId: 6350, bookingId: 8100 }
       ],
 
-      offenderSentence: { bookingId: 8133 },
+      mainBooking: { bookingId: 8133 },
     };
 
     it('should not retrieve any sentence calculation dates', () => {

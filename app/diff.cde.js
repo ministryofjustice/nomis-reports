@@ -7,8 +7,8 @@ const pointer = require('json-pointer');
 
 const log = require('../server/log');
 
-const CDE_DATE = moment('2018-07-10').add(-2, 'days');
-const EXTRACT_DATE = moment('2018-07-10');
+const CDE_DATE = moment('2018-07-10');
+const EXTRACT_DATE = moment('2018-07-10T23:00:00');
 
 const cdeFields = [
   'sysdate_f1',                     // passed param
@@ -169,7 +169,11 @@ const cdeFields = [
 const cdeColParser = {
   age_f12: 'number',
 
-  sysdate_f1(item) { return moment(item, 'DD/MM/YYYY'); },
+  // ignore for now
+  establishment_f2() { return ''; },
+  activity_details_f152() { return ''; },
+
+  sysdate_f1(item) { return moment.utc(item, 'DD/MM/YYYY').add(22, 'hours'); },
   dob_f13(item) { return moment(item, 'DD/MM/YYYY'); },
   first_reception_date_f23(item) { return moment(item, 'DD/MM/YYYY'); },
   ['sec_cat.next_review_f27'](item) { return moment(item, 'DD/MM/YYYY'); },
@@ -253,7 +257,7 @@ const finish = diff => () => {
     let data = diff[path];
     if (data) {
       log.info(`${data.length} differences on ${field}`);
-      fs.writeFileSync(`./.extracts/reports/DIFF/${field}.${EXTRACT_DATE.format('YYYYMMDD')}.json`, JSON.stringify(data, null, '  '));
+      fs.writeFileSync(`./.extracts/reports/DIFF/${field}.${EXTRACT_DATE.format('YYYYMMDD.HHmm')}.json`, JSON.stringify(data, null, '  '));
     }
   });
 };
@@ -312,7 +316,7 @@ const processStream = (type) => (x) => {
   checkDoc(nomsId);
 };
 
-fs.createReadStream(`./.extracts/reports/CDE/${EXTRACT_DATE.format('YYYYMMDD')}.json`, 'utf8')
+fs.createReadStream(`./.extracts/reports/CDE/${EXTRACT_DATE.format('YYYYMMDD.HHmm')}.json`, 'utf8')
   .pipe(jsonStream.parse('*'))
   .on('data', processStream('doc'))
   .on('error', err => log.error(err));

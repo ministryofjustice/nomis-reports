@@ -31,7 +31,7 @@ describe('cde/movements', () => {
     };
 
     it('should not retrieve a movement', () => {
-      helpers.getFirstOffenderOutMovement(input).should.not.have.property('movementDateTime');
+      helpers.getEarliestOutMovementDate(input).should.not.have.property('movementDateTime');
     });
   });
 
@@ -55,7 +55,7 @@ describe('cde/movements', () => {
     };
 
     it('should not retrieve a movement', () => {
-      helpers.getFirstOffenderOutMovement(input).should.not.have.property('movementDateTime');
+      helpers.getEarliestOutMovementDate(input).should.not.have.property('movementDateTime');
     });
   });
 
@@ -79,7 +79,7 @@ describe('cde/movements', () => {
     };
 
     it('should retrieve a movement', () => {
-      helpers.getFirstOffenderOutMovement(input).should.have.property('movementDateTime', '2008-10-02T11:51:35');
+      helpers.getEarliestOutMovementDate(input).should.have.property('movementDateTime', '2008-10-02T11:51:35');
     });
   });
 

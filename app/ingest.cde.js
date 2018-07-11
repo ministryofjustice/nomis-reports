@@ -62,14 +62,14 @@ const isCDEEntry = (data, extractDate) => {
 };
 
 let reportName = 'CDE';
-let extractDate = moment();
+let extractDate = moment('2018-07-10T23:00:00');
 let builder = CDEModel.build(extractDate.clone());
 let entryChecker = isCDEEntry;
 
 // start of routine
 
 let now = moment();
-let ep = `./.extracts/reports/${reportName}/${extractDate.format('YYYYMMDD')}.json`;
+let ep = `./.extracts/reports/${reportName}/${extractDate.format('YYYYMMDD.HHmm')}.json`;
 let ws = fs.createWriteStream(ep, 'utf8');
 let size = 100;
 

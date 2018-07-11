@@ -50,7 +50,7 @@ const model = helpers.pipe([
   ['lastSequentialTransfer', helpers.getLastSequentialTransfer],
   ['activeTransfers', helpers.getActiveTransfers],
   ['lastSequentialMovementIfOut', helpers.getLastSequentialMovementIfOut],
-  ['earliestMovementDate', helpers.getEarliestMovementDate],
+  ['earliestOutMovementDate', helpers.getEarliestOutMovementDate],
   ['lastSequentialMovement', helpers.getLastSequentialMovement],
   ['offenderSentenceCalculationDates', helpers.getOffenderSentenceCalculationDates],
   ['offenderEmployments', helpers.getOffenderEmployments],
@@ -247,7 +247,7 @@ module.exports.build = sysdate => data => {
 
     court_f141: (o.lastSequentialMovementIfOut.movementTypeCode === 'CRT' ? o.lastSequentialMovementIfOut.toAgencyLocationId : undefined),
     escort_f142: (o.lastSequentialMovementIfOut.escortCode || {}).description,
-    first_out_mov_post_adm_f143: helpers.optionalDate(o.earliestMovementDate.movementDateTime),
+    first_out_mov_post_adm_f143: helpers.optionalDate(o.earliestOutMovementDate.movementDateTime),
 // 144	Employed
     diary_details_f145: helpers.withList(o.diaryDetails).map(odd => helpers.formatOffenderDiaryDetail(odd, o)),
     licence_type_f146: (o.offenderLicense.sentenceCalculationType || {}).description,

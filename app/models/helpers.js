@@ -36,7 +36,7 @@ const optionalTime = helpers.optionalTime = d =>
   d ? moment(d).format('HH:mm:ss') : undefined;
 
 helpers.optionalHeight = n =>
-  n ? (n / 100).toFixed(1) : '';
+  n ? (n / 100).toFixed(2) : undefined;
 
 
 
@@ -68,9 +68,9 @@ helpers.formatSupervisingService = om =>
     ? [
         formatAddressLine1(om.primaryAddress, ', '),
         om.primaryAddress.locality,
-        (om.primaryAddress.cityCode || {}).description,
-        (om.primaryAddress.countyCode || {}).description,
-        (om.primaryAddress.countryCode || {}).description,
+        (om.primaryAddress.city || {}).description,
+        (om.primaryAddress.county || {}).description,
+        (om.primaryAddress.country || {}).description,
         om.primaryAddress.postalCode
       ]
       .filter(x => !!x)
@@ -235,7 +235,7 @@ helpers.getCheckHoldAlerts = o =>
       if (oa.alertType === 'V') {
         x.VUL = 'Y';
 
-        if (~['V45','VOP','V46','V49G','V49P'].indexOf(oa.alertCode)) {
+        if (~['V45','VOP','V46','V49G','V49P'].indexOf((oa.alertCode || {}).code)) {
           x.V_45_46 = 'Y';
         }
       }
@@ -364,6 +364,7 @@ helpers.getLastSequentialTransfer = o =>
         oem.bookingId === o.mainBooking.bookingId &&
         oem.movementTypeCode === 'TRN'
       ))
+      // TODO: reorder for offloc ignoring date - so remove
       .sort((a, b) => a.sequenceNumber - b.sequenceNumber) // ASC
   );
 
@@ -374,6 +375,7 @@ helpers.getActiveTransfers = o =>
       oem.movementTypeCode === 'TRN' &&
       oem.active
     ))
+    // TODO: reorder for offloc ignoring date - so remove
     .sort((a, b) => a.sequenceNumber - b.sequenceNumber); // ASC
 
 helpers.getLastSequentialMovement = o =>
@@ -382,6 +384,7 @@ helpers.getLastSequentialMovement = o =>
       .filter(oem => (
         oem.bookingId === o.mainBooking.bookingId
       ))
+      // TODO: reorder for offloc ignoring date - so remove
       .sort((a, b) => a.sequenceNumber - b.sequenceNumber) // ASC
   );
 
@@ -397,11 +400,13 @@ helpers.getLastSequentialMovementIfOut = o => {
   return (oem && oem.movementDirection === 'OUT' ? oem : {});
 };
 
-helpers.getEarliestMovementDate = o =>
-  withList(o.offenderCharges)
+helpers.getEarliestOutMovementDate = o =>
+  withList(o.movements)
     .reduce((out, oem) => (
-      (!out.movementDateTime || moment(oem.movementDateTime).diff(out.movementDateTime) < 0) ? oem : out
-    ), {}) || {};
+        oem.bookingId === o.mainBooking.bookingId &&
+        oem.movementDirection === 'OUT' &&
+        (!out.movementDateTime || moment(oem.movementDateTime).diff(out.movementDateTime) < 0)
+      ) ? oem : out, {}) || {};
 
 
 
@@ -491,6 +496,13 @@ helpers.getIEPLevel = o =>
     .filter(op => (
       op.bookingId === o.mainBooking.bookingId
     ))
+    // TODO: reorder for offloc ignoring time - so remove
+    .sort((a, b) => {
+      let x = moment(a.iepDateTime).set({ hour: 0, minute: 0, second: 0 })
+                .diff(moment(b.iepDateTime).set({ hour: 0, minute: 0, second: 0 }));
+
+      return x === 0 ? b.iepLevelSeq - a.iepLevelSeq : x;
+    })
     .map(iep => iep.iepLevel));
 
 helpers.getImprisonmentStatus = o =>
@@ -564,31 +576,22 @@ helpers.getCustodyStatus = data => {
     inTransit: (mainBooking.inOutStatus || "").toUpperCase() === 'TRN',
     isActive: (mainBooking.activeFlag || false),
     bookingSequence: mainBooking.bookingSequence,
+    inOutStatus: (mainBooking.inOutStatus || "").toUpperCase()
   };
 
-  if (stat.isActive) {
-    return 'Active-In';
-  }
+  let a = null;
+  if (stat.isActive) a = 'Active';
+  else if (!stat.isActive && (~['ESCP', 'UAL', 'UAL_ECL'].indexOf(stat.statusReason) || stat.inTransit)) a = 'Active';
+  else if (!stat.isActive && stat.bookingSequence === 1) a = 'INACTIVE';
+  else if (!stat.isActive && stat.bookingSequence > 1) a = 'HISTORIC';
 
-  if (stat.inTransit) {
-    return 'In Transit';
-  }
+  let b = null;
+  if (~['ESCP', 'UAL'].indexOf(stat.statusReason)) b = 'UAL';
+  else if (stat.statusReason = 'UAL_ECL') b = 'UAL_ECL';
+  else if (stat.inTransit) b = 'In Transit';
+  else b = stat.inOutStatus;
 
-  if (!stat.isActive) {
-    if (~['ESCP', 'UAL'].indexOf(stat.statusReason)) {
-      return 'UAL';
-    } else if (~['UAL_ECL'].indexOf(stat.statusReason)) {
-      return 'UAL_ECL';
-    } else {
-      return stat.inOutStatus;
-    }
-
-    if (stat.bookingSequence === 1) {
-      return 'INACTIVE';
-    } else if (stat.bookingSequence > 1) {
-      return 'HISTORIC';
-    }
-  }
+  return [a, b].join('-');
 };
 
 helpers.getOffenderSentenceCalculationDates = o =>

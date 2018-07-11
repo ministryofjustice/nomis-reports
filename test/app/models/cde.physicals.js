@@ -49,7 +49,8 @@ describe('cde/physicals', () => {
     it('Should identify the correct physicals', () => {
       let result = helpers.getPhysicals(input);
       result.should.have.property('profileDetails');
-      result.profileDetails.should.have.property('YOUTH', 'N');
+      result.profileDetails.should.have.property('YOUTH');
+      result.profileDetails.YOUTH.should.have.property('code', 'N');
     });
   });
 });

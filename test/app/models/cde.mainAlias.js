@@ -9,8 +9,14 @@ describe('cde/mainAlias', () => {
       middleNames: "MATHEW PATRICE",
       surname: "ZAHIR",
       dateOfBirth: "1971-04-28",
-      sexCode: "M",
-      raceCode: "A1",
+      gender: {
+        code: "M",
+        description: "Male"
+      },
+      ethnicity: {
+        code: "B1",
+        description: "Black/Black British: Caribbean"
+      },
       aliases: [
         {
           nomsId: "X5815XX",
@@ -18,7 +24,10 @@ describe('cde/mainAlias', () => {
           firstName: "JJJ",
           surname: "VIS0001-MIG002",
           dateOfBirth: "1975-04-18",
-          sexCode: "M",
+          gender: {
+            code: "M",
+            description: "Male"
+          },
         }
       ],
       mainBooking: {
@@ -33,7 +42,7 @@ describe('cde/mainAlias', () => {
     let result = modelHelpers.getMainAlias(input);
 
     it('Should select the offender\'s gender from the alias', () => {
-      result.should.have.property('sexCode', input.aliases[0].sexCode);
+      result.should.have.property('gender', input.aliases[0].gender);
     });
 
     it('Should select the offender\'s surname from the alias', () => {
@@ -53,7 +62,7 @@ describe('cde/mainAlias', () => {
     });
 
     it('Should select the offender\'s ethnicity from the alias', () => {
-      result.should.not.have.property('raceCode');
+      result.should.not.have.property('ethnicity');
     });
   });
 
@@ -65,8 +74,14 @@ describe('cde/mainAlias', () => {
       middleNames: "MATHEW PATRICE",
       surname: "ZAHIR",
       dateOfBirth: "1971-04-28",
-      sexCode: "M",
-      raceCode: "A1",
+      gender: {
+        code: "M",
+        description: "Male"
+      },
+      ethnicity: {
+        code: "B1",
+        description: "Black/Black British: Caribbean"
+      },
       aliases: [
         {
           nomsId: "X5815XX",
@@ -74,7 +89,10 @@ describe('cde/mainAlias', () => {
           firstName: "JJJ",
           surname: "VIS0001-MIG002",
           dateOfBirth: "1975-04-18",
-          sexCode: "M",
+          gender: {
+            code: "M",
+            description: "Male"
+          },
         }
       ],
       mainBooking: {
@@ -88,7 +106,7 @@ describe('cde/mainAlias', () => {
     let result = modelHelpers.getMainAlias(input);
 
     it('Should select the offender\'s gender from the alias', () => {
-      result.should.have.property('sexCode', input.sexCode);
+      result.should.have.property('gender', input.gender);
     });
 
     it('Should select the offender\'s surname from the alias', () => {
@@ -108,7 +126,7 @@ describe('cde/mainAlias', () => {
     });
 
     it('Should select the offender\'s ethnicity from the alias', () => {
-      result.should.have.property('raceCode', input.raceCode);
+      result.should.have.property('ethnicity', input.ethnicity);
     });
   });
 
@@ -120,8 +138,14 @@ describe('cde/mainAlias', () => {
       middleNames: "MATHEW PATRICE",
       surname: "ZAHIR",
       dateOfBirth: "1971-04-28",
-      sexCode: "M",
-      raceCode: "A1",
+      gender: {
+        code: "M",
+        description: "Male"
+      },
+      ethnicity: {
+        code: "B1",
+        description: "Black/Black British: Caribbean"
+      },
       aliases: [
         {
           nomsId: "X5815XX",
@@ -129,7 +153,10 @@ describe('cde/mainAlias', () => {
           firstName: "JJJ",
           surname: "VIS0001-MIG002",
           dateOfBirth: "1975-04-18",
-          sexCode: "M",
+          gender: {
+            code: "M",
+            description: "Male"
+          },
         }
       ],
     };
@@ -137,7 +164,7 @@ describe('cde/mainAlias', () => {
     let result = modelHelpers.getMainAlias(input);
 
     it('Should select the offender\'s gender from the alias', () => {
-      result.should.have.property('sexCode', input.sexCode);
+      result.should.have.property('gender', input.gender);
     });
 
     it('Should select the offender\'s surname from the alias', () => {
@@ -157,7 +184,7 @@ describe('cde/mainAlias', () => {
     });
 
     it('Should select the offender\'s ethnicity from the alias', () => {
-      result.should.have.property('raceCode', input.raceCode);
+      result.should.have.property('ethnicity', input.ethnicity);
     });
   });
 });
