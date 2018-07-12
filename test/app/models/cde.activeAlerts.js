@@ -6,6 +6,8 @@ describe('cde/activeAlerts', () => {
       nomsId: "A5465AA",
       offenderId: 1014520,
 
+      mainBooking: { bookingId: 15711 },
+
       alerts: [
         {
           bookingId: 15711,

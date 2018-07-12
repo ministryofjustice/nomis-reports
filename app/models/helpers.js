@@ -35,8 +35,23 @@ const optionalDate = helpers.optionalDate = d =>
 const optionalTime = helpers.optionalTime = d =>
   d ? moment(d).format('HH:mm:ss') : undefined;
 
-helpers.optionalHeight = n =>
-  n ? (n / 100).toFixed(2) : undefined;
+helpers.optionalHeight = n => {
+  if (n && n > 0) {
+    let h = (n / 100).toFixed(2);
+
+    if (h.substr(-3) === '.00') {
+      return h.substr(0, h.length - 3);
+    }
+
+    if (h.substr(-1) === '0') {
+      return h.substr(0, h.length - 1);
+    }
+
+    return h;
+  }
+
+  return n;
+};
 
 
 
@@ -217,7 +232,10 @@ helpers.getOffenderDischargeAddress2 = o =>
 //TODO: does this have an active property?
 helpers.getActiveAlerts = o =>
   withList(o.alerts)
-    .filter(oa => oa.alertStatus === 'ACTIVE');
+    .filter(oa => (
+      oa.bookingId === o.mainBooking.bookingId &&
+      oa.alertStatus === 'ACTIVE'
+    ));
 
 helpers.getCheckHoldAlerts = o =>
   withList(o.activeAlerts)
@@ -266,13 +284,23 @@ helpers.mapOffenderIdentifiers = o =>
     }, {});
 
 //TODO: does this also need to be attached to the current active sentence
-helpers.getMostRecentConviction = o =>
-  getFirst(withList(o.courtEvents)
+helpers.getMostRecentConviction = o => {
+  let mrc = getFirst(withList(o.courtEvents)
     .filter(ce => (
       ce.bookingId === o.mainBooking.bookingId &&
-      ce.courtEventCharges && ce.courtEventCharges.length > 0 &&
-      ce.courtEventCharges[0].sentences && ce.courtEventCharges[0].sentences.length > 0
-    )));
+      (ce.courtEventCharges || []).filter(cec => (cec.sentences ||[]).length > 0).length > 0
+    ))
+    // TODO: reorder for offloc ignoring time - so remove
+    .sort((a, b) => {
+      let x = moment(b.startDateTime).set({ hour: 0, minute: 0, second: 0 })
+                .diff(moment(a.startDateTime).set({ hour: 0, minute: 0, second: 0 }));
+
+      return x === 0 ? b.eventId - a.eventId : x;
+    })
+  );
+
+  return mrc.outcomeReasonCode ? mrc : {};
+};
 
 helpers.getPhysicals = o => {
   let physicals = getFirst(withList(o.physicals)
@@ -354,6 +382,35 @@ helpers.getOffenderLicense = o =>
         ).courtEventCharges
       )).sentences
     ).filter(s => s.isActive));
+
+helpers.getEarliestSentenceAndConviction = o =>
+  withList(o.courtEvents)
+    .filter(ce => (
+      ce.bookingId === o.mainBooking.bookingId &&
+      (ce.courtEventCharges || []).filter(cec => (
+        (cec.resultCodes || []).filter(rc => rc.conviction).length > 0 &&
+        (cec.sentences || []).filter(os => os.isActive).length > 0
+      )).length > 0
+    ))
+    .reduce((out, ce) => {
+      if (!out.earliestConviction.startDateTime || moment(ce.startDateTime).diff(out.earliestConviction.startDateTime) < 0) {
+        out.earliestConviction = ce;
+      }
+
+      (ce.courtEventCharges || [])
+        .forEach(cec => {
+          let activeSentence = (cec.sentences || [])
+            .reduce((out, os) => (
+              os.isActive && (!out.startDate || moment(os.startDate).diff(out.startDate) < 0)
+            ) ? os : out, {});
+
+          if (activeSentence.startDate && (!out.earliestSentence.startDate || moment(activeSentence.startDate).diff(out.earliestSentence.startDate) < 0)) {
+            out.earliestSentence = activeSentence;
+          }
+        });
+
+      return out;
+    }, { earliestConviction: {}, earliestSentence: {} });
 
 // movement related
 
@@ -572,11 +629,11 @@ helpers.getCustodyStatus = data => {
   let mainBooking = data.mainBooking;
 
   let stat = {
-    statusReason: (mainBooking.statusReason || "").substring(5),
+    statusReason: (mainBooking.statusReason || "").substring(4),
     inTransit: (mainBooking.inOutStatus || "").toUpperCase() === 'TRN',
     isActive: (mainBooking.activeFlag || false),
     bookingSequence: mainBooking.bookingSequence,
-    inOutStatus: (mainBooking.inOutStatus || "").toUpperCase()
+    inOutStatus: (mainBooking.inOutStatus || "")
   };
 
   let a = null;
@@ -587,9 +644,9 @@ helpers.getCustodyStatus = data => {
 
   let b = null;
   if (~['ESCP', 'UAL'].indexOf(stat.statusReason)) b = 'UAL';
-  else if (stat.statusReason = 'UAL_ECL') b = 'UAL_ECL';
-  else if (stat.inTransit) b = 'In Transit';
-  else b = stat.inOutStatus;
+  else if (stat.statusReason === 'UAL_ECL') b = 'UAL_ECL';
+  else if (stat.inTransit) b === 'In Transit';
+  else b = stat.inOutStatus.charAt(0).toUpperCase() + stat.inOutStatus.toLowerCase().slice(1);
 
   return [a, b].join('-');
 };

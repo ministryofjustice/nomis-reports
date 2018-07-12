@@ -2,7 +2,6 @@ const fs = require('fs');
 const moment = require('moment');
 const jsonStream = require('jsonstream');
 const jsonPatch = require('fast-json-patch');
-const csv = require('csvtojson');
 const pointer = require('json-pointer');
 
 const log = require('../server/log');
@@ -167,7 +166,7 @@ const cdeFields = [
 ];
 
 const cdeColParser = {
-  age_f12: 'number',
+  age_f12(item){ return 1 * item; },
 
   // ignore for now
   establishment_f2() { return ''; },
@@ -321,7 +320,28 @@ fs.createReadStream(`./.extracts/reports/CDE/${EXTRACT_DATE.format('YYYYMMDD.HHm
   .on('data', processStream('doc'))
   .on('error', err => log.error(err));
 
-csv({ noheader: true, headers: cdeFields, delimiter: '|', ignoreEmpty: false, colParser: cdeColParser })
-  .fromStream(fs.createReadStream(`./test/data/C_NOMIS_OFFENDER_${CDE_DATE.format('DDMMYYYY')}_01.dat`, 'utf8'))
-  .subscribe(processStream('line'))
-  .on('error', err => log.error(err));
+fs.readFileSync(`./test/data/C_NOMIS_OFFENDER_${CDE_DATE.format('DDMMYYYY')}_01.dat`)
+  .toString()
+  .split('\n')
+  .map(x => {
+    let out = {};
+
+    if (x === '') return out;
+
+    let src = x.split('|');
+
+    cdeFields.forEach((p, i) => {
+      let v = src[i];
+      if (!v || v === '""') return;
+
+      let valueParser = cdeColParser[p];
+
+      v = v.replace(/"/g, '');
+      pointer.set(out, `/${p.replace(/\./g, '/')}`, (v && (valueParser ? valueParser(v) : v)) || v);
+    });
+
+    //console.log(out);
+
+    return out;
+  })
+  .forEach(processStream('line'));

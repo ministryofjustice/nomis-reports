@@ -73,9 +73,8 @@ const model = helpers.pipe([
   ['imprisonmentStatus', helpers.getImprisonmentStatus],
   ['releaseDetails', helpers.getReleaseDetails],
   ['isSexOffender', helpers.isSexOffender],
-  ['firstConviction', helpers.getFirstConviction],
   ['mostRecentConviction', helpers.getMostRecentConviction],
-  ['firstSentence', helpers.getFirstSentence],
+  ['earliestSentenceAndConviction', helpers.getEarliestSentenceAndConviction],
   ['courtOutcome', helpers.getCourtOutcome],
   ['highestRankedOffence', helpers.highestRankedOffence],
   ['otherOffences', helpers.getOtherOffences],
@@ -143,8 +142,8 @@ module.exports.build = sysdate => data => {
       parole_39: o.checkHoldAlerts.T_TPR,
     },
 
-    date_of_first_conviction_40: helpers.optionalDate(o.firstConviction.startDateTime),
-    date_first_sentenced_f41: helpers.optionalDate(o.firstSentence.startDate),
+    date_of_first_conviction_40: helpers.optionalDate(o.earliestSentenceAndConviction.earliestConviction.startDateTime),
+    date_first_sentenced_f41: helpers.optionalDate(o.earliestSentenceAndConviction.earliestSentence.startDate),
     f2052_status_42: o.checkHoldAlerts.H_HA,
     highest_ranked_offence_f43: o.highestRankedOffence.offenceCode,
     // 44	Status Rank (to be left blank)
