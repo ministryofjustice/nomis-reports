@@ -165,4 +165,42 @@ describe('cde/cde.earliestSentenceAndConviction', () => {
       result.earliestSentence.should.not.have.property('startDate', '2011-02-19');
     });
   });
+
+  describe('When court events list contains a single conviction against the main booking without a sentence', () => {
+    let input = {
+
+      mainBooking: {
+        bookingId: 9138,
+      },
+
+      courtEvents: [
+        {
+          eventId: 841629,
+          bookingId: 9138,
+          startDateTime: "2008-08-27T10:00:00",
+
+          courtEventCharges: [
+            {
+              chargeId: 17529,
+              bookingId: 9138,
+
+              resultCodes: [
+                { conviction: true }
+              ]
+            }
+          ]
+        }
+      ]
+    };
+
+    it('Should identify the conviction correctly', () => {
+      let result = helpers.getEarliestSentenceAndConviction(input);
+      result.should.have.property('earliestConviction');
+      result.earliestConviction.should.not.have.property('startDateTime', '2010-02-19T10:03:00');
+      result.should.have.property('earliestSentence');
+      result.earliestSentence.should.not.have.property('startDate', '2011-02-19');
+    });
+  });
+
+
 });

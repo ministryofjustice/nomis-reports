@@ -10,9 +10,9 @@ const getSentenceLengthValues = l => {
   let x = (l || '').split(/\//gmi);
 
   return {
-    years: x[0] ? parseInt(x[0], 10) : 0,
-    months: x[1] ? parseInt(x[1], 10) : 0,
-    days: x[2] ? parseInt(x[2], 10) : 0,
+    years: x[0] ? x[0] : 0,// parseInt(x[0], 10) : 0,
+    months: x[1] ? x[1] : 0,// parseInt(x[1], 10) : 0,
+    days: x[2] ? x[2] : 0,// parseInt(x[2], 10) : 0,
   };
 };
 
@@ -272,7 +272,14 @@ helpers.getCourtOutcome = o =>
       ce.bookingId === o.mainBooking.bookingId &&
       ce.directionCode === 'OUT' &&
       ce.caseId
-    ));
+    )
+    // TODO: reorder for offloc ignoring time - so remove
+    .sort((a, b) => {
+      let x = moment(b.startDateTime).set({ hour: 0, minute: 0, second: 0 })
+                .diff(moment(a.startDateTime).set({ hour: 0, minute: 0, second: 0 }));
+
+      return x === 0 ? b.eventId - a.eventId : x;
+    }));
 
 helpers.mapOffenderIdentifiers = o =>
   withList(o.aliases)
@@ -393,7 +400,7 @@ helpers.getEarliestSentenceAndConviction = o =>
       )).length > 0
     ))
     .reduce((out, ce) => {
-      if (!out.earliestConviction.startDateTime || moment(ce.startDateTime).diff(out.earliestConviction.startDateTime) < 0) {
+      if (ce.startDateTime && (!out.earliestConviction.startDateTime || moment(ce.startDateTime).diff(out.earliestConviction.startDateTime) < 0)) {
         out.earliestConviction = ce;
       }
 

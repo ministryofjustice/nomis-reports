@@ -254,7 +254,7 @@ module.exports.build = sysdate => data => {
     active_alerts_f148: o.activeAlerts.map(helpers.formatAlert),
 
     court: {
-      type_f149: refData.courtOutcome(o.courtOutcome.outcomeReasonCode),
+      type_f149: (o.courtOutcome.outcomeReason || {}).description,
       code_f150: o.mostRecentConviction.agencyLocationId,
       name_f151: "",
     },
