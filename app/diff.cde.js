@@ -6,8 +6,8 @@ const pointer = require('json-pointer');
 
 const log = require('../server/log');
 
-const CDE_DATE = moment('2018-07-10');
-const EXTRACT_DATE = moment('2018-07-10T23:00:00');
+const CDE_DATE = moment('2018-07-12');
+const EXTRACT_DATE = moment('2018-07-16T15:08:00');
 
 const cdeFields = [
   'sysdate_f1',                     // passed param
@@ -179,6 +179,7 @@ const cdeColParser = {
   earliest_release_date_f32(item) { return moment(item, 'DD/MM/YYYY'); },
   date_of_first_conviction_40(item) { return moment(item, 'DD/MM/YYYY'); },
   date_first_sentenced_f41(item) { return moment(item, 'DD/MM/YYYY'); },
+  ['release.date_f65'](item) { return moment(item, 'DD/MM/YYYY'); },
   sed_f67(item) { return moment(item, 'DD/MM/YYYY'); },
   hdced_f68(item) { return moment(item, 'DD/MM/YYYY'); },
   hdcad_f69(item) { return moment(item, 'DD/MM/YYYY'); },

@@ -202,5 +202,4 @@ describe('cde/cde.earliestSentenceAndConviction', () => {
     });
   });
 
-
 });

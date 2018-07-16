@@ -76,7 +76,7 @@ helpers.formatLicenseType = os =>
 const formatAddressLine1 = helpers.formatAddressLine1 = (a , j) =>
   a && (a.flat || a.premise || a.street) ? [a.flat, a.premise, a.street]
     .filter(x => !!x)
-    .join(j ? j : ' ') : undefined;
+    .join(j ? j : ' ').trim() : undefined;
 
 helpers.formatSupervisingService = om =>
   om && om.primaryAddress
@@ -202,7 +202,7 @@ helpers.getOffenderHomeAddress = o =>
     .filter(a => withList(a.addressUsages)
       .filter(au => (
         au.active &&
-        au.usage === 'HOME'
+        au.usage.code === 'HOME'
       )).length > 0));
 
 helpers.getOffenderReceptionAddress = o =>
@@ -210,7 +210,7 @@ helpers.getOffenderReceptionAddress = o =>
     .filter(a => withList(a.addressUsages)
       .filter(au => (
         au.active &&
-        au.usage === 'RECEP'
+        au.usage.code === 'RECEP'
       )).length > 0));
 
 helpers.getOffenderDischargeAddress = o =>
@@ -218,7 +218,7 @@ helpers.getOffenderDischargeAddress = o =>
     .filter(a => withList(a.addressUsages)
       .filter(au => (
         au.active &&
-        ~['RELEASE','DNF','DUT','DST','DPH','DSH','DAP','DBA','DOH','DBH'].indexOf(au.usage)
+        ~['RELEASE','DNF','DUT','DST','DPH','DSH','DAP','DBA','DOH','DBH'].indexOf(au.usage.code)
       )).length > 0));
 
 helpers.getOffenderDischargeAddress2 = o =>
@@ -226,7 +226,7 @@ helpers.getOffenderDischargeAddress2 = o =>
     .filter(a => withList(a.addressUsages)
       .filter(au => (
         au.active &&
-        !~[ 'HOME', 'RECEP' ].indexOf(au.usage)
+        !~[ 'HOME', 'RECEP' ].indexOf(au.usage.code)
       )).length > 0));
 
 //TODO: does this have an active property?
@@ -395,8 +395,7 @@ helpers.getEarliestSentenceAndConviction = o =>
     .filter(ce => (
       ce.bookingId === o.mainBooking.bookingId &&
       (ce.courtEventCharges || []).filter(cec => (
-        (cec.resultCodes || []).filter(rc => rc.conviction).length > 0 &&
-        (cec.sentences || []).filter(os => os.isActive).length > 0
+        (cec.resultCodes || []).filter(rc => rc.conviction).length > 0
       )).length > 0
     ))
     .reduce((out, ce) => {
@@ -604,7 +603,10 @@ helpers.getFirstOffenderOffence = o =>
 
 helpers.getOtherOffences = o =>
   withList(o.offenderCharges)
-    .filter((o, i) => i !== 0);
+    .filter((oc) => (
+      oc.chargeStatus === 'A' &&
+      o.highestRankedOffence.offenceCode !== oc.offenceCode
+    ));
 
 helpers.getAge = o =>
   moment().diff(moment(o.dateOfBirth), 'years');
@@ -615,7 +617,8 @@ helpers.getNextOfKin = o =>
       ocp.nextOfKin
     ))
     .map(ocp => {
-      ocp.primaryAddress = getFirst(withList(ocp.addresses)) || {};
+      ocp.primaryAddress = getFirst(withList(ocp.addresses)
+        .filter(a => a.addressType === 'HOME')) || {};
 
       return ocp;
     }));
@@ -627,7 +630,8 @@ helpers.getOffenderManager = o =>
       ocp.contactPersonType.relationshipType === 'PROB'
     ))
     .map(ocp => {
-      ocp.primaryAddress = getFirst(withList(ocp.addresses)) || {};
+      ocp.primaryAddress = getFirst(withList(ocp.addresses)
+        .filter(a => a.addressType === 'BUS')) || {};
 
       return ocp;
     }));
@@ -659,94 +663,107 @@ helpers.getCustodyStatus = data => {
 };
 
 helpers.getOffenderSentenceCalculationDates = o =>
-  (osc => ({
-    sed: optionalDate(osc.sedOverridedDate || osc.sedCalculatedDate),
-    hdced: optionalDate(osc.hdcedOverridedDate || osc.hdcedCalculatedDate),
-    hdcad: optionalDate(osc.hdcadOverridedDate || osc.hdcadCalculatedDate),
-    etd: optionalDate(osc.etdOverridedDate || osc.etdCalculatedDate),
-    mtd: optionalDate(osc.mtdOverridedDate || osc.mtdCalculatedDate),
-    ltd: optionalDate(osc.ltdOverridedDate || osc.ltdCalculatedDate),
-    crd: optionalDate(osc.crdOverridedDate || osc.crdCalculatedDate),
-    ped: optionalDate(osc.pedOverridedDate || osc.pedCalculatedDate),
-    apd: optionalDate(osc.apdOverridedDate || osc.apdCalculatedDate),
-    npd: optionalDate(osc.npdOverridedDate || osc.npdCalculatedDate),
-    ard: optionalDate(osc.ardOverridedDate || osc.ardCalculatedDate),
-    led: optionalDate(osc.ledOverridedDate || osc.ledCalculatedDate),
-    tused: optionalDate(osc.tusedOverridedDate || osc.tusedCalculatedDate)
-  }))(o.offenderSentenceCalculations);
+  o.offenderSentenceCalculations ?
+    (osc => ({
+      sed: optionalDate(osc.sedOverridedDate || osc.sedCalculatedDate),
+      hdced: optionalDate(osc.hdcedOverridedDate || osc.hdcedCalculatedDate),
+      hdcad: optionalDate(osc.hdcadOverridedDate || osc.hdcadCalculatedDate),
+      etd: optionalDate(osc.etdOverridedDate || osc.etdCalculatedDate),
+      mtd: optionalDate(osc.mtdOverridedDate || osc.mtdCalculatedDate),
+      ltd: optionalDate(osc.ltdOverridedDate || osc.ltdCalculatedDate),
+      crd: optionalDate(osc.crdOverridedDate || osc.crdCalculatedDate),
+      ped: optionalDate(osc.pedOverridedDate || osc.pedCalculatedDate),
+      apd: optionalDate(osc.apdOverridedDate || osc.apdCalculatedDate),
+      npd: optionalDate(osc.npdOverridedDate || osc.npdCalculatedDate),
+      ard: optionalDate(osc.ardOverridedDate || osc.ardCalculatedDate),
+      led: optionalDate(osc.ledOverridedDate || osc.ledCalculatedDate),
+      tused: optionalDate(osc.tusedOverridedDate || osc.tusedCalculatedDate)
+    }))(o.offenderSentenceCalculations) : undefined;
 
 helpers.getOffenderSentenceCalculationDates2 = o =>
-  (osc => ({
-    effectiveSentenceLength: getSentenceLengthValues(osc.effectiveSentenceLength),
-    judiciallyImposedSentenceLength: getSentenceLengthValues(osc.judiciallyImposedSentenceLength),
-    effectiveSentenceEndDate: osc.effectiveSentenceEndDate,
-    sed: moment(osc.sedOverridedDate || osc.sedCalculatedDate),
-    hdced: moment(osc.hdcedOverridedDate || osc.hdcedCalculatedDate),
-    hdcad: moment(osc.hdcadOverridedDate || osc.hdcadCalculatedDate),
-    etd: moment(osc.etdOverridedDate || osc.etdCalculatedDate),
-    mtd: moment(osc.mtdOverridedDate || osc.mtdCalculatedDate),
-    ltd: moment(osc.ltdOverridedDate || osc.ltdCalculatedDate),
-    crd: moment(osc.crdOverridedDate || osc.crdCalculatedDate),
-    ped: moment(osc.pedOverridedDate || osc.pedCalculatedDate),
-    apd: moment(osc.apdOverridedDate || osc.apdCalculatedDate),
-    npd: moment(osc.npdOverridedDate || osc.npdCalculatedDate),
-    ard: moment(osc.ardOverridedDate || osc.ardCalculatedDate),
-    led: moment(osc.ledOverridedDate || osc.ledCalculatedDate),
-    tused: moment(osc.tusedOverridedDate || osc.tusedCalculatedDate),
-    prrd: moment(osc.prrdOverridedDate || osc.prrdCalculatedDate),
-    ersed: moment(osc.ersedOverridedDate || osc.ersedCalculatedDate),
-    tersed: moment(osc.tersedOverridedDate || osc.tersedCalculatedDate),
-    rotl: moment(osc.rotlOverridedDate || osc.rotlCalculatedDate),
-    tariff: moment(osc.tariffOverridedDate || osc.tariffCalculatedDate),
-  }))(o.offenderSentenceCalculations);
+  o.offenderSentenceCalculations ?
+    (osc => ({
+      effectiveSentenceLength: getSentenceLengthValues(osc.effectiveSentenceLength),
+      judiciallyImposedSentenceLength: getSentenceLengthValues(osc.judiciallyImposedSentenceLength),
+      effectiveSentenceEndDate: osc.effectiveSentenceEndDate,
+      sed: moment(osc.sedOverridedDate || osc.sedCalculatedDate),
+      hdced: moment(osc.hdcedOverridedDate || osc.hdcedCalculatedDate),
+      hdcad: moment(osc.hdcadOverridedDate || osc.hdcadCalculatedDate),
+      etd: moment(osc.etdOverridedDate || osc.etdCalculatedDate),
+      mtd: moment(osc.mtdOverridedDate || osc.mtdCalculatedDate),
+      ltd: moment(osc.ltdOverridedDate || osc.ltdCalculatedDate),
+      crd: moment(osc.crdOverridedDate || osc.crdCalculatedDate),
+      ped: moment(osc.pedOverridedDate || osc.pedCalculatedDate),
+      apd: moment(osc.apdOverridedDate || osc.apdCalculatedDate),
+      npd: moment(osc.npdOverridedDate || osc.npdCalculatedDate),
+      ard: moment(osc.ardOverridedDate || osc.ardCalculatedDate),
+      led: moment(osc.ledOverridedDate || osc.ledCalculatedDate),
+      tused: moment(osc.tusedOverridedDate || osc.tusedCalculatedDate),
+      prrd: moment(osc.prrdOverridedDate || osc.prrdCalculatedDate),
+      ersed: moment(osc.ersedOverridedDate || osc.ersedCalculatedDate),
+      tersed: moment(osc.tersedOverridedDate || osc.tersedCalculatedDate),
+      rotl: moment(osc.rotlOverridedDate || osc.rotlCalculatedDate),
+      tariff: moment(osc.tariffOverridedDate || osc.tariffCalculatedDate),
+    }))(o.offenderSentenceCalculations) : undefined;
 
 helpers.getEarliestReleaseDate =  o =>
-  (scd => [
-    scd.hdced,
-    scd.hdcad,
-    scd.etd,
-    scd.mtd,
-    scd.ltd,
-    scd.crd,
-    scd.ped,
-    scd.apd,
-    scd.npd,
-    scd.ard
-  ]
-  .sort((a, b) => a.diff(b))[0])(o.offenderSentenceCalculationDates);
+  o.offenderSentenceCalculationDates ?
+    (scd => [
+      scd.hdced || moment('2999-12-31'),
+      scd.hdcad || moment('2999-12-31'),
+      scd.etd || moment('2999-12-31'),
+      scd.mtd || moment('2999-12-31'),
+      scd.ltd || moment('2999-12-31'),
+      scd.crd || moment('2999-12-31'),
+      scd.ped || moment('2999-12-31'),
+      scd.apd || moment('2999-12-31'),
+      scd.npd || moment('2999-12-31'),
+      scd.ard || moment('2999-12-31')
+    ]
+    .sort((a, b) => a.diff(b))[0])(o.offenderSentenceCalculationDates) : undefined;
 
 helpers.getEarliestReleaseDate2 =  o =>
-  (scd => [
-    { date: moment(o.releaseDetails.releaseDate),
-      label: `REL-${o.releaseDetails.movementReasonCode}`,
-      description: `Assessed Release - ${o.releaseDetails.description ? o.releaseDetails.description : 'Reason Not Stated'}`
-    },
-      { date: scd.hdced, label: 'hdced', description: '' },
-      { date: scd.hdcad, label: 'hdcad', description: 'Home Detention Curfew Approved Date' },
-      { date: scd.etd, label: 'etd', description: '' },
-      { date: scd.mtd, label: 'mtd', description: 'Mid Term Release Date' },
-      { date: scd.ltd, label: 'ltd', description: '' },
-      { date: scd.crd, label: 'crd', description: 'Conditional Release Date' },
-      { date: scd.ped, label: 'ped', description: '' },
-      { date: scd.apd, label: 'apd', description: 'Approved Parole Date' },
-      { date: scd.npd, label: 'npd', description: 'Non Parole Release Date' },
-      { date: scd.ard, label: 'ard', description: 'Automatic Release Date' },
-      { date: scd.prrd, label: 'prrd', description: 'Post Recall Release Date' },
-      { date: scd.ard, label: 'ard', description: '' },
-  ]
-  .sort((a, b) => a.date.diff(b.date))[0])(o.offenderSentenceCalculationDates);
+  o.offenderSentenceCalculationDates ?
+    (scd => [
+      { date: moment(o.releaseDetails.releaseDate),
+        label: `REL-${o.releaseDetails.movementReasonCode}`,
+        description: `Assessed Release - ${o.releaseDetails.description ? o.releaseDetails.description : 'Reason Not Stated'}`
+      },
+        { date: scd.hdced, label: 'hdced', description: '' },
+        { date: scd.hdcad, label: 'hdcad', description: 'Home Detention Curfew Approved Date' },
+        { date: scd.etd, label: 'etd', description: '' },
+        { date: scd.mtd, label: 'mtd', description: 'Mid Term Release Date' },
+        { date: scd.ltd, label: 'ltd', description: '' },
+        { date: scd.crd, label: 'crd', description: 'Conditional Release Date' },
+        { date: scd.ped, label: 'ped', description: '' },
+        { date: scd.apd, label: 'apd', description: 'Approved Parole Date' },
+        { date: scd.npd, label: 'npd', description: 'Non Parole Release Date' },
+        { date: scd.ard, label: 'ard', description: 'Automatic Release Date' },
+        { date: scd.prrd, label: 'prrd', description: 'Post Recall Release Date' },
+        { date: scd.ard, label: 'ard', description: '' },
+    ]
+    .sort((a, b) => a.date.diff(b.date))[0])(o.offenderSentenceCalculationDates) : undefined;
 
 helpers.getNFA = oa => {
-  if (~['RELEASE', 'HOME', 'RECEP'].indexOf(oa.addressUsage)) {
-    return oa.noFixedAddress ? 'NFA' : undefined;
+  switch (oa.noFixedAddress) {
+    case true: return 'NFA';
+    default: return undefined;
   }
+};
 
-  return oa.addressUsage;
+helpers.getDischargeNFA = oa => {
+  let au = getFirst(withList(oa.addressUsages)
+    .filter(au => ~['DNF','DUT','DST','DPH','DSH','DAP', 'DBA', 'DOH','DBH'].indexOf(au.usage.code)));
+
+  return au.usage ? au.usage.description || au.usage.code : helpers.getNFA(oa);
 };
 
 const getSexOffences = helpers.getSexOffences = o =>
   withList(o.charges)
-    .filter(oc => ~withList(oc.offenceIndicatorCodes).indexOf('S'));
+    .filter(oc => (
+      oc.bookingId === o.mainBooking.bookingId &&
+      ~withList(oc.offenceIndicatorCodes).indexOf('S')
+    ));
 
 helpers.isSexOffender = o =>
   getSexOffences(o).length > 0;

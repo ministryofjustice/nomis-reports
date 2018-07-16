@@ -1,8 +1,7 @@
 const moment = require('moment');
 const helpers = require('./helpers');
-const refData = require('./refData');
 
-const modelAddress = (base, n, a) => {
+const modelAddress = (base, n, a, phoneType) => {
   if (!base && !a) {
     return;
   }
@@ -26,7 +25,11 @@ const modelAddress = (base, n, a) => {
     }
 
     out[`address6_f${n + 5}`] = a.postalCode;
-    out[`address7_f${n + 6}`] = a.phoneNo;
+
+    let phones = (a.phones || []).filter(p => !phoneType || p.phoneType === phoneType);
+    if (phones.length > 0) {
+      out[`address7_f${n + 6}`] = phones[0].phoneNo;
+    }
   }
 
   return out;
@@ -197,24 +200,24 @@ module.exports.build = sysdate => data => {
     },
 
     discharge: modelAddress({
-        nfa_f78: helpers.getNFA(o.offenderDischargeAddress)
-      }, 79, o.offenderDischargeAddress),
+        nfa_f78: helpers.getDischargeNFA(o.offenderDischargeAddress)
+      }, 79, o.offenderDischargeAddress, 'HOME'),
 
     reception: modelAddress({
         nfa_f86: helpers.getNFA(o.offenderReceptionAddress)
-      }, 87, o.offenderReceptionAddress),
+      }, 87, o.offenderReceptionAddress, 'HOME'),
 
     home: modelAddress({
-      }, 94, o.offenderHomeAddress),
+      }, 94, o.offenderHomeAddress, 'HOME'),
 
     nok: modelAddress({
         name_f101: helpers.formatContactPersonName(o.nextOfKin),
         nfa_f102: helpers.formatContactPersonRelationship(o.nextOfKin)
-      }, 103, o.nextOfKin ? o.nextOfKin.primaryAddress : undefined),
+      }, 103, o.nextOfKin ? o.nextOfKin.primaryAddress : undefined, 'HOME'),
 
     prob: modelAddress({
         name_f110: helpers.formatContactPersonName(o.offenderManager)
-      }, 111, o.offenderManager ? o.offenderManager.primaryAddress : undefined),
+      }, 111, o.offenderManager ? o.offenderManager.primaryAddress : undefined, 'BUS'),
 
     f118: "",  // 118	Remark Type Allocation
     f119: "",  // 119	Remarks Allocation
