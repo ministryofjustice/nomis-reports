@@ -7,7 +7,13 @@ const pointer = require('json-pointer');
 const log = require('../server/log');
 
 const CDE_DATE = moment('2018-07-12');
-const EXTRACT_DATE = moment('2018-07-16T15:08:00');
+const EXTRACT_DATE = moment('2018-07-17T15:34:00');
+
+const optionalNumber = (n, b) => {
+  let out = parseInt(n, b);
+
+  return !isNaN(out) ? out : undefined;
+};
 
 const cdeFields = [
   'sysdate_f1',                     // passed param
@@ -166,7 +172,7 @@ const cdeFields = [
 ];
 
 const cdeColParser = {
-  age_f12(item){ return 1 * item; },
+  age_f12(item){ return optionalNumber(item, 10); },
 
   // ignore for now
   establishment_f2() { return ''; },
@@ -201,16 +207,18 @@ const cdeColParser = {
   other_offences_f147(item) { return item.replace(/"/g, '').split('~'); },
   active_alerts_f148(item) { return item.replace(/"/g, '').split('~'); },
 
-  sentence_length_f64(item) { return 1 * item; },
-  ['sentence.years_f28'](item) { return 1 * item; },
-  ['sentence.months_f29'](item) { return 1 * item; },
-  ['sentence.days_f30'](item) { return 1 * item; },
+  sentence_length_f64(item) { return optionalNumber(item, 10); },
+  ['sentence.years_f28'](item) { return optionalNumber(item, 10); },
+  ['sentence.months_f29'](item) { return optionalNumber(item, 10); },
+  ['sentence.days_f30'](item) { return optionalNumber(item, 10); },
 
   ['discharge.address1_f79'](item) { return item.replace(/\s\s/gmi, ' '); },
   ['home.address1_f94'](item) { return item.replace(/\s\s/gmi, ' '); },
   ['nok.address1_f103'](item) { return item.replace(/\s\s/gmi, ' '); },
   ['prob.address1_f111'](item) { return item.replace(/\s\s/gmi, ' '); },
   ['reception.address1_f87'](item) { return item.replace(/\s\s/gmi, ' '); },
+
+  supervising_service_f53(item) { return item.trim().substr(item.trim().length-1) === ','? item.trim().substr(0, item.trim().length-1) : item.trim(); }
 };
 
 const inspect = (x) => {
@@ -338,7 +346,7 @@ fs.readFileSync(`./test/data/C_NOMIS_OFFENDER_${CDE_DATE.format('DDMMYYYY')}_01.
       let valueParser = cdeColParser[p];
 
       v = v.replace(/"/g, '');
-      pointer.set(out, `/${p.replace(/\./g, '/')}`, (v && (valueParser ? valueParser(v) : v)) || v);
+      pointer.set(out, `/${p.replace(/\./g, '/')}`, (v && valueParser) ? valueParser(v) : v);
     });
 
     //console.log(out);

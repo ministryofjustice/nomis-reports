@@ -35,6 +35,21 @@ const modelAddress = (base, n, a, phoneType) => {
   return out;
 };
 
+const getEffectiveSentenceLength = o => {
+  let x = (o.offenderSentenceCalculations || {}).effectiveSentenceLength || '';
+
+  if (!x) {
+    return {};
+  }
+
+  x = x.split(/\//gmi);
+  return {
+    years: parseInt(x[0], 10),
+    months: parseInt(x[0], 10),
+    days: parseInt(x[0], 10),
+  };
+};
+
 const sortAssessments = o => {
   return (o.assessments.slice() || []).sort((a, b) => b.assessmentSequence - a.assessmentSequence); // DESC
 };
@@ -84,6 +99,7 @@ const model = helpers.pipe([
   ['earliestReleaseDate', helpers.getEarliestReleaseDate],
   ['custodyStatus', helpers.getCustodyStatus],
   ['maternityStatus', helpers.getMaternityStatus],
+  ['effectiveSentenceLength', getEffectiveSentenceLength]
 ]);
 
 
@@ -127,9 +143,9 @@ module.exports.build = sysdate => data => {
     },
 
     sentence: {
-      years_f28: parseInt((o.offenderSentenceCalculations.effectiveSentenceLength || '').split(/\//gmi)[0] || 0, 10),
-      months_f29: parseInt((o.offenderSentenceCalculations.effectiveSentenceLength || '').split(/\//gmi)[1] || 0, 10),
-      days_f30: parseInt((o.offenderSentenceCalculations.effectiveSentenceLength || '').split(/\//gmi)[2] || 0, 10),
+      years_f28: o.effectiveSentenceLength.years,
+      months_f29: o.effectiveSentenceLength.months,
+      days_f30: o.effectiveSentenceLength.days,
     },
 
     previous_prison_no_f31: o.previousBookingNos,
@@ -184,13 +200,13 @@ module.exports.build = sysdate => data => {
       name_f66: (o.releaseDetails[0] || {}).movementReasonDescription,
     },
 
-    sed_f67: o.offenderSentenceCalculationDates.sed,
-    hdced_f68: o.offenderSentenceCalculationDates.hdced,
-    hdcad_f69: o.offenderSentenceCalculationDates.hdcad,
-    ped_f70: o.offenderSentenceCalculationDates.ped,
-    crd_f71: o.offenderSentenceCalculationDates.crd,
-    npd_f72: o.offenderSentenceCalculationDates.npd,
-    led_f73: o.offenderSentenceCalculationDates.led,
+    sed_f67: helpers.optionalDate((o.offenderSentenceCalculationDates || {}).sed),
+    hdced_f68: helpers.optionalDate((o.offenderSentenceCalculationDates || {}).hdced),
+    hdcad_f69: helpers.optionalDate((o.offenderSentenceCalculationDates || {}).hdcad),
+    ped_f70: helpers.optionalDate((o.offenderSentenceCalculationDates || {}).ped),
+    crd_f71: helpers.optionalDate((o.offenderSentenceCalculationDates || {}).crd),
+    npd_f72: helpers.optionalDate((o.offenderSentenceCalculationDates || {}).npd),
+    led_f73: helpers.optionalDate((o.offenderSentenceCalculationDates || {}).led),
     date_sec_cat_changed_f74: helpers.optionalDate(o.offenderSecurityCategory.evaluationDate),
     rule_45_yoi_rule_46_f75: o.checkHoldAlerts.V_45_46,
 
@@ -250,7 +266,7 @@ module.exports.build = sysdate => data => {
     court_f141: (o.lastSequentialMovementIfOut.movementTypeCode === 'CRT' ? o.lastSequentialMovementIfOut.toAgencyLocationId : undefined),
     escort_f142: (o.lastSequentialMovementIfOut.escortCode || {}).description,
     first_out_mov_post_adm_f143: helpers.optionalDate(o.earliestOutMovementDate.movementDateTime),
-// 144	Employed
+    employed_f144: 'N',
     diary_details_f145: helpers.withList(o.diaryDetails).map(odd => helpers.formatOffenderDiaryDetail(odd, o)),
     licence_type_f146: (o.offenderLicense.sentenceCalculationType || {}).description,
     other_offences_f147: o.otherOffences.map(x => x.offenceCode).sort(),
@@ -270,6 +286,6 @@ module.exports.build = sysdate => data => {
 //     152e	Activity End Hour
 //     152f	Activity End Min
 
-    tused_f153: helpers.optionalDate(o.offenderSentenceCalculationDates.tused),
+    tused_f153: helpers.optionalDate((o.offenderSentenceCalculationDates || {}).tused),
   };
 };

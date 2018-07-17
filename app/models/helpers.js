@@ -3,6 +3,7 @@ const moment = require('moment');
 let helpers = {};
 
 const getFirst = helpers.getFirst = a => a[0] || {};
+const getFirstOrNothing = helpers.getFirstOrNothing = a => a[0];
 const getLast = helpers.getLast = a => a[a.length - 1] || {};
 const withList = helpers.withList = a => a || [];
 
@@ -360,7 +361,7 @@ helpers.getActiveOffenderSentence = o =>
     ), {}) || {};
 
 helpers.getOffenderSentenceCalculations = o =>
-  getFirst(withList(o.sentenceCalculations)
+  getFirstOrNothing(withList(o.sentenceCalculations)
     .filter(sc => (
       sc.bookingId === o.mainBooking.bookingId
     )));
@@ -378,7 +379,7 @@ helpers.getOffenderLicense = o =>
     .filter(s => (
       s.bookingId === o.offenderSentence.bookingId &&
       s.sentenceCategory === 'LICENCE' &&
-      s.sentenceStatus === 'A'
+      s.isActive
     )));
 
   helpers.getFirstSentence = o =>
@@ -779,11 +780,11 @@ helpers.getFirstSentenceAndCounts = o =>
     .filter(s => s.bookingId === o.mainBooking.bookingId)
     .reduce((a, b) => ({
       firstSentenced: b.courtDate < a.courtDate ? b.courtDate : a.courtDate || b.courtDate,
-      firstActiveSentenceStart: b.sentenceStatus === 'A' && b.startDate < a.startDate ? b.startDate : a.startDate || b.startDate,
+      firstActiveSentenceStart: b.isActive && b.startDate < a.startDate ? b.startDate : a.startDate || b.startDate,
       sentences: a.sentences + 1,
-      activeSentences: b.sentenceStatus === 'A' ? a.activeSentences + 1 : a.activeSentences,
+      activeSentences: b.isActive ? a.activeSentences + 1 : a.activeSentences,
       activeFineDefaultSentences:
-        b.sentenceStatus === 'A' && b.sentenceCalcType === 'A/FINE' ? a.activeFineDefaultSentences + 1 : a.activeFineDefaultSentences,
+        b.isActive && b.sentenceCalcType === 'A/FINE' ? a.activeFineDefaultSentences + 1 : a.activeFineDefaultSentences,
     }), { sentences: 0, activeSentences: 0, activeFineDefaultSentences: 0}) || {};
 
 
