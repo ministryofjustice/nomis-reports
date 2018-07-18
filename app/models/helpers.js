@@ -174,7 +174,8 @@ helpers.getEmployment = o =>
     .filter(oe => (
       oe.bookingId === o.mainBooking.bookingId &&
       (!oe.terminationDate || moment(oe.terminationDate).diff(o.mainBooking.startDate) > 0)
-    )));
+    ))
+    .sort((a, b) => a.employmentSequence - b.employmentSequence));
 
 helpers.getOffenderEmployments = o =>
   withList(o.employments)
@@ -500,7 +501,7 @@ helpers.getNotForReleaseAlerts = o =>
       oa.alertStatus === 'ACTIVE'
     )));
 
-helpers.getCharges = o =>
+helpers.getOffenderCharges = o =>
   withList(o.charges)
     .filter(oc => (
       oc.bookingId === o.mainBooking.bookingId
@@ -585,8 +586,17 @@ helpers.getImprisonmentStatus2 = o =>
 
 // main booking entire
 
-helpers.highestRankedOffence = o =>
-  getFirst(o.offenderCharges);
+helpers.getHighestRankedOffence = o => {
+  let mostSerious = withList(o.offenderCharges)
+    .filter(oc => (
+      oc.mostSeriousCharge
+    ));
+
+  return getFirst(mostSerious.length === 1
+      ? mostSerious
+      : withList(o.offenderCharges).filter(c => (c.chargeStatus === 'A'))
+  );
+};
 
 //TODO: does this have an active property?
 helpers.getOffenderMainOffence = o =>
@@ -820,7 +830,7 @@ helpers.getOffenceGroups = o =>
     });
 
 helpers.getCSRALevel = o =>
-  getFirst((o.assessments || [])
+  getFirst(withList(o.assessments)
     .filter(oa => (
       oa.assessmentType &&
       oa.assessmentType.assessmentClass === 'TYPE' &&
@@ -876,6 +886,55 @@ helpers.formatSentenceLength = o => {
   }
 
   return 'Less than 6 months';
+};const addressBuilder = (out, n, a, phoneType) => {
+  out[`address1_f${n}`] = helpers.formatAddressLine1(a);
+  out[`address2_f${n + 1}`] = a.locality;
+
+  if (a.city) {
+    out[`address3_f${n + 2}`] = a.city.description;
+  }
+
+  if (a.county) {
+    out[`address4_f${n + 3}`] = a.county.description;
+  }
+
+  if (a.country) {
+    out[`address5_f${n + 4}`] = a.country.description;
+  }
+
+  out[`address6_f${n + 5}`] = a.postalCode;
+
+  let phones = (a.phones || []).filter(p => !phoneType || p.phoneType === phoneType);
+  if (phones.length > 0) {
+    out[`address7_f${n + 6}`] = phones[0].phoneNo;
+  }
+
+  return out;
+};
+
+helpers.modelAddress = (base, n, a, phoneType) => {
+  if (!base && !a) {
+    return;
+  }
+
+  let out = Object.assign({}, base);
+
+  return a ? addressBuilder(out, n, a, phoneType) : out;
+};
+
+helpers.getEffectiveSentenceLength = o => {
+  let x = (o.offenderSentenceCalculations || {}).effectiveSentenceLength || '';
+
+  if (!x) {
+    return {};
+  }
+
+  x = x.split(/\//gmi);
+  return {
+    years: parseInt(x[0], 10),
+    months: parseInt(x[1], 10),
+    days: parseInt(x[2], 10),
+  };
 };
 
 

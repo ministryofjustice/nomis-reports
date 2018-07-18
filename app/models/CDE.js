@@ -1,63 +1,9 @@
 const moment = require('moment');
 const helpers = require('./helpers');
 
-const modelAddress = (base, n, a, phoneType) => {
-  if (!base && !a) {
-    return;
-  }
-
-  let out = Object.assign({}, base);
-
-  if (a) {
-    out[`address1_f${n}`] = helpers.formatAddressLine1(a);
-    out[`address2_f${n + 1}`] = a.locality;
-
-    if (a.city) {
-      out[`address3_f${n + 2}`] = (a.city || {}).description;
-    }
-
-    if (a.county) {
-      out[`address4_f${n + 3}`] = (a.county || {}).description;
-    }
-
-    if (a.country) {
-      out[`address5_f${n + 4}`] = (a.country || {}).description;
-    }
-
-    out[`address6_f${n + 5}`] = a.postalCode;
-
-    let phones = (a.phones || []).filter(p => !phoneType || p.phoneType === phoneType);
-    if (phones.length > 0) {
-      out[`address7_f${n + 6}`] = phones[0].phoneNo;
-    }
-  }
-
-  return out;
-};
-
-const getEffectiveSentenceLength = o => {
-  let x = (o.offenderSentenceCalculations || {}).effectiveSentenceLength || '';
-
-  if (!x) {
-    return {};
-  }
-
-  x = x.split(/\//gmi);
-  return {
-    years: parseInt(x[0], 10),
-    months: parseInt(x[0], 10),
-    days: parseInt(x[0], 10),
-  };
-};
-
-const sortAssessments = o => {
-  return (o.assessments.slice() || []).sort((a, b) => b.assessmentSequence - a.assessmentSequence); // DESC
-};
-
 const model = helpers.pipe([
   ['mainBooking', helpers.getMainBooking],
   ['mainAlias', helpers.getMainAlias],
-  ['sequentialAssessments', sortAssessments],
   ['previousBookingNos', helpers.getPreviousBookings],
   ['offenderIdentifiers', helpers.mapOffenderIdentifiers],
   ['offenderSecurityCategory', helpers.getOffenderSecurityCategory],
@@ -72,7 +18,7 @@ const model = helpers.pipe([
   ['lastSequentialMovement', helpers.getLastSequentialMovement],
   ['offenderSentenceCalculationDates', helpers.getOffenderSentenceCalculationDates],
   ['offenderEmployments', helpers.getOffenderEmployments],
-  ['offenderCharges', helpers.getCharges],
+  ['offenderCharges', helpers.getOffenderCharges],
   ['offenderContactPersons', helpers.getContactPersons],
   ['offenderHomeAddress', helpers.getOffenderHomeAddress],
   ['offenderReceptionAddress', helpers.getOffenderReceptionAddress],
@@ -85,7 +31,7 @@ const model = helpers.pipe([
   ['checkHoldAlerts', helpers.getCheckHoldAlerts],
   ['physicals', helpers.getPhysicals],
   ['IEPLevel', helpers.getIEPLevel],
-  ['employments', helpers.getEmployment],
+  ['employment', helpers.getEmployment],
   ['dischargeEmployment', helpers.dischargeEmployment],
   ['receptionEmployment', helpers.receptionEmployment],
   ['imprisonmentStatus', helpers.getImprisonmentStatus],
@@ -94,12 +40,12 @@ const model = helpers.pipe([
   ['mostRecentConviction', helpers.getMostRecentConviction],
   ['earliestSentenceAndConviction', helpers.getEarliestSentenceAndConviction],
   ['courtOutcome', helpers.getCourtOutcome],
-  ['highestRankedOffence', helpers.highestRankedOffence],
+  ['highestRankedOffence', helpers.getHighestRankedOffence],
   ['otherOffences', helpers.getOtherOffences],
   ['earliestReleaseDate', helpers.getEarliestReleaseDate],
   ['custodyStatus', helpers.getCustodyStatus],
   ['maternityStatus', helpers.getMaternityStatus],
-  ['effectiveSentenceLength', getEffectiveSentenceLength]
+  ['effectiveSentenceLength', helpers.getEffectiveSentenceLength]
 ]);
 
 
@@ -131,7 +77,7 @@ module.exports.build = sysdate => data => {
     maternity_status_f18: (o.maternityStatus.problemCode || {}).description,
     location_f19: o.mainBooking.livingUnitId,
     incentive_band_f20: (o.IEPLevel.iepLevel || {}).description,
-    occupation_v21: (o.employments.occupationsCode || {}).description,
+    occupation_v21: (o.employment.occupationsCode || {}).description,
     transfer_reason_f22: o.lastSequentialTransfer.movementReasonDescription,
     first_reception_date_f23: helpers.optionalDate(o.mainBooking.startDate),
     custody_status_f24: o.custodyStatus,
@@ -215,23 +161,23 @@ module.exports.build = sysdate => data => {
       start_f77: helpers.optionalDate(o.checkHoldAlerts.SH_Date),
     },
 
-    discharge: modelAddress({
+    discharge: helpers.modelAddress({
         nfa_f78: helpers.getDischargeNFA(o.offenderDischargeAddress)
       }, 79, o.offenderDischargeAddress, 'HOME'),
 
-    reception: modelAddress({
+    reception: helpers.modelAddress({
         nfa_f86: helpers.getNFA(o.offenderReceptionAddress)
       }, 87, o.offenderReceptionAddress, 'HOME'),
 
-    home: modelAddress({
+    home: helpers.modelAddress({
       }, 94, o.offenderHomeAddress, 'HOME'),
 
-    nok: modelAddress({
+    nok: helpers.modelAddress({
         name_f101: helpers.formatContactPersonName(o.nextOfKin),
         nfa_f102: helpers.formatContactPersonRelationship(o.nextOfKin)
       }, 103, o.nextOfKin ? o.nextOfKin.primaryAddress : undefined, 'HOME'),
 
-    prob: modelAddress({
+    prob: helpers.modelAddress({
         name_f110: helpers.formatContactPersonName(o.offenderManager)
       }, 111, o.offenderManager ? o.offenderManager.primaryAddress : undefined, 'BUS'),
 
