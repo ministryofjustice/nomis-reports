@@ -6,15 +6,15 @@ describe('cde/addresses', () => {
       addresses: [
         {
           addressId: 126759,
-          addressUsages: [ { usage: "HOME", active: true } ]
+          addressUsages: [ { usage: { code: "HOME" }, active: true } ]
         },
         {
           addressId: 126761,
-          addressUsages: [ { usage: "RECEP", active: true } ]
+          addressUsages: [ { usage: { code: "RECEP" }, active: true } ]
         },
         {
           addressId: 126760,
-          addressUsages: [ { usage: "RELEASE", active: true } ]
+          addressUsages: [ { usage: { code: "RELEASE" }, active: true } ]
         }
       ]
     };
@@ -38,9 +38,9 @@ describe('cde/addresses', () => {
         {
           addressId: 126759,
           addressUsages: [
-            { usage: "HOME", active: true },
-            { usage: "RECEP", active: true },
-            { usage: "RELEASE", active: true }
+            { usage: { code: "HOME" }, active: true },
+            { usage: { code: "RECEP" }, active: true },
+            { usage: { code: "RELEASE" }, active: true }
           ]
         }
       ]
@@ -65,9 +65,9 @@ describe('cde/addresses', () => {
         {
           addressId: 126759,
           addressUsages: [
-            { usage: "HOME", active: false },
-            { usage: "RECEP", active: false },
-            { usage: "RELEASE", active: false }
+            { usage: { code: "HOME" }, active: false },
+            { usage: { code: "RECEP" }, active: false },
+            { usage: { code: "RELEASE" }, active: false }
           ]
         }
       ]
@@ -91,12 +91,12 @@ describe('cde/addresses', () => {
       addresses: [
         {
           addressId: 126759,
-          addressUsages: [ { usage: "HOME", active: false }
+          addressUsages: [ { usage: { code: "HOME" }, active: false }
           ]
         },
         {
           addressId: 126761,
-          addressUsages: [ { usage: "HOME", active: true } ]
+          addressUsages: [ { usage: { code: "HOME" }, active: true } ]
         }
       ]
     };
@@ -112,15 +112,15 @@ describe('cde/addresses', () => {
         {
           addressId: 126759,
           addressUsages: [
-            { usage: "HOME", active: false },
-            { usage: "RECEP", active: true }
+            { usage: { code: "HOME" }, active: false },
+            { usage: { code: "RECEP" }, active: true }
           ]
         },
         {
           addressId: 126761,
           addressUsages: [
-            { usage: "HOME", active: true },
-            { usage: "RECEP", active: false }
+            { usage: { code: "HOME" }, active: true },
+            { usage: { code: "RECEP" }, active: false }
           ]
         }
       ]
