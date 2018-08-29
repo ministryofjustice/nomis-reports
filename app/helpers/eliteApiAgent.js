@@ -3,7 +3,7 @@ const qs = require('querystring');
 
 function eliteAuthHeaderPlugin (config) {
   return function (request) {
-    let token = 'Basic ' + (new Buffer(`${qs.escape(config.oauth.username)}:${qs.escape(config.oauth.password)}`)).toString('base64');
+    let token = `${config.oauth.grantType} ` + (new Buffer(`${qs.escape(config.oauth.username)}:${qs.escape(config.oauth.password)}`)).toString('base64');
 
     if (config.elite2Jwt && config.elite2Jwt.access_token) {
       token = 'Bearer ' + config.elite2Jwt.access_token;

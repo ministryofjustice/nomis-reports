@@ -3,7 +3,7 @@ const qs = require('querystring');
 
 function custodyAuthHeaderPlugin (config) {
   return function (request) {
-    let token = 'Basic ' + (new Buffer(`${qs.escape(config.oauth.username)}:${qs.escape(config.oauth.password)}`)).toString('base64');
+    let token = `${config.oauth.grantType} ` + (new Buffer(`${qs.escape(config.oauth.username)}:${qs.escape(config.oauth.password)}`)).toString('base64');
 
     if (config.oauth.bearerToken) {
       token = `Bearer ${config.oauth.bearerToken}`;

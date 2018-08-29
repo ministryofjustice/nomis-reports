@@ -16,7 +16,7 @@ const get = (name, fallback, options = {}) => {
   throw new Error('Missing env var ' + name);
 };
 
-module.exports = {
+let config = {
   name: pkg.name,
   version: pkg.version,
 
@@ -59,10 +59,16 @@ module.exports = {
       deadline: 25000
     },
     oauth: {
-      grantType: get('REPORT_GRANT_TYPE', 'client_credentials', { requireInProduction: true }),
-      username: get('REPORT_USERNAME', 'x_trusted_client', { requireInProduction: true }),
-      password: get('REPORT_PASSWORD', 'x_client_password', { requireInProduction: true }),
+      grantType: get('REPORT_GRANT_TYPE', 'client_credentials'),
+      username: get('REPORT_USERNAME', 'x_trusted_client'),
+      password: get('REPORT_PASSWORD', 'x_client_password'),
       bearerToken: get('REPORT_BEARER_TOKEN', ''),
     },
   }
 };
+
+if (!config.custody.oauth.bearerToken && !config.custody.oauth.username && !config.custody.oauth.password && !config.custody.oauth.grantType) {
+  throw new Error('Missing env vars either REPORT_BEARER_TOKEN or REPORT_GRANT_TYPE, REPORT_USERNAME and REPORT_PASSWORD');
+}
+
+module.exports = config;
