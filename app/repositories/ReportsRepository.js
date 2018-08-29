@@ -10,6 +10,8 @@ function ReportsRepository(config, agent) {
 
   this.requests = {
     listAddresses: this.agent.get(`${root}/addresses`),
+    listAgencyLocations: this.agent.get(`${root}/agencyLocations`),
+    listAgencyInternalLocations: this.agent.get(`${root}/agencyInternalLocations`),
     listAlerts: this.agent.get(`${root}/alerts`),
     listAssessments: this.agent.get(`${root}/assessments`),
     listCharges: this.agent.get(`${root}/charges`),
@@ -37,6 +39,7 @@ function ReportsRepository(config, agent) {
     getOffenderImprisonmentStatuses: this.agent.get(`${root}/offenders/offenderId/:offenderId/imprisonmentStatuses`),
     getOffenderMovements: this.agent.get(`${root}/offenders/offenderId/:offenderId/movements`),
     getOffenderPhysicals: this.agent.get(`${root}/offenders/offenderId/:offenderId/physicals`),
+    getOffenderProgrammeProfiles: this.agent.get(`${root}/offenders/offenderId/:offenderId/programmeProfiles`),
     getOffenderRehabDecisions: this.agent.get(`${root}/offenders/offenderId/:offenderId/rehabDecisions`),
     getOffenderReleaseDetails: this.agent.get(`${root}/offenders/offenderId/:offenderId/releaseDetails`),
     getOffenderSentenceCalculations: this.agent.get(`${root}/offenders/offenderId/:offenderId/sentenceCalculations`),
@@ -154,6 +157,10 @@ ReportsRepository.prototype.getOffenderMovements = function (offenderId) {
 
 ReportsRepository.prototype.getOffenderPhysicals = function (offenderId) {
   return this.requests.getOffenderPhysicals({ offenderId }).then(helpers.handleResponse([]));
+};
+
+ReportsRepository.prototype.getOffenderProgrammeProfiles = function (offenderId) {
+  return this.requests.getOffenderProgrammeProfiles({ offenderId }).then(helpers.handleResponse([]));
 };
 
 ReportsRepository.prototype.getOffenderRehabDecisions = function (offenderId) {

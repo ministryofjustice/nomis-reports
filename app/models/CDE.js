@@ -10,7 +10,7 @@ const model = helpers.pipe([
   ['offenderSentence', helpers.getActiveOffenderSentence],
   ['offenderSentenceCalculations', helpers.getOffenderSentenceCalculations],
   ['offenderSentenceLength', helpers.getOffenderSentenceLength],
-  ['offenderLicense', helpers.getOffenderLicense],
+  ['offenderLicenses', helpers.getOffenderLicenses],
   ['lastSequentialTransfer', helpers.getLastSequentialTransfer],
   ['activeTransfers', helpers.getActiveTransfers],
   ['lastSequentialMovementIfOut', helpers.getLastSequentialMovementIfOut],
@@ -68,7 +68,7 @@ module.exports.build = sysdate => data => {
     forename2_f9: o.mainAlias.middleNames,
     cro_f10: o.offenderIdentifiers.CRO,
     adult_yp_f11: (o.physicals.profileDetails.YOUTH || {}).description,
-    age_f12: helpers.getAge(o.mainAlias),
+    age_f12: helpers.getAge(o.mainAlias, o.sysdate),
     dob_f13: helpers.optionalDate(o.mainAlias.dateOfBirth),
     nationality_f14: (o.physicals.profileDetails.NAT || {}).description,
     ethnicity_f15: (o.mainAlias.ethnicity || {}).description,
@@ -174,7 +174,7 @@ module.exports.build = sysdate => data => {
 
     nok: helpers.modelAddress({
         name_f101: helpers.formatContactPersonName(o.nextOfKin),
-        nfa_f102: helpers.formatContactPersonRelationship(o.nextOfKin)
+        nfa_f102: helpers.getNFA(o.nextOfKin.primaryAddress || {}),
       }, 103, o.nextOfKin ? o.nextOfKin.primaryAddress : undefined, 'HOME'),
 
     prob: helpers.modelAddress({
@@ -212,9 +212,9 @@ module.exports.build = sysdate => data => {
     court_f141: (o.lastSequentialMovementIfOut.movementTypeCode === 'CRT' ? o.lastSequentialMovementIfOut.toAgencyLocationId : undefined),
     escort_f142: (o.lastSequentialMovementIfOut.escortCode || {}).description,
     first_out_mov_post_adm_f143: helpers.optionalDate(o.earliestOutMovementDate.movementDateTime),
-    employed_f144: 'N',
+    employed_f144: ((o.programmeProfiles || []).length > 0 ? 'Y' : 'N'),
     diary_details_f145: helpers.withList(o.diaryDetails).map(odd => helpers.formatOffenderDiaryDetail(odd, o)),
-    licence_type_f146: (o.offenderLicense.sentenceCalculationType || {}).description,
+    licence_type_f146: o.offenderLicenses.map(ol => (ol.sentenceCalculationType || {}).description).join('~'),
     other_offences_f147: o.otherOffences.map(x => x.offenceCode).sort(),
     active_alerts_f148: o.activeAlerts.map(helpers.formatAlert),
 

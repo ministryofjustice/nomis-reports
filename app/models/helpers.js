@@ -375,13 +375,13 @@ helpers.getOffenderSentenceLength = o =>
     ? moment(o.offenderSentenceCalculations.effectiveSentenceEndDate)
         .diff(moment(o.offenderSentence.startDate), 'days') + 1 : undefined;
 
-helpers.getOffenderLicense = o =>
-  getFirst(withList(o.sentences)
+helpers.getOffenderLicenses = o =>
+  withList(o.sentences)
     .filter(s => (
       s.bookingId === o.offenderSentence.bookingId &&
       s.sentenceCategory === 'LICENCE' &&
       s.isActive
-    )));
+    ));
 
   helpers.getFirstSentence = o =>
     getFirst(withList(
@@ -563,8 +563,8 @@ helpers.getIEPLevel = o =>
     ))
     // TODO: reorder for offloc ignoring time - so remove
     .sort((a, b) => {
-      let x = moment(a.iepDateTime).set({ hour: 0, minute: 0, second: 0 })
-                .diff(moment(b.iepDateTime).set({ hour: 0, minute: 0, second: 0 }));
+      let x = moment(b.iepDateTime).set({ hour: 0, minute: 0, second: 0 })
+                .diff(moment(a.iepDateTime).set({ hour: 0, minute: 0, second: 0 }));
 
       return x === 0 ? b.iepLevelSeq - a.iepLevelSeq : x;
     })
@@ -586,6 +586,7 @@ helpers.getImprisonmentStatus2 = o =>
 
 // main booking entire
 
+//TODO: we cannot rely on the Most_Serious_Flag being set correctly
 helpers.getHighestRankedOffence = o => {
   let mostSerious = withList(o.offenderCharges)
     .filter(oc => (
@@ -619,8 +620,8 @@ helpers.getOtherOffences = o =>
       o.highestRankedOffence.offenceCode !== oc.offenceCode
     ));
 
-helpers.getAge = o =>
-  moment().diff(moment(o.dateOfBirth), 'years');
+helpers.getAge = (o, sysdate) =>
+  moment(sysdate).diff(moment(o.dateOfBirth), 'years');
 
 helpers.getNextOfKin = o =>
   getFirst(withList(o.offenderContactPersons)
