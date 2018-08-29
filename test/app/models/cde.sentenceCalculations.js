@@ -1,3 +1,5 @@
+let should = require('chai').should();
+
 const helpers = require('../../../app/models/helpers');
 
 describe('cde/sentenceCalculations', () => {
@@ -48,8 +50,7 @@ describe('cde/sentenceCalculations', () => {
     };
 
     it('should not retrieve any sentence calculation dates', () => {
-      helpers.getOffenderSentenceCalculations(input)
-        .should.not.have.property('sentenceCalculationId');
+      should.not.exist(helpers.getOffenderSentenceCalculations(input));
     });
   });
 
