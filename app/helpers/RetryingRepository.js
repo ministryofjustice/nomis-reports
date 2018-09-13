@@ -19,7 +19,7 @@ const retry = (repository, method, args, retries) =>
       let error = err.response && err.response.error || err;
 
       if (shouldRetry(error, retries)) {
-        log.debug({ method, args, retries }, 'RetryingRepository request RETRY');
+        log.debug({ method, args: (method !== 'login' ? args : ['#','#','#']), retries }, 'RetryingRepository request RETRY');
 
         return new Promise((resolve, reject) => {
           setTimeout(() =>
@@ -28,7 +28,7 @@ const retry = (repository, method, args, retries) =>
         });
       }
 
-      log.debug({ method, args, status: error.code, retries }, 'RetryingRepository request ERROR');
+      log.debug({ method, args: (method !== 'login' ? args : ['#','#','#']), status: error.code, retries }, 'RetryingRepository request ERROR');
 
       delete error.text;
       return Promise.reject(error);

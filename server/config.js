@@ -40,6 +40,7 @@ let config = {
   },
 
   elite2: {
+    authUrl: get('OAUTH_API_URL', 'http://localhost:8081/oauth', { requireInProduction: true }),
     apiUrl: get('ELITE2_API_URL', 'http://localhost:8081/api', { requireInProduction: true }),
     timeout: {
       response: 20000,
@@ -53,10 +54,11 @@ let config = {
   },
 
   custody: {
+    authUrl: get('OAUTH_API_URL', 'http://localhost:8081/oauth', { requireInProduction: true }),
     apiUrl: get('REPORT_API_URL', 'http://localhost:8080/api', { requireInProduction: true }),
     timeout: {
-      response: 20000,
-      deadline: 25000
+      response: 50000,
+      deadline: 55000
     },
     oauth: {
       grantType: get('REPORT_GRANT_TYPE', 'client_credentials'),

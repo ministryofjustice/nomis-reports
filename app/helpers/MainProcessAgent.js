@@ -13,14 +13,13 @@ const RetryingRepository = require('./RetryingRepository');
 const log = require('../../server/log');
 
 const setJwt = (config) => (token) => {
-  config.elite2.elite2Jwt = config.custody.custodyJwt = token;
+  config.jwt = token;
 
   return token;
 };
 
 const removeJwt = (config) => {
-  delete config.elite2.elite2Jwt;
-  delete config.custody.custodyJwt;
+  delete config.jwt;
 
   return config;
 };
@@ -40,14 +39,14 @@ function MainProcessAgent(config, services) {
   };
 }
 
-MainProcessAgent.prototype.login = function() {
-  log.debug('MainProcessAgent login BEGIN');
+MainProcessAgent.prototype.login = function(config, label) {
+  log.debug(`MainProcessAgent login ${label} API BEGIN`);
 
-  return (this.config.elite2.elite2Jwt && this.config.custody.custodyJwt) ?
+  return (config.jwt) ?
           Promise.resolve() :
-          this.request('user', 'login')
-            .then(setJwt(this.config))
-            .then(token => log.debug(token, 'MainProcessAgent login SUCCESS'));
+          this.request('user', 'login', config.oauth.username, config.oauth.password, config.oauth.grantType)
+            .then(setJwt(config))
+            .then(() => log.debug(`MainProcessAgent login ${label} API SUCCESS`));
 };
 
 MainProcessAgent.prototype.request = function(repository, method, ...params) {
@@ -75,16 +74,23 @@ MainProcessAgent.prototype.request = function(repository, method, ...params) {
   }
 
   return Promise.resolve(builder(request.config))
-    .then((repository) => repository[request.method].apply(repository, request.params))
-    .then((response) => {
+    .then(repository => repository[request.method].apply(repository, request.params))
+    .then(response => {
       log.debug({repository, method, params}, 'MainProcessAgent message SUCCESS');
       return response;
     })
-    .catch((error) => {
+    .catch(error => {
       if (error.status === 401) { //unauthorised
         log.debug(error, 'MainProcessAgent message UNAUTHORISED');
-        removeJwt(this.config);
-        return this.login().then(() => this.request.apply(this, [repository, method].concat(params)));
+
+        removeJwt(this.config.elite2);
+        removeJwt(this.config.custody);
+
+        return Promise.all([
+            this.login(this.config.elite2, 'ELITE2'),
+            this.login(this.config.custody, 'CUSTODY')
+          ])
+          .then(() => this.request.apply(this, [repository, method].concat(params)));
       }
 
       return Promise.reject(error);

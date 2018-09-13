@@ -29,28 +29,29 @@ ReportsService.prototype.listOffenders = function (query, page, size) {
 };
 
 ReportsService.prototype.getDetails = function (offenderId) {
-  return Promise.all([
-    this.getOffender(offenderId),
-    describe('addresses', this.getOffenderAddresses(offenderId), []),
-    describe('alerts', this.getOffenderAlerts(offenderId), []),
-    describe('assessments', this.getOffenderAssessments(offenderId), []),
-    describe('charges', this.getOffenderCharges(offenderId), []),
-    describe('contactPersons', this.getOffenderContactPersons(offenderId), []),
-    describe('courtEvents', this.getOffenderCourtEvents(offenderId), []),
-    describe('diaryDetails', this.getOffenderDiaryDetails(offenderId), []),
-    describe('employments', this.getOffenderEmployments(offenderId), []),
-    describe('healthProblems', this.getOffenderHealthProblems(offenderId), []),
-    describe('ieps', this.getOffenderIEPs(offenderId), []),
-    describe('imprisonmentStatuses', this.getOffenderImprisonmentStatuses(offenderId), []),
-    describe('movements', this.getOffenderMovements(offenderId), []),
-    describe('physicals', this.getOffenderPhysicals(offenderId), []),
-    describe('programmeProfiles', this.getOffenderProgrammeProfiles(offenderId), []),
-    describe('rehabDecisions', this.getOffenderRehabDecisions(offenderId), []),
-    describe('releaseDetails', this.getOffenderReleaseDetails(offenderId), []),
-    describe('sentenceCalculations', this.getOffenderSentenceCalculations(offenderId), []),
-    describe('sentences', this.getOffenderSentences(offenderId), []),
-  ])
-  .then((data) => data.reduce((a, b) => Object.assign(a, b), {}));
+  return this.getOffender(offenderId)
+    .then(offender => Promise.all([
+      describe('addresses', this.getOffenderAddresses(offenderId), []),
+      describe('alerts', this.getOffenderAlerts(offenderId), []),
+      describe('assessments', this.getOffenderAssessments(offenderId), []),
+      describe('charges', this.getOffenderCharges(offenderId), []),
+      describe('contactPersons', this.getOffenderContactPersons(offenderId), []),
+      describe('courtEvents', this.getOffenderCourtEvents(offenderId), []),
+      describe('diaryDetails', this.getOffenderDiaryDetails(offenderId), []),
+      describe('employments', this.getOffenderEmployments(offenderId), []),
+      describe('healthProblems', this.getOffenderHealthProblems(offenderId), []),
+      describe('ieps', this.getOffenderIEPs(offenderId), []),
+      describe('imprisonmentStatuses', this.getOffenderImprisonmentStatuses(offenderId), []),
+      describe('individualSchedules', this.getOffenderIndividualSchedules(offenderId), []),
+      describe('movements', this.getOffenderMovements(offenderId), []),
+      describe('physicals', this.getOffenderPhysicals(offenderId), []),
+      describe('programmeProfiles', this.getOffenderProgrammeProfiles(offenderId, offender.bookings[0].bookingId), []),
+      describe('rehabDecisions', this.getOffenderRehabDecisions(offenderId), []),
+      describe('releaseDetails', this.getOffenderReleaseDetails(offenderId), []),
+      describe('sentenceCalculations', this.getOffenderSentenceCalculations(offenderId), []),
+      describe('sentences', this.getOffenderSentences(offenderId), []),
+    ])
+    .then((data) => data.reduce((a, b) => Object.assign(a, b), offender)));
 };
 
 ReportsService.prototype.getDetailsByNomsId = function (nomsId) {
@@ -72,8 +73,20 @@ ReportsService.prototype.listAgencyInternalLocations = function (query, page, si
   return this.agent.request('reports', 'listAgencyInternalLocations', query, page, size);
 };
 
+ReportsService.prototype.listAlerts = function (query, page, size) {
+  return this.agent.request('reports', 'listAlerts', query, page, size);
+};
+
+ReportsService.prototype.listAssessments = function (query, page, size) {
+  return this.agent.request('reports', 'listAssessments', query, page, size);
+};
+
 ReportsService.prototype.listCharges = function (query, page, size) {
   return this.agent.request('reports', 'listCharges', query, page, size);
+};
+
+ReportsService.prototype.listEvents = function (query, page, size) {
+  return this.agent.request('reports', 'listEvents', query, page, size);
 };
 
 ReportsService.prototype.listHealthProblems = function (query, page, size) {
@@ -164,6 +177,10 @@ ReportsService.prototype.getOffenderImprisonmentStatuses = function (offenderId)
   return this.agent.request('reports', 'getOffenderImprisonmentStatuses', offenderId);
 };
 
+ReportsService.prototype.getOffenderIndividualSchedules = function (offenderId) {
+  return this.agent.request('reports', 'getOffenderIndividualSchedules', offenderId);
+};
+
 ReportsService.prototype.getOffenderMovements = function (offenderId) {
   return this.agent.request('reports', 'getOffenderMovements', offenderId);
 };
@@ -172,8 +189,8 @@ ReportsService.prototype.getOffenderPhysicals = function (offenderId) {
   return this.agent.request('reports', 'getOffenderPhysicals', offenderId);
 };
 
-ReportsService.prototype.getOffenderProgrammeProfiles = function (offenderId) {
-  return this.agent.request('reports', 'getOffenderProgrammeProfiles', offenderId);
+ReportsService.prototype.getOffenderProgrammeProfiles = function (offenderId, bookingId) {
+  return this.agent.request('reports', 'getOffenderProgrammeProfiles', offenderId, bookingId);
 };
 
 ReportsService.prototype.getOffenderRehabDecisions = function (offenderId) {

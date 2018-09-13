@@ -1,16 +1,13 @@
 const apiAgent = require('./apiAgent');
-const qs = require('querystring');
 
 function custodyAuthHeaderPlugin (config) {
   return function (request) {
-    let token = `${config.oauth.grantType} ` + (new Buffer(`${qs.escape(config.oauth.username)}:${qs.escape(config.oauth.password)}`)).toString('base64');
+    let token = 'Bearer ';
 
-    if (config.oauth.bearerToken) {
-      token = `Bearer ${config.oauth.bearerToken}`;
-    }
-
-    if (config.custodyJwt && config.custodyJwt.access_token) {
-      token = 'Bearer ' + config.custodyJwt.access_token;
+    if (config.oauth && config.oauth.bearerToken) {
+      token += config.oauth.bearerToken;
+    } else if (config.jwt && config.jwt.access_token) {
+      token += config.jwt.access_token;
     }
 
     request.set('Authorization', token);

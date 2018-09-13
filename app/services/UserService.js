@@ -11,7 +11,9 @@ function UserService(config, childProcessAgent) {
 }
 
 UserService.prototype.login = function (username, password) {
-  return this.agent.request('user', 'login', username, password).then(setJwt(this.config));
+  return this.agent
+    .request('user', 'login', username, password)
+    .then(setJwt(this.config));
 };
 
 module.exports = UserService;

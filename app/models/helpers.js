@@ -780,6 +780,22 @@ const getSexOffences = helpers.getSexOffences = o =>
 helpers.isSexOffender = o =>
   getSexOffences(o).length > 0;
 
+helpers.isEmployed = o =>
+  withList(o.programmeProfiles)
+    .filter(opp => (
+        opp.bookingId === o.mainBooking.bookingId &&
+        !opp.suspended &&
+        opp.courseActivity.outsideWork
+    )).length > 0 ||
+  withList(o.individualSchedules)
+    .filter(ois => (
+        ois.bookingId === o.mainBooking.bookingId &&
+        ois.eventType === 'TAP' &&
+        ~['OPA', 'R2', 'F7'].indexOf(ois.eventSubType) &&
+        ois.eventStatus !== 'DEN' &&
+        moment(o.sysdate).diff(ois.returnDate) >= 0
+    )).length > 0;
+
 
 
 

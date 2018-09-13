@@ -45,9 +45,9 @@ const model = helpers.pipe([
   ['earliestReleaseDate', helpers.getEarliestReleaseDate],
   ['custodyStatus', helpers.getCustodyStatus],
   ['maternityStatus', helpers.getMaternityStatus],
-  ['effectiveSentenceLength', helpers.getEffectiveSentenceLength]
+  ['effectiveSentenceLength', helpers.getEffectiveSentenceLength],
+  ['offenderEmployed', helpers.isEmployed]
 ]);
-
 
 const buildModel = module.exports.buildModel = sysdate => data => {
   return model.apply(Object.assign({ sysdate }, data));
@@ -212,7 +212,7 @@ module.exports.build = sysdate => data => {
     court_f141: (o.lastSequentialMovementIfOut.movementTypeCode === 'CRT' ? o.lastSequentialMovementIfOut.toAgencyLocationId : undefined),
     escort_f142: (o.lastSequentialMovementIfOut.escortCode || {}).description,
     first_out_mov_post_adm_f143: helpers.optionalDate(o.earliestOutMovementDate.movementDateTime),
-    employed_f144: ((o.programmeProfiles || []).length > 0 ? 'Y' : 'N'),
+    employed_f144: o.offenderEmployed, // (o.offenderEmployed ? 'Y' : 'N'),
     diary_details_f145: helpers.withList(o.diaryDetails).map(odd => helpers.formatOffenderDiaryDetail(odd, o)),
     licence_type_f146: o.offenderLicenses.map(ol => (ol.sentenceCalculationType || {}).description).join('~'),
     other_offences_f147: o.otherOffences.map(x => x.offenceCode).sort(),

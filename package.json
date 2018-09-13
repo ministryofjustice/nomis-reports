@@ -15,7 +15,7 @@
     "ingest-ao": "node app/ingest.ao.js | bunyan -o short",
     "ingest-cde": "node app/ingest.cde.js | bunyan -o short",
     "diff-cde": "node app/diff.cde.js | bunyan -o short",
-    "sync": "node app/sync.js | bunyan -o short",
+    "sync-cde": "node app/sync.cde.js | bunyan -o short",
     "build": "webpack",
     "test": "mocha --exit",
     "test-report": "mocha --exit --reporter mocha-junit-reporter",

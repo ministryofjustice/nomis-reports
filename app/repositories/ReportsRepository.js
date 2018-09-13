@@ -15,6 +15,7 @@ function ReportsRepository(config, agent) {
     listAlerts: this.agent.get(`${root}/alerts`),
     listAssessments: this.agent.get(`${root}/assessments`),
     listCharges: this.agent.get(`${root}/charges`),
+    listEvents: this.agent.get(`${root}/events`),
     listHealthProblems: this.agent.get(`${root}/healthProblems`),
     listImprisonmentStatuses: this.agent.get(`${root}/imprisonmentStatuses`),
     listMovements: this.agent.get(`${root}/movements`),
@@ -37,6 +38,7 @@ function ReportsRepository(config, agent) {
     getOffenderHealthProblems: this.agent.get(`${root}/offenders/offenderId/:offenderId/healthProblems`),
     getOffenderIEPs: this.agent.get(`${root}/offenders/offenderId/:offenderId/ieps`),
     getOffenderImprisonmentStatuses: this.agent.get(`${root}/offenders/offenderId/:offenderId/imprisonmentStatuses`),
+    getOffenderIndividualSchedules: this.agent.get(`${root}/offenders/offenderId/:offenderId/individualSchedules`),
     getOffenderMovements: this.agent.get(`${root}/offenders/offenderId/:offenderId/movements`),
     getOffenderPhysicals: this.agent.get(`${root}/offenders/offenderId/:offenderId/physicals`),
     getOffenderProgrammeProfiles: this.agent.get(`${root}/offenders/offenderId/:offenderId/programmeProfiles`),
@@ -61,6 +63,10 @@ ReportsRepository.prototype.listAssessments = function (query, page, size) {
 
 ReportsRepository.prototype.listCharges = function (query, page, size) {
   return this.requests.listCharges(Object.assign({}, query, { page, size })).then(helpers.handleResponse([]));
+};
+
+ReportsRepository.prototype.listEvents = function (query, page, size) {
+  return this.requests.listEvents(Object.assign({}, query, { page, size })).then(helpers.handleResponse([]));
 };
 
 ReportsRepository.prototype.listHealthProblems = function (query, page, size) {
@@ -151,6 +157,10 @@ ReportsRepository.prototype.getOffenderImprisonmentStatuses = function (offender
   return this.requests.getOffenderImprisonmentStatuses({ offenderId }).then(helpers.handleResponse([]));
 };
 
+ReportsRepository.prototype.getOffenderIndividualSchedules = function (offenderId) {
+  return this.requests.getOffenderIndividualSchedules({ offenderId }).then(helpers.handleResponse([]));
+};
+
 ReportsRepository.prototype.getOffenderMovements = function (offenderId) {
   return this.requests.getOffenderMovements({ offenderId }).then(helpers.handleResponse([]));
 };
@@ -159,8 +169,8 @@ ReportsRepository.prototype.getOffenderPhysicals = function (offenderId) {
   return this.requests.getOffenderPhysicals({ offenderId }).then(helpers.handleResponse([]));
 };
 
-ReportsRepository.prototype.getOffenderProgrammeProfiles = function (offenderId) {
-  return this.requests.getOffenderProgrammeProfiles({ offenderId }).then(helpers.handleResponse([]));
+ReportsRepository.prototype.getOffenderProgrammeProfiles = function (offenderId, bookingId) {
+  return this.requests.getOffenderProgrammeProfiles({ offenderId }, { bookingId }).then(helpers.handleResponse([]));
 };
 
 ReportsRepository.prototype.getOffenderRehabDecisions = function (offenderId) {
