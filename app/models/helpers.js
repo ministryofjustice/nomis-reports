@@ -677,44 +677,44 @@ helpers.getCustodyStatus = data => {
 helpers.getOffenderSentenceCalculationDates = o =>
   o.offenderSentenceCalculations ?
     (osc => ({
-      sed: optionalDate(osc.sedOverridedDate || osc.sedCalculatedDate),
-      hdced: optionalDate(osc.hdcedOverridedDate || osc.hdcedCalculatedDate),
-      hdcad: optionalDate(osc.hdcadOverridedDate || osc.hdcadCalculatedDate),
-      etd: optionalDate(osc.etdOverridedDate || osc.etdCalculatedDate),
-      mtd: optionalDate(osc.mtdOverridedDate || osc.mtdCalculatedDate),
-      ltd: optionalDate(osc.ltdOverridedDate || osc.ltdCalculatedDate),
-      crd: optionalDate(osc.crdOverridedDate || osc.crdCalculatedDate),
-      ped: optionalDate(osc.pedOverridedDate || osc.pedCalculatedDate),
-      apd: optionalDate(osc.apdOverridedDate || osc.apdCalculatedDate),
-      npd: optionalDate(osc.npdOverridedDate || osc.npdCalculatedDate),
-      ard: optionalDate(osc.ardOverridedDate || osc.ardCalculatedDate),
-      led: optionalDate(osc.ledOverridedDate || osc.ledCalculatedDate),
-      tused: optionalDate(osc.tusedOverridedDate || osc.tusedCalculatedDate)
-    }))(o.offenderSentenceCalculations) : undefined;
-
-helpers.getOffenderSentenceCalculationDates2 = o =>
-  o.offenderSentenceCalculations ?
-    (osc => ({
       effectiveSentenceLength: getSentenceLengthValues(osc.effectiveSentenceLength),
       judiciallyImposedSentenceLength: getSentenceLengthValues(osc.judiciallyImposedSentenceLength),
       effectiveSentenceEndDate: osc.effectiveSentenceEndDate,
+      // sentence Expiry Date
       sed: moment(osc.sedOverridedDate || osc.sedCalculatedDate),
+      // homeDetentionCurfew Eligibility Date
       hdced: moment(osc.hdcedOverridedDate || osc.hdcedCalculatedDate),
+      // homeDetentionCurfew Actual Date
       hdcad: moment(osc.hdcadOverridedDate || osc.hdcadCalculatedDate),
+      // early Term Date
       etd: moment(osc.etdOverridedDate || osc.etdCalculatedDate),
+      // mid Term Date
       mtd: moment(osc.mtdOverridedDate || osc.mtdCalculatedDate),
+      // late Term Date
       ltd: moment(osc.ltdOverridedDate || osc.ltdCalculatedDate),
+      // Conditional Release Date
       crd: moment(osc.crdOverridedDate || osc.crdCalculatedDate),
+      // parole Eligibility Date
       ped: moment(osc.pedOverridedDate || osc.pedCalculatedDate),
+      // actual Parole Date
       apd: moment(osc.apdOverridedDate || osc.apdCalculatedDate),
+      // non Parole Date
       npd: moment(osc.npdOverridedDate || osc.npdCalculatedDate),
+      // automatic Release Date
       ard: moment(osc.ardOverridedDate || osc.ardCalculatedDate),
+      // licence Expiry Date
       led: moment(osc.ledOverridedDate || osc.ledCalculatedDate),
+      // topupSupervision Expiry Date
       tused: moment(osc.tusedOverridedDate || osc.tusedCalculatedDate),
+      // postRecall Release Date
       prrd: moment(osc.prrdOverridedDate || osc.prrdCalculatedDate),
+      // earlyRemovalScheme Eligibility Date
       ersed: moment(osc.ersedOverridedDate || osc.ersedCalculatedDate),
+      // Tarif earlyRemovalScheme Eligibility Date
       tersed: moment(osc.tersedOverridedDate || osc.tersedCalculatedDate),
+      // releaseOnTemporaryLicenceDate
       rotl: moment(osc.rotlOverridedDate || osc.rotlCalculatedDate),
+      // tariffDate
       tariff: moment(osc.tariffOverridedDate || osc.tariffCalculatedDate),
     }))(o.offenderSentenceCalculations) : undefined;
 
@@ -737,22 +737,23 @@ helpers.getEarliestReleaseDate =  o =>
 helpers.getEarliestReleaseDate2 =  o =>
   o.offenderSentenceCalculationDates ?
     (scd => [
+      { date: scd.hdced, label: 'hdced', description: 'Home Detention Curfew Eligibility Date' },
+      { date: scd.hdcad, label: 'hdcad', description: 'Home Detention Curfew Approved Date' },
+      { date: scd.etd, label: 'etd', description: 'Early Term Date' },
+      { date: scd.mtd, label: 'mtd', description: 'Mid Term Release Date' },
+      { date: scd.ltd, label: 'ltd', description: 'Late Term Date' },
+      { date: scd.crd, label: 'crd', description: 'Conditional Release Date' },
+      { date: scd.ped, label: 'ped', description: 'Parole Eligibility Date' },
+      { date: scd.apd, label: 'apd', description: 'Approved Parole Date' },
+      { date: scd.npd, label: 'npd', description: 'Non Parole Release Date' },
+      { date: scd.ard, label: 'ard', description: 'Automatic Release Date' },
+
+      // dates not included in OFFLOC calculations
       { date: moment(o.releaseDetails.releaseDate),
         label: `REL-${o.releaseDetails.movementReasonCode}`,
         description: `Assessed Release - ${o.releaseDetails.description ? o.releaseDetails.description : 'Reason Not Stated'}`
       },
-        { date: scd.hdced, label: 'hdced', description: '' },
-        { date: scd.hdcad, label: 'hdcad', description: 'Home Detention Curfew Approved Date' },
-        { date: scd.etd, label: 'etd', description: '' },
-        { date: scd.mtd, label: 'mtd', description: 'Mid Term Release Date' },
-        { date: scd.ltd, label: 'ltd', description: '' },
-        { date: scd.crd, label: 'crd', description: 'Conditional Release Date' },
-        { date: scd.ped, label: 'ped', description: '' },
-        { date: scd.apd, label: 'apd', description: 'Approved Parole Date' },
-        { date: scd.npd, label: 'npd', description: 'Non Parole Release Date' },
-        { date: scd.ard, label: 'ard', description: 'Automatic Release Date' },
-        { date: scd.prrd, label: 'prrd', description: 'Post Recall Release Date' },
-        { date: scd.ard, label: 'ard', description: '' },
+      { date: scd.prrd, label: 'prrd', description: 'Post Recall Release Date' },
     ]
     .sort((a, b) => a.date.diff(b.date))[0])(o.offenderSentenceCalculationDates) : undefined;
 
