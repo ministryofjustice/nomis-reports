@@ -59,7 +59,7 @@ module.exports.build = sysdate => data => {
   return {
     sysdate_f1: o.sysdate,
     establishment_f2: "",
-    estab_code_f3: o.mainBooking.agencyLocationId,
+    estab_code_f3: (o.mainBooking.agencyLocation || {}).agencyLocationId,
     nomis_id_f4: o.nomsId,
     gender_f5: (o.mainAlias.gender || {}).description,
     prison_no_f6: o.mainBooking.bookingNo,
@@ -75,7 +75,7 @@ module.exports.build = sysdate => data => {
     religion_f16: (o.physicals.profileDetails.RELF || {}).description,
     marital_f17: (o.physicals.profileDetails.MARITAL || {}).description,
     maternity_status_f18: (o.maternityStatus.problemCode || {}).description,
-    location_f19: o.mainBooking.livingUnitId,
+    location_f19: (o.mainBooking.livingUnit || {}).description.replace((o.mainBooking.livingUnit || {}).agencyLocationId + '-', ''),
     incentive_band_f20: (o.IEPLevel.iepLevel || {}).description,
     occupation_v21: (o.employment.occupationsCode || {}).description,
     transfer_reason_f22: o.lastSequentialTransfer.movementReasonDescription,
@@ -112,8 +112,8 @@ module.exports.build = sysdate => data => {
     f2052_status_42: o.checkHoldAlerts.H_HA,
     highest_ranked_offence_f43: o.highestRankedOffence.offenceCode,
     // 44	Status Rank (to be left blank)
-    pending_transfers_f45: (o.activeTransfers[0] || {}).toAgencyLocationId,
-    received_from_f46: (o.activeTransfers[0] || {}).fromAgencyLocationId,
+    pending_transfers_f45: ((o.activeTransfers[0] || {}).toAgencyLocation || {}).description,
+    received_from_f46: ((o.activeTransfers[0] || {}).fromAgencyLocation || {}).description,
     vulnerable_prisoner_alert_f47: o.checkHoldAlerts.VUL,
     pnc_f48: o.offenderIdentifiers.PNC,
 
@@ -198,7 +198,7 @@ module.exports.build = sysdate => data => {
     f132: "",  // 132	Remark Type Labour
     f133: "",  // 133	Remarks Labour
 
-    sending_estab_f134: o.lastSequentialTransfer.fromAgencyLocationId,
+    sending_estab_f134: (o.lastSequentialTransfer.fromAgencyLocation || {}).description,
     reason_f135: o.lastSequentialTransfer.movementReasonDescription,
 
     movement: {
@@ -209,10 +209,10 @@ module.exports.build = sysdate => data => {
       code_f140: o.lastSequentialMovement.movementReasonCode,
     },
 
-    court_f141: (o.lastSequentialMovementIfOut.movementTypeCode === 'CRT' ? o.lastSequentialMovementIfOut.toAgencyLocationId : undefined),
+    court_f141: (o.lastSequentialMovementIfOut.movementTypeCode === 'CRT' ? o.lastSequentialMovementIfOut.toAgencyLocation.agencyLocationId : undefined),
     escort_f142: (o.lastSequentialMovementIfOut.escortCode || {}).description,
     first_out_mov_post_adm_f143: helpers.optionalDate(o.earliestOutMovementDate.movementDateTime),
-    employed_f144: o.offenderEmployed, // (o.offenderEmployed ? 'Y' : 'N'),
+    employed_f144: (o.offenderEmployed ? 'Y' : 'N'),
     diary_details_f145: helpers.withList(o.diaryDetails).map(odd => helpers.formatOffenderDiaryDetail(odd, o)),
     licence_type_f146: o.offenderLicenses.map(ol => (ol.sentenceCalculationType || {}).description).join('~'),
     other_offences_f147: o.otherOffences.map(x => x.offenceCode).sort(),
@@ -220,8 +220,8 @@ module.exports.build = sysdate => data => {
 
     court: {
       type_f149: (o.courtOutcome.outcomeReason || {}).description,
-      code_f150: o.mostRecentConviction.agencyLocationId,
-      name_f151: "",
+      code_f150: (o.mostRecentConviction.agencyLocation || {}).agencyLocationId,
+      name_f151: (o.mostRecentConviction.agencyLocation || {}).description,
     },
 
 // 152	Activity Details

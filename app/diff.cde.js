@@ -6,7 +6,7 @@ const pointer = require('json-pointer');
 
 const log = require('../server/log');
 
-const CDE_DATE = moment(/*'2018-07-17T22:00:00.000Z'*/);
+const CDE_DATE = moment(/*'2018-07-17T22:00:00.000Z'*/).subtract(1, 'days');
 const EXTRACT_DATE = moment(/*'2018-07-17T22:00:00.000Z'*/);
 
 const optionalNumber = (n, b) => {
@@ -324,7 +324,7 @@ const processStream = (type) => (x) => {
   checkDoc(nomsId);
 };
 
-fs.createReadStream(`./.extracts/reports/CDE/${EXTRACT_DATE.format('YYYYMMDD.HHmm')}.json`, 'utf8')
+fs.createReadStream(`./.extracts/reports/CDE/${EXTRACT_DATE.format('YYYYMMDD')}.json`, 'utf8')
   .pipe(jsonStream.parse('*'))
   .on('data', processStream('doc'))
   .on('error', err => log.error(err));

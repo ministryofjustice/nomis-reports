@@ -16,14 +16,19 @@ const services = {
 const getFirst = a => a[0] || {};
 const ofList = a => a || [];
 
+const getAgencyId = (al) =>
+  (al || {}).agencyLocationId;
+
 const getValidLocation = (mainBooking, lastMovement) => {
-  switch (mainBooking.agencyLocationId) {
+  switch (getAgencyId(mainBooking.agencyLocation)) {
     case 'OUT':
-      return lastMovement.fromAgencyLocationId;
+      return getAgencyId(lastMovement.fromAgencyLocation);
     case 'TRN':
-      return lastMovement.toAgencyCodeLocationId;
+      return getAgencyId(lastMovement.toAgencyCodeLocation);
+    case 'ZZGHI':
+      return undefined;
     default:
-      return mainBooking.agencyLocationId !== 'ZZGHI' ? mainBooking.agencyLocationId : undefined;
+      return getAgencyId(mainBooking.agencyLocation);
   }
 };
 
@@ -62,7 +67,7 @@ const isCDEEntry = (data, extractDate) => {
 };
 
 let reportName = 'CDE';
-let extractDate = moment(/*'2018-07-17T22:00:00.000Z'*/);
+let extractDate = moment('2018-09-17T00:00:00.000Z');
 let builder = CDEModel.build(extractDate.clone());
 let entryChecker = isCDEEntry;
 
