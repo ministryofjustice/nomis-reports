@@ -1,7 +1,5 @@
+const apiAgent = require('../helpers/apiAgent');
 const healthCheckAgent = require('../services/healthCheck');
-const nomisApiAgent = require('../helpers/nomisApiAgent');
-const eliteApiAgent = require('../helpers/eliteApiAgent');
-const custodyApiAgent = require('../helpers/custodyApiAgent');
 
 const safely = (fn) => {
   try {
@@ -20,14 +18,8 @@ const addAppInfo = (result) =>
 const gatherCheckInfo = (total, x) =>
   Object.assign({}, total, {[ x.name ]: (x => (delete x.name) && x)(x)});
 
-const nomisApiCheck = (config, logger) =>
-  healthCheckAgent(nomisApiAgent(undefined, undefined, config), 'nomis-api', config, {logger}).version;
-
-const eliteApiCheck = (config, logger) =>
-  healthCheckAgent(eliteApiAgent(undefined, undefined, config), 'elite2-api', config, {logger}).health; // + info
-
-const custodyApiCheck = (config, logger) =>
-  healthCheckAgent(custodyApiAgent(undefined, undefined, config), 'custody-api', config, {logger}).health; // + info
+const healthApiCheck = (config, logger, apiName) =>
+  healthCheckAgent(apiAgent(undefined, undefined, config), apiName, config, {logger}).health; // + info
 
 module.exports = function healthcheck(config, log) {
   let response = {
@@ -37,9 +29,8 @@ module.exports = function healthcheck(config, log) {
   };
 
   const checks = [];
-  if (config.nomis) checks.push(nomisApiCheck(config.nomis, log));
-  if (config.elite2) checks.push(eliteApiCheck(config.elite2, log));
-  if (config.custody) checks.push(custodyApiCheck(config.custody, log));
+  if (config.elite2) checks.push(healthApiCheck(config.elite2, log, 'elite2-api'));
+  if (config.custody) checks.push(healthApiCheck(config.custody, log , 'cusody-api'));
 
   if (!checks.length) return new Promise(res => res(addAppInfo(response)));
 

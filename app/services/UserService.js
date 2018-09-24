@@ -5,9 +5,9 @@ const setJwt = (config) => (token) => {
   config.custody.custodyJwt = token;
 };
 
-function UserService(config, childProcessAgent) {
+function UserService(config, processAgent) {
   this.config = config;
-  this.agent = childProcessAgent || new ProcessAgent(this.config);
+  this.agent = processAgent || new ProcessAgent(this.config);
 }
 
 UserService.prototype.login = function (username, password) {

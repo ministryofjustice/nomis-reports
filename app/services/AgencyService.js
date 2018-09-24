@@ -2,19 +2,9 @@ const log = require('../../server/log');
 
 const ProcessAgent = require('../helpers/MainProcessAgent');
 
-const describe = (name, promise, alt, map) =>
-  promise
-    .then((data) => ({ [name]: (data || alt) }))
-    .then((data) => data.map && map ? data.map(map) : data)
-    .catch((err) => {
-      log.error(err, {name}, 'AgencyService describe ERROR');
-
-      return alt;
-    });
-
-function AgencyService(config, childProcessAgent) {
+function AgencyService(config, processAgent) {
   this.config = config;
-  this.agent = childProcessAgent || new ProcessAgent(this.config);
+  this.agent = processAgent || new ProcessAgent(this.config);
 }
 
 AgencyService.prototype.list = function (query, pageOffset, pageSize) {

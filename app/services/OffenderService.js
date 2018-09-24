@@ -1,8 +1,8 @@
 const ProcessAgent = require('../helpers/MainProcessAgent');
 
-function OffenderService(config, childProcessAgent) {
+function OffenderService(config, processAgent) {
   this.config = config;
-  this.agent = childProcessAgent || new ProcessAgent(this.config);
+  this.agent = processAgent || new ProcessAgent(this.config);
 }
 
 OffenderService.prototype.getDetails = function (nomsId) {

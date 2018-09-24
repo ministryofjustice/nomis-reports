@@ -12,9 +12,9 @@ const describe = (name, promise, alt, map) =>
       return alt;
     });
 
-function ReportsService(config, childProcessAgent) {
+function ReportsService(config, processAgent) {
   this.config = config;
-  this.agent = childProcessAgent || new ProcessAgent(this.config);
+  this.agent = processAgent || new ProcessAgent(this.config);
 }
 
 ReportsService.prototype.listOffenders = function (query, page, size) {

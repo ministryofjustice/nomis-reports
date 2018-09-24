@@ -1,8 +1,8 @@
 const ProcessAgent = require('../helpers/MainProcessAgent');
 
-function OffenceService(config, childProcessAgent) {
+function OffenceService(config, processAgent) {
   this.config = config;
-  this.agent = childProcessAgent || new ProcessAgent(this.config);
+  this.agent = processAgent || new ProcessAgent(this.config);
 }
 
 OffenceService.prototype.listOffences = function (query, pageOffset, pageSize) {

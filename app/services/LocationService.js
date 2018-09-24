@@ -2,9 +2,9 @@ const log = require('../../server/log');
 
 const ProcessAgent = require('../helpers/MainProcessAgent');
 
-function LocationService(config, childProcessAgent) {
+function LocationService(config, processAgent) {
   this.config = config;
-  this.agent = childProcessAgent || new ProcessAgent(this.config);
+  this.agent = processAgent || new ProcessAgent(this.config);
 }
 
 LocationService.prototype.list = function (query, pageOffset, pageSize) {

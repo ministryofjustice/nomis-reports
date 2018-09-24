@@ -13,9 +13,9 @@ const describe = (name, promise, alt, map) =>
       return alt;
     });
 
-function BookingService(config, childProcessAgent) {
+function BookingService(config, processAgent) {
   this.config = config;
-  this.agent = childProcessAgent || new ProcessAgent(this.config);
+  this.agent = processAgent || new ProcessAgent(this.config);
 }
 
 BookingService.prototype.all = function (query, pageSize = 10, concurrency = 1) {
