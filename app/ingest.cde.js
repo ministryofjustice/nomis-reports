@@ -59,7 +59,7 @@ const isCDEEntry = (data, extractDate) => {
   // Active-UAL, UAL_ECL, UAL (Escape), Inactive-Out
   if (lastMovement.movementTypeCode === 'REL') {
     let movementDate =
-      ~['ESCP', 'UAL', 'UAL_ECL'].indexOf(lastMovement.movementReasonCode) ?
+      ~[ 'ESCP', 'UAL', 'UAL_ECL' ].indexOf(lastMovement.movementReasonCode) ?
         extractDate : moment(lastMovement.movementDateTime);
 
     return movementDate.diff(extractDate.clone().subtract(7, 'days')) >= 0;
@@ -67,14 +67,14 @@ const isCDEEntry = (data, extractDate) => {
 };
 
 let reportName = 'CDE';
-let extractDate = moment('2018-09-17T00:00:00.000Z');
+let extractDate = moment('2018-09-18T22:00:00.000Z');
 let builder = CDEModel.build(extractDate.clone());
 let entryChecker = isCDEEntry;
 
 // start of routine
 
 let now = moment();
-let ep = `./.extracts/reports/${reportName}/${extractDate.format('YYYYMMDD.HHmm')}.json`;
+let ep = `./.extracts/reports/${reportName}/${extractDate.format('YYYYMMDD')}.json`;
 let ws = fs.createWriteStream(ep, 'utf8');
 let size = 100;
 

@@ -2,51 +2,83 @@ const moment = require('moment');
 const helpers = require('./helpers');
 
 const model = helpers.pipe([
-  ['mainBooking', helpers.getMainBooking],
-  ['mainAlias', helpers.getMainAlias],
-  ['previousBookingNos', helpers.getPreviousBookings],
-  ['offenderIdentifiers', helpers.mapOffenderIdentifiers],
-  ['offenderSecurityCategory', helpers.getOffenderSecurityCategory],
-  ['offenderSentence', helpers.getActiveOffenderSentence],
-  ['offenderSentenceCalculations', helpers.getOffenderSentenceCalculations],
-  ['offenderSentenceLength', helpers.getOffenderSentenceLength],
-  ['offenderLicenses', helpers.getOffenderLicenses],
-  ['lastSequentialTransfer', helpers.getLastSequentialTransfer],
-  ['activeTransfers', helpers.getActiveTransfers],
-  ['lastSequentialMovementIfOut', helpers.getLastSequentialMovementIfOut],
-  ['earliestOutMovementDate', helpers.getEarliestOutMovementDate],
-  ['lastSequentialMovement', helpers.getLastSequentialMovement],
-  ['offenderSentenceCalculationDates', helpers.getOffenderSentenceCalculationDates],
-  ['offenderEmployments', helpers.getOffenderEmployments],
-  ['offenderCharges', helpers.getOffenderCharges],
-  ['offenderContactPersons', helpers.getContactPersons],
-  ['offenderHomeAddress', helpers.getOffenderHomeAddress],
-  ['offenderReceptionAddress', helpers.getOffenderReceptionAddress],
-  ['offenderDischargeAddress', helpers.getOffenderDischargeAddress],
-  ['nextOfKin', helpers.getNextOfKin],
-  ['offenderManager', helpers.getOffenderManager],
-  ['activeAlerts', helpers.getActiveAlerts],
-  ['notForRelease', helpers.getNotForReleaseAlerts],
-  ['MAPPA', helpers.getMAPPAAlerts],
-  ['checkHoldAlerts', helpers.getCheckHoldAlerts],
-  ['physicals', helpers.getPhysicals],
-  ['IEPLevel', helpers.getIEPLevel],
-  ['employment', helpers.getEmployment],
-  ['dischargeEmployment', helpers.dischargeEmployment],
-  ['receptionEmployment', helpers.receptionEmployment],
-  ['imprisonmentStatus', helpers.getImprisonmentStatus],
-  ['releaseDetails', helpers.getReleaseDetails],
-  ['isSexOffender', helpers.isSexOffender],
-  ['mostRecentConviction', helpers.getMostRecentConviction],
-  ['earliestSentenceAndConviction', helpers.getEarliestSentenceAndConviction],
-  ['courtOutcome', helpers.getCourtOutcome],
-  ['highestRankedOffence', helpers.getHighestRankedOffence],
-  ['otherOffences', helpers.getOtherOffences],
-  ['earliestReleaseDate', helpers.getEarliestReleaseDate],
-  ['custodyStatus', helpers.getCustodyStatus],
-  ['maternityStatus', helpers.getMaternityStatus],
-  ['effectiveSentenceLength', helpers.getEffectiveSentenceLength],
-  ['offenderEmployed', helpers.isEmployed]
+  // bookings
+  ['mainBooking', helpers.getMainBooking],                                      // bookings
+  ['previousBookingNos', helpers.getPreviousBookings],                          // bookings
+//['activeBookings', helpers.getActiveBookings],                                // bookings
+  ['custodyStatus', helpers.getCustodyStatus],                                  // mainBooking
+  // aliases
+  ['mainAlias', helpers.getMainAlias],                                          // aliases
+  // identifiers
+  ['offenderIdentifiers', helpers.mapOffenderIdentifiers],                      // identifiers
+  // assessments
+  ['offenderSecurityCategory', helpers.getOffenderSecurityCategory],            // assessments
+//['offenderSecurityCategory', helpers.getOffenderSecurityCategory2],           // assessments
+//['csraLevel', helpers.getCSRALevel],                                          // assessments
+  // sentences
+//['firstSentenceAndCounts', helpers.getFirstSentenceAndCounts],                // sentences
+  ['offenderSentence', helpers.getActiveOffenderSentence],                      // sentences
+  ['offenderLicenses', helpers.getOffenderLicenses],                            // sentences
+  // sentenceCalculations
+  ['offenderSentenceCalculations', helpers.getOffenderSentenceCalculations],    // sentenceCalculations
+  ['offenderSentenceCalculationDates', helpers.getOffenderSentenceCalculationDates],  // offenderSentenceCalculations
+  ['effectiveSentenceLength', helpers.getEffectiveSentenceLength],              // offenderSentenceCalculations
+  ['offenderSentenceLength', helpers.getOffenderSentenceLength],                // offenderSentenceCalculations, offenderSentence
+  ['earliestReleaseDate', helpers.getEarliestReleaseDate],                      // offenderSentenceCalculationDates
+//['earliestReleaseDate', helpers.getEarliestReleaseDate2],                      // offenderSentenceCalculationDates
+  // movements
+  ['activeTransfers', helpers.getActiveTransfers],                              // movements
+  ['firstSequentialMovement', helpers.getFirstSequentialMovement],                // movements
+  ['lastSequentialMovement', helpers.getLastSequentialMovement],                // movements
+  ['lastSequentialMovementIfOut', helpers.getLastSequentialMovementIfOut],      // movements
+  ['lastSequentialTransfer', helpers.getLastSequentialTransfer],                // movements
+  ['earliestOutMovementDate', helpers.getEarliestOutMovementDate],              // movements
+  // employments
+  ['offenderEmployments', helpers.getOffenderEmployments],                      // employments
+  ['employment', helpers.getEmployment],                                        // employments
+  ['dischargeEmployment', helpers.dischargeEmployment],                         // offenderEmployments
+  ['receptionEmployment', helpers.receptionEmployment],                         // offenderEmployments
+  // charges
+  ['offenderCharges', helpers.getOffenderCharges],                              // charges
+  ['isSexOffender', helpers.isSexOffender],                                     // charges
+//['offenceGroups', helpers.getOffenceGroups],                                  // charges
+//['mainOffence', helpers.getOffenderMainOffence],                              // offenderCharges
+  ['otherOffences', helpers.getOtherOffences],                                  // offenderCharges
+//['firstOffence', helpers.getFirstOffenderOffence],                            // offenderCharges
+  ['highestRankedOffence', helpers.getHighestRankedOffence],                    // offenderCharges
+  //contactPersons
+  ['offenderContactPersons', helpers.getContactPersons],                        // contactPersons
+  ['nextOfKin', helpers.getNextOfKin],                                          // offenderContactPersons
+  ['offenderManager', helpers.getOffenderManager],                              // offenderContactPersons
+  //addresses
+//['offenderAddresses', helpers.getOffenderAddresses],                          // addresses
+  ['offenderHomeAddress', helpers.getOffenderHomeAddress],                      // addresses
+  ['offenderReceptionAddress', helpers.getOffenderReceptionAddress],            // addresses
+  ['offenderDischargeAddress', helpers.getOffenderDischargeAddress],            // addresses
+//['offenderDischargeAddress', helpers.getOffenderDischargeAddress2],           // addresses
+  // alerts
+  ['activeAlerts', helpers.getActiveAlerts],                                    // alerts
+  ['notForRelease', helpers.getNotForReleaseAlerts],                            // alerts
+  ['MAPPA', helpers.getMAPPAAlerts],                                            // alerts
+  ['checkHoldAlerts', helpers.getCheckHoldAlerts],                              // activeAlerts
+  // physicals
+  ['physicals', helpers.getPhysicals],                                          // physicals
+  // ieps
+  ['IEPLevel', helpers.getIEPLevel],                                            // ieps
+  // imprisonmentStatuses
+  ['offenderImprisonmentStatus', helpers.getImprisonmentStatus],                // imprisonmentStatuses
+  // releaseDetails
+  ['releaseDetails', helpers.getReleaseDetails],                                // releaseDetails
+  // courtEvents
+  ['mostRecentConviction', helpers.getMostRecentConviction],                    // courtEvents
+  ['earliestSentenceAndConviction', helpers.getEarliestSentenceAndConviction],  // courtEvents
+  ['courtOutcome', helpers.getCourtOutcome],                                    // courtEvents
+  // healthProblems
+  ['maternityStatus', helpers.getMaternityStatus],                              // healthProblems
+  // programmeProfiles, individualSchedules
+  ['offenderEmployed', helpers.isEmployed],                                     // programmeProfiles, individualSchedules
+  // diaryDetails
+  ['futureDiaryDetails', helpers.getFutureDiaryDetails]                         // diaryDetails
 ]);
 
 const buildModel = module.exports.buildModel = sysdate => data => {
@@ -75,7 +107,8 @@ module.exports.build = sysdate => data => {
     religion_f16: (o.physicals.profileDetails.RELF || {}).description,
     marital_f17: (o.physicals.profileDetails.MARITAL || {}).description,
     maternity_status_f18: (o.maternityStatus.problemCode || {}).description,
-    location_f19: (o.mainBooking.livingUnit || {}).description.replace((o.mainBooking.livingUnit || {}).agencyLocationId + '-', ''),
+    location_f19: (o.mainBooking.livingUnit || {}).agencyLocationId ? o.mainBooking.livingUnit.description
+          .replace(o.mainBooking.livingUnit.agencyLocationId + '-', '') : (o.mainBooking.livingUnit || {}).description,
     incentive_band_f20: (o.IEPLevel.iepLevel || {}).description,
     occupation_v21: (o.employment.occupationsCode || {}).description,
     transfer_reason_f22: o.lastSequentialTransfer.movementReasonDescription,
@@ -142,8 +175,8 @@ module.exports.build = sysdate => data => {
     sentence_length_f64: o.offenderSentenceLength,
 
     release: {
-      date_f65: helpers.optionalDate((o.releaseDetails[0] || {}).releaseDate),
-      name_f66: (o.releaseDetails[0] || {}).movementReasonDescription,
+      date_f65: helpers.optionalDate((o.releaseDetails || {}).releaseDate),
+      name_f66: (o.releaseDetails || {}).movementReasonDescription,
     },
 
     sed_f67: helpers.optionalDate((o.offenderSentenceCalculationDates || {}).sed),
@@ -201,7 +234,7 @@ module.exports.build = sysdate => data => {
     sending_estab_f134: (o.lastSequentialTransfer.fromAgencyLocation || {}).description,
     reason_f135: o.lastSequentialTransfer.movementReasonDescription,
 
-    movement: {
+    movement: o.lastSequentialMovement && {
       date_f136: helpers.optionalDate(o.lastSequentialMovement.movementDateTime),
       hour_f137: moment(o.lastSequentialMovement.movementDateTime).format('HH'),
       min_f138: moment(o.lastSequentialMovement.movementDateTime).format('mm'),
@@ -213,7 +246,7 @@ module.exports.build = sysdate => data => {
     escort_f142: (o.lastSequentialMovementIfOut.escortCode || {}).description,
     first_out_mov_post_adm_f143: helpers.optionalDate(o.earliestOutMovementDate.movementDateTime),
     employed_f144: (o.offenderEmployed ? 'Y' : 'N'),
-    diary_details_f145: helpers.withList(o.diaryDetails).map(odd => helpers.formatOffenderDiaryDetail(odd, o)),
+    diary_details_f145: o.futureDiaryDetails.map(odd => helpers.formatOffenderDiaryDetail(odd, o)),
     licence_type_f146: o.offenderLicenses.map(ol => (ol.sentenceCalculationType || {}).description).join('~'),
     other_offences_f147: o.otherOffences.map(x => x.offenceCode).sort(),
     active_alerts_f148: o.activeAlerts.map(helpers.formatAlert),

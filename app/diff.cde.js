@@ -6,8 +6,8 @@ const pointer = require('json-pointer');
 
 const log = require('../server/log');
 
-const CDE_DATE = moment(/*'2018-07-17T22:00:00.000Z'*/).subtract(1, 'days');
-const EXTRACT_DATE = moment(/*'2018-07-17T22:00:00.000Z'*/);
+const CDE_DATE = moment().subtract(1, 'days');
+const EXTRACT_DATE = moment();
 
 const optionalNumber = (n, b) => {
   let out = parseInt(n, b);

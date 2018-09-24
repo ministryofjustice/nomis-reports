@@ -2,7 +2,7 @@ const moment = require('moment');
 
 const helpers = require('../../../app/models/helpers');
 
-describe('cde/IEPLevels', () => {
+describe('cde/EmploymentStatus', () => {
 
   describe('When an offender has an individual schedule that indicates they are employed', () => {
     let input = {
@@ -35,7 +35,7 @@ describe('cde/IEPLevels', () => {
   describe('When an offender has a programme profile that indicates they are employed', () => {
     let input = {
 
-      sysdate: moment('2019-11-19T00:00:00'),
+      sysdate: moment('2010-07-10T00:00:00'),
 
       mainBooking: { bookingId: 155957 },
 
@@ -116,6 +116,54 @@ describe('cde/IEPLevels', () => {
       let result = helpers.isEmployed(input);
 
       result.should.equal(true);
+    });
+  });
+
+  describe('When an offender has two programme profile one of which indicates they were employed', () => {
+    let input = {
+
+      sysdate: moment('2019-11-19T00:00:00'),
+
+      mainBooking: { bookingId: 155957 },
+
+      programmeProfiles: [
+        {
+          bookingId: 155957,
+          courseActivity: {
+            courseActivityId: 61323,
+            description: "Library_OUT",
+            scheduledStartDate: moment('2008-07-24'),
+            active: true,
+            outsideWork: true
+          },
+          agencyLocationId: "PKI",
+          offenderProgramStatus: "WAIT",
+          suspended: false
+        },
+        {
+          bookingId: 155957,
+          courseActivity: {
+            courseActivityId: 60589,
+            description: "A LIFE WORTH LIVING",
+            scheduledStartDate: moment('2007-07-24'),
+            active: true,
+            outsideWork: false
+          },
+          agencyLocationId: "PKI",
+          offenderProgramStatus: "END",
+          offenderStartDate: moment('2008-07-24'),
+          offenderEndDate: moment('2008-07-24'),
+          suspended: false
+        }
+      ],
+
+      individualSchedules: [ ],
+    };
+
+    it('should indicate that the offender is employed', () => {
+      let result = helpers.isEmployed(input);
+
+      result.should.equal(false);
     });
   });
 

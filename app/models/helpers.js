@@ -2,6 +2,8 @@ const moment = require('moment');
 
 let helpers = {};
 
+const farFutureDate = helpers.farFutureDate = moment('2999-12-31');
+
 const getFirst = helpers.getFirst = a => a[0] || {};
 const getFirstOrNothing = helpers.getFirstOrNothing = a => a[0];
 const getLast = helpers.getLast = a => a[a.length - 1] || {};
@@ -31,7 +33,7 @@ helpers.pipe = p => ({
 });
 
 const optionalDate = helpers.optionalDate = d =>
-  d ? moment(moment(d).format('YYYY-MM-DDT00:00:00.000Z')) : undefined;
+  d ? moment(moment(d).format('YYYY-MM-DD')) : undefined;
 
 const optionalTime = helpers.optionalTime = d =>
   d ? moment(d).format('HH:mm:ss') : undefined;
@@ -453,6 +455,16 @@ helpers.getLastSequentialMovement = o =>
       .sort((a, b) => a.sequenceNumber - b.sequenceNumber) // ASC
   );
 
+helpers.getFirstSequentialMovement = o =>
+  getFirst(
+    withList(o.movements)
+      .filter(oem => (
+        oem.bookingId === o.mainBooking.bookingId
+      ))
+      // TODO: reorder for offloc ignoring date - so remove
+      .sort((a, b) => a.sequenceNumber - b.sequenceNumber) // ASC
+);
+
 helpers.getLastSequentialMovementIfTransfer = o => {
   let oem = helpers.getLastSequentialMovement(o);
 
@@ -472,7 +484,6 @@ helpers.getEarliestOutMovementDate = o =>
         oem.movementDirection === 'OUT' &&
         (!out.movementDateTime || moment(oem.movementDateTime).diff(out.movementDateTime) < 0)
       ) ? oem : out, {}) || {};
-
 
 
 
@@ -526,16 +537,17 @@ helpers.getMaternityStatus = o =>
     )));
 
 helpers.getReleaseDetails = o =>
-  withList(o.releaseDetails)
+  getFirst(withList(o.releaseDetails)
     .filter(ord => (
       ord.bookingId === o.mainBooking.bookingId
-    ));
+    )));
 
 //TODO: does this have an active property?
 helpers.getOffenderSecurityCategory = o =>
   getFirst(withList(o.assessments)
     .filter(oa => (
       oa.bookingId === o.mainBooking.bookingId &&
+    //oa.calcSupLevelType === 'Y' &&
       oa.evaluationResultCode === 'APP' &&
       oa.assessStatus === 'A' &&
       oa.assessmentType &&
@@ -548,12 +560,14 @@ helpers.getOffenderSecurityCategory = o =>
 helpers.getOffenderSecurityCategory2 = o =>
   getFirst(withList(o.assessments)
     .filter(oa => (
+    // oa.bookingId === o.mainBooking.bookingId &&
       oa.calcSupLevelType === 'Y' &&
       oa.evaluationResultCode === 'APP' &&
       oa.assessStatus === 'A' &&
       oa.assessmentType &&
       oa.assessmentType.assessmentClass === 'TYPE' &&
-      oa.assessmentType.assessmentCode === 'CATEGORY'
+      oa.assessmentType.assessmentCode === 'CATEGORY'// &&
+    // oa.assessmentType.determineSupLevelFlag
     )));
 
 helpers.getIEPLevel = o =>
@@ -680,80 +694,81 @@ helpers.getOffenderSentenceCalculationDates = o =>
       effectiveSentenceLength: getSentenceLengthValues(osc.effectiveSentenceLength),
       judiciallyImposedSentenceLength: getSentenceLengthValues(osc.judiciallyImposedSentenceLength),
       effectiveSentenceEndDate: osc.effectiveSentenceEndDate,
+
       // sentence Expiry Date
-      sed: moment(osc.sedOverridedDate || osc.sedCalculatedDate),
+      sed: optionalDate(osc.sedOverridedDate || osc.sedCalculatedDate),
       // homeDetentionCurfew Eligibility Date
-      hdced: moment(osc.hdcedOverridedDate || osc.hdcedCalculatedDate),
+      hdced: optionalDate(osc.hdcedOverridedDate || osc.hdcedCalculatedDate),
       // homeDetentionCurfew Actual Date
-      hdcad: moment(osc.hdcadOverridedDate || osc.hdcadCalculatedDate),
+      hdcad: optionalDate(osc.hdcadOverridedDate || osc.hdcadCalculatedDate),
       // early Term Date
-      etd: moment(osc.etdOverridedDate || osc.etdCalculatedDate),
+      etd: optionalDate(osc.etdOverridedDate || osc.etdCalculatedDate),
       // mid Term Date
-      mtd: moment(osc.mtdOverridedDate || osc.mtdCalculatedDate),
+      mtd: optionalDate(osc.mtdOverridedDate || osc.mtdCalculatedDate),
       // late Term Date
-      ltd: moment(osc.ltdOverridedDate || osc.ltdCalculatedDate),
+      ltd: optionalDate(osc.ltdOverridedDate || osc.ltdCalculatedDate),
       // Conditional Release Date
-      crd: moment(osc.crdOverridedDate || osc.crdCalculatedDate),
+      crd: optionalDate(osc.crdOverridedDate || osc.crdCalculatedDate),
       // parole Eligibility Date
-      ped: moment(osc.pedOverridedDate || osc.pedCalculatedDate),
+      ped: optionalDate(osc.pedOverridedDate || osc.pedCalculatedDate),
       // actual Parole Date
-      apd: moment(osc.apdOverridedDate || osc.apdCalculatedDate),
+      apd: optionalDate(osc.apdOverridedDate || osc.apdCalculatedDate),
       // non Parole Date
-      npd: moment(osc.npdOverridedDate || osc.npdCalculatedDate),
+      npd: optionalDate(osc.npdOverridedDate || osc.npdCalculatedDate),
       // automatic Release Date
-      ard: moment(osc.ardOverridedDate || osc.ardCalculatedDate),
+      ard: optionalDate(osc.ardOverridedDate || osc.ardCalculatedDate),
       // licence Expiry Date
-      led: moment(osc.ledOverridedDate || osc.ledCalculatedDate),
+      led: optionalDate(osc.ledOverridedDate || osc.ledCalculatedDate),
       // topupSupervision Expiry Date
-      tused: moment(osc.tusedOverridedDate || osc.tusedCalculatedDate),
+      tused: optionalDate(osc.tusedOverridedDate || osc.tusedCalculatedDate),
       // postRecall Release Date
-      prrd: moment(osc.prrdOverridedDate || osc.prrdCalculatedDate),
+      prrd: optionalDate(osc.prrdOverridedDate || osc.prrdCalculatedDate),
       // earlyRemovalScheme Eligibility Date
-      ersed: moment(osc.ersedOverridedDate || osc.ersedCalculatedDate),
+      ersed: optionalDate(osc.ersedOverridedDate || osc.ersedCalculatedDate),
       // Tarif earlyRemovalScheme Eligibility Date
-      tersed: moment(osc.tersedOverridedDate || osc.tersedCalculatedDate),
+      tersed: optionalDate(osc.tersedOverridedDate || osc.tersedCalculatedDate),
       // releaseOnTemporaryLicenceDate
-      rotl: moment(osc.rotlOverridedDate || osc.rotlCalculatedDate),
+      rotl: optionalDate(osc.rotlOverridedDate || osc.rotlCalculatedDate),
       // tariffDate
-      tariff: moment(osc.tariffOverridedDate || osc.tariffCalculatedDate),
+      tariff: optionalDate(osc.tariffOverridedDate || osc.tariffCalculatedDate),
     }))(o.offenderSentenceCalculations) : undefined;
 
 helpers.getEarliestReleaseDate =  o =>
   o.offenderSentenceCalculationDates ?
     (scd => [
-      scd.hdced || moment('2999-12-31'),
-      scd.hdcad || moment('2999-12-31'),
-      scd.etd || moment('2999-12-31'),
-      scd.mtd || moment('2999-12-31'),
-      scd.ltd || moment('2999-12-31'),
-      scd.crd || moment('2999-12-31'),
-      scd.ped || moment('2999-12-31'),
-      scd.apd || moment('2999-12-31'),
-      scd.npd || moment('2999-12-31'),
-      scd.ard || moment('2999-12-31')
+      scd.hdced || farFutureDate,
+      scd.hdcad || farFutureDate,
+      scd.etd || farFutureDate,
+      scd.mtd || farFutureDate,
+      scd.ltd || farFutureDate,
+      scd.crd || farFutureDate,
+      scd.ped || farFutureDate,
+      scd.apd || farFutureDate,
+      scd.npd || farFutureDate,
+      scd.ard || farFutureDate
     ]
     .sort((a, b) => a.diff(b))[0])(o.offenderSentenceCalculationDates) : undefined;
 
 helpers.getEarliestReleaseDate2 =  o =>
   o.offenderSentenceCalculationDates ?
     (scd => [
-      { date: scd.hdced, label: 'hdced', description: 'Home Detention Curfew Eligibility Date' },
-      { date: scd.hdcad, label: 'hdcad', description: 'Home Detention Curfew Approved Date' },
-      { date: scd.etd, label: 'etd', description: 'Early Term Date' },
-      { date: scd.mtd, label: 'mtd', description: 'Mid Term Release Date' },
-      { date: scd.ltd, label: 'ltd', description: 'Late Term Date' },
-      { date: scd.crd, label: 'crd', description: 'Conditional Release Date' },
-      { date: scd.ped, label: 'ped', description: 'Parole Eligibility Date' },
-      { date: scd.apd, label: 'apd', description: 'Approved Parole Date' },
-      { date: scd.npd, label: 'npd', description: 'Non Parole Release Date' },
-      { date: scd.ard, label: 'ard', description: 'Automatic Release Date' },
+      { date: scd.hdced || farFutureDate, label: 'hdced', description: 'Home Detention Curfew Eligibility Date' },
+      { date: scd.hdcad || farFutureDate, label: 'hdcad', description: 'Home Detention Curfew Approved Date' },
+      { date: scd.etd || farFutureDate, label: 'etd', description: 'Early Term Date' },
+      { date: scd.mtd || farFutureDate, label: 'mtd', description: 'Mid Term Release Date' },
+      { date: scd.ltd || farFutureDate, label: 'ltd', description: 'Late Term Date' },
+      { date: scd.crd || farFutureDate, label: 'crd', description: 'Conditional Release Date' },
+      { date: scd.ped || farFutureDate, label: 'ped', description: 'Parole Eligibility Date' },
+      { date: scd.apd || farFutureDate, label: 'apd', description: 'Approved Parole Date' },
+      { date: scd.npd || farFutureDate, label: 'npd', description: 'Non Parole Release Date' },
+      { date: scd.ard || farFutureDate, label: 'ard', description: 'Automatic Release Date' },
 
-      // dates not included in OFFLOC calculations
-      { date: moment(o.releaseDetails.releaseDate),
+      // other dates not included in OFFLOC calculations
+      { date: o.releaseDetails.releaseDate || farFutureDate,
         label: `REL-${o.releaseDetails.movementReasonCode}`,
         description: `Assessed Release - ${o.releaseDetails.description ? o.releaseDetails.description : 'Reason Not Stated'}`
       },
-      { date: scd.prrd, label: 'prrd', description: 'Post Recall Release Date' },
+      { date: scd.prrd || farFutureDate, label: 'prrd', description: 'Post Recall Release Date' },
     ]
     .sort((a, b) => a.date.diff(b.date))[0])(o.offenderSentenceCalculationDates) : undefined;
 
@@ -786,7 +801,11 @@ helpers.isEmployed = o =>
     .filter(opp => (
         opp.bookingId === o.mainBooking.bookingId &&
         !opp.suspended &&
-        opp.courseActivity.outsideWork
+        moment(opp.offenderStartDate || farFutureDate).diff(o.sysdate) <= 0 &&
+        (opp.offenderEndDate ? moment(opp.offenderEndDate).add(1, 'days') : farFutureDate).diff(o.sysdate) > 0 &&
+        opp.courseActivity.outsideWork &&
+        moment(opp.courseActivity.scheduledStartDate || farFutureDate).diff(o.sysdate) <= 0 &&
+        (opp.courseActivity.scheduledEndDate ? moment(opp.courseActivity.scheduledEndDate).add(1, 'days') : farFutureDate).diff(o.sysdate) > 0
     )).length > 0 ||
   withList(o.individualSchedules)
     .filter(ois => (
@@ -904,7 +923,9 @@ helpers.formatSentenceLength = o => {
   }
 
   return 'Less than 6 months';
-};const addressBuilder = (out, n, a, phoneType) => {
+};
+
+const addressBuilder = (out, n, a, phoneType) => {
   out[`address1_f${n}`] = helpers.formatAddressLine1(a);
   out[`address2_f${n + 1}`] = a.locality;
 
@@ -954,6 +975,10 @@ helpers.getEffectiveSentenceLength = o => {
     days: parseInt(x[2], 10),
   };
 };
+
+helpers.getFutureDiaryDetails = o =>
+  withList(o.diaryDetails)
+    .filter(odd => moment(odd.movementDateTime || 0).diff(o.sysdate) >= 0);
 
 
 

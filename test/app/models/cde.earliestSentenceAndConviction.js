@@ -1,6 +1,6 @@
 const helpers = require('../../../app/models/helpers');
 
-describe('cde/cde.earliestSentenceAndConviction', () => {
+describe('cde/earliestSentenceAndConviction', () => {
   describe('When court events list contains a conviction', () => {
     let input = {
 
