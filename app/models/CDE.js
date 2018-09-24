@@ -43,9 +43,9 @@ const model = helpers.pipe([
   ['isSexOffender', helpers.isSexOffender],                                     // charges
 //['offenceGroups', helpers.getOffenceGroups],                                  // charges
 //['mainOffence', helpers.getOffenderMainOffence],                              // offenderCharges
+  ['highestRankedOffence', helpers.getHighestRankedOffence],                    // offenderCharges
   ['otherOffences', helpers.getOtherOffences],                                  // offenderCharges
 //['firstOffence', helpers.getFirstOffenderOffence],                            // offenderCharges
-  ['highestRankedOffence', helpers.getHighestRankedOffence],                    // offenderCharges
   //contactPersons
   ['offenderContactPersons', helpers.getContactPersons],                        // contactPersons
   ['nextOfKin', helpers.getNextOfKin],                                          // offenderContactPersons
@@ -114,7 +114,7 @@ module.exports.build = sysdate => data => {
     transfer_reason_f22: o.lastSequentialTransfer.movementReasonDescription,
     first_reception_date_f23: helpers.optionalDate(o.mainBooking.startDate),
     custody_status_f24: o.custodyStatus,
-    inmate_status_f25: (o.imprisonmentStatus.imprisonmentStatus || {}).description,
+    inmate_status_f25: (o.offenderImprisonmentStatus.imprisonmentStatus || {}).description,
 
     sec_cat: {
       level_f26: (o.offenderSecurityCategory.reviewSupLevelType || {}).description,

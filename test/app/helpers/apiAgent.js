@@ -79,24 +79,6 @@ describe('API Agent', () => {
     });
   });
 
-  describe('for NOMIS API', () => {
-    let config = {
-      apiUrl: '',
-      apiGatewayToken: 'dummy',
-      apiGatewayPrivateKey: fakeKey
-    };
-
-    const nomisApiAgent = require('../../../app/helpers/nomisApiAgent');
-    const jwtAuthApiAgent = nomisApiAgent(supertest(server), undefined, config);
-
-    it('should not throw an error', () =>
-      should.not.throw(() => jwtAuthApiAgent.get('/')()));
-
-    it('Should include the Authorization header when the gatewayAuthTokenGenerator is used', () =>
-      jwtAuthApiAgent.get('/fake-api/header/Authorization')()
-        .then((response) => response.body.Authorization.should.match(/Bearer\s(.+)/mi)));
-  });
-
   describe('for NOMIS Elite2 API', () => {
     let config = {
       apiUrl: '',

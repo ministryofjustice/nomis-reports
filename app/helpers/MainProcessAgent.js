@@ -1,9 +1,7 @@
 const AgencyRepository = require('../repositories/AgencyRepository');
 const BookingRepository = require('../repositories/BookingRepository');
-const CaseNoteRepository = require('../repositories/CaseNoteRepository');
 const LocationRepository = require('../repositories/LocationRepository');
 const OffenceRepository = require('../repositories/OffenceRepository');
-const OffenderRepository = require('../repositories/OffenderRepository');
 const ReportsRepository = require('../repositories/ReportsRepository');
 const UserRepository = require('../repositories/UserRepository');
 
@@ -30,10 +28,8 @@ function MainProcessAgent(config, services) {
   this.services = services || {
     agency: config => new CachingRepository(new RetryingRepository(new AgencyRepository(config))),
     booking: config => new CachingRepository(new RetryingRepository(new BookingRepository(config))),
-    caseNote: config => new CachingRepository(new RetryingRepository(new CaseNoteRepository(config))),
     location: config => new CachingRepository(new RetryingRepository(new LocationRepository(config))),
     offence: config => new CachingRepository(new RetryingRepository(new OffenceRepository(config))),
-    offender: config => new CachingRepository(new RetryingRepository(new OffenderRepository(config))),
     reports: config => new CachingRepository(new RetryingRepository(new ReportsRepository(config))),
     user: config => new RetryingRepository(new UserRepository(config)),
   };
