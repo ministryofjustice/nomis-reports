@@ -2,10 +2,10 @@ let should = require('chai').should();
 
 const request = require('supertest');
 const express = require('express');
-
+/*
 const AgencyRepository = require('../../../app/repositories/AgencyRepository');
 
-describe('Agency Repository', () => {
+describe.skip('Agency Repository', () => {
   let exampleSet = [
     { agencyId: 'ABC', agencyType: 'ABCabc' },
     { agencyId: 'DEF', agencyType: 'DEFdef' },
@@ -58,3 +58,4 @@ describe('Agency Repository', () => {
         .then((data) => should.not.exist(data)));
   });
 });
+*/

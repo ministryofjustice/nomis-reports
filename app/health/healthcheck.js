@@ -29,7 +29,6 @@ module.exports = function healthcheck(config, log) {
   };
 
   const checks = [];
-  if (config.elite2) checks.push(healthApiCheck(config.elite2, log, 'elite2-api'));
   if (config.custody) checks.push(healthApiCheck(config.custody, log , 'cusody-api'));
 
   if (!checks.length) return new Promise(res => res(addAppInfo(response)));

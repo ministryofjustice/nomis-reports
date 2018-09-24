@@ -29,30 +29,6 @@ let config = {
 
   port: get('PORT', 3000),
 
-  nomis: {
-    apiUrl: get('NOMIS_API_URL', 'http://localhost:8082/api', { requireInProduction: true }),
-    apiGatewayToken: get('GW_TOKEN', '', { requireInProduction: true }),
-    apiGatewayPrivateKey: new Buffer(get('GW_KEY', '', { requireInProduction: true }), 'base64').toString('ascii'),
-    timeout: {
-      response: 20000,
-      deadline: 25000
-    }
-  },
-
-  elite2: {
-    authUrl: get('OAUTH_API_URL', 'http://localhost:8081/oauth', { requireInProduction: true }),
-    apiUrl: get('ELITE2_API_URL', 'http://localhost:8081/api', { requireInProduction: true }),
-    timeout: {
-      response: 20000,
-      deadline: 25000
-    },
-    oauth: {
-      grantType: get('OAUTH_GRANT_TYPE', 'client_credentials', { requireInProduction: true }),
-      username: get('OAUTH_USERNAME', 'x_trusted_client', { requireInProduction: true }),
-      password: get('OAUTH_PASSWORD', 'x_client_password', { requireInProduction: true }),
-    },
-  },
-
   custody: {
     authUrl: get('OAUTH_API_URL', 'http://localhost:8081/oauth', { requireInProduction: true }),
     apiUrl: get('REPORT_API_URL', 'http://localhost:8080/api', { requireInProduction: true }),

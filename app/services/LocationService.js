@@ -47,6 +47,9 @@ LocationService.prototype.getDetails = function (locationId) {
         throw err;
       }
 
+      return data;
+    })
+    .then(data => {
       let location = {
         id: `/locations/${data.locationId}`,
         type: `/locations/types/${data.locationType}`,
@@ -61,8 +64,9 @@ LocationService.prototype.getDetails = function (locationId) {
       };
 
       return this.list({ query: `parentLocationId:eq:${locationId}` })
+        .catch(() => Promise.resolve([]))
         .then(locations => {
-          if (locations.length) {
+          if (locations && locations.length) {
             location.locations = locations;
           }
 

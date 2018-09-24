@@ -2,10 +2,10 @@ let should = require('chai').should();
 
 const request = require('supertest');
 const express = require('express');
-
+/*
 const LocationRepository = require('../../../app/repositories/LocationRepository');
 
-describe('Location Repository', () => {
+describe.skip('Location Repository', () => {
   let exampleSet = [
     { locationId: 'ABC', description: 'ABCabc' },
     { locationId: 'DEF', description: 'DEFdef' },
@@ -54,3 +54,4 @@ describe('Location Repository', () => {
         .then((data) => should.not.exist(data)));
   });
 });
+*/

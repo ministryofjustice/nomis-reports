@@ -1,7 +1,6 @@
 const ProcessAgent = require('../helpers/MainProcessAgent');
 
 const setJwt = (config) => (token) => {
-  config.elite2.elite2Jwt = token;
   config.custody.custodyJwt = token;
 };
 

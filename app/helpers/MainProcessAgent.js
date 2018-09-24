@@ -1,6 +1,3 @@
-const AgencyRepository = require('../repositories/AgencyRepository');
-const BookingRepository = require('../repositories/BookingRepository');
-const LocationRepository = require('../repositories/LocationRepository');
 const OffenceRepository = require('../repositories/OffenceRepository');
 const ReportsRepository = require('../repositories/ReportsRepository');
 const UserRepository = require('../repositories/UserRepository');
@@ -26,9 +23,6 @@ function MainProcessAgent(config, services) {
   this.requestId = 0;
   this.config = config;
   this.services = services || {
-    agency: config => new CachingRepository(new RetryingRepository(new AgencyRepository(config))),
-    booking: config => new CachingRepository(new RetryingRepository(new BookingRepository(config))),
-    location: config => new CachingRepository(new RetryingRepository(new LocationRepository(config))),
     offence: config => new CachingRepository(new RetryingRepository(new OffenceRepository(config))),
     reports: config => new CachingRepository(new RetryingRepository(new ReportsRepository(config))),
     user: config => new RetryingRepository(new UserRepository(config)),
@@ -79,13 +73,9 @@ MainProcessAgent.prototype.request = function(repository, method, ...params) {
       if (error.status === 401) { //unauthorised
         log.debug(error, 'MainProcessAgent message UNAUTHORISED');
 
-        removeJwt(this.config.elite2);
         removeJwt(this.config.custody);
 
-        return Promise.all([
-            this.login(this.config.elite2, 'ELITE2'),
-            this.login(this.config.custody, 'CUSTODY')
-          ])
+        return this.login(this.config.custody, 'CUSTODY')
           .then(() => this.request.apply(this, [repository, method].concat(params)));
       }
 

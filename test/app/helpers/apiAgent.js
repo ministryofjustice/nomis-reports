@@ -78,24 +78,4 @@ describe('API Agent', () => {
           .then(() => x.should.equal('Bearer 4')))));
     });
   });
-
-  describe('for NOMIS Elite2 API', () => {
-    let config = {
-      apiUrl: '',
-      apiGatewayToken: 'dummy',
-      apiGatewayPrivateKey: fakeKey,
-      oauth: {
-        grantType: 'client_credentials',
-        username: 'x_trusted_client',
-        password: 'x_client_password',
-      }
-    };
-
-    const eliteApiAgent = require('../../../app/helpers/eliteApiAgent');
-    const eliteAuthHeaderApiAgent = eliteApiAgent(supertest(server), undefined, config);
-
-    it('Should include the Authorization header', () =>
-      eliteAuthHeaderApiAgent.get('/fake-api/header/Authorization')()
-        .then((response) => should.exist(response.body.Authorization)));
-  });
 });

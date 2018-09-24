@@ -5,18 +5,16 @@ const helpers = require('../helpers');
 
 function UserRepository(config, agent) {
   this.config = Object.assign({ limit: 2000 }, config);
-  this.agent = apiAgent(agent, undefined, this.config.elite2);
+  this.agent = apiAgent(agent, undefined, this.config.custody);
 
   this.requests = {
-    login: this.agent.post(`${this.config.elite2.authUrl}/token`),
+    login: this.agent.post(`${this.config.custody.authUrl}/token`),
   };
 }
 
 UserRepository.prototype.login = function (username = '', password = '', grantType = 'client_credentials') {
   if (grantType === 'client_credentials') {
     let token = `Basic ${(new Buffer(`${qs.escape(username)}:${qs.escape(password)}`)).toString('base64')}`;
-
-    console.log({ grantType, username, password }, token);
 
     return this.requests.login({ grant_type: grantType })
       .set('Content-Type', 'application/x-www-form-urlencoded')

@@ -47,6 +47,9 @@ AgencyService.prototype.getDetails = function (agencyId) {
         throw err;
       }
 
+      return data;
+    })
+    .then(data => {
       let agency = Object.assign({
           id: `/agencies/${data.agencyId}`,
           type: `/agencies/types/${data.agencyType}`,
@@ -77,7 +80,7 @@ AgencyService.prototype.getDetails = function (agencyId) {
       delete agency.description;
 
       return this.agent.request('location', 'list', `agencyId:eq:${agencyId}`)
-        .catch(err => Promise.resolve([]))
+        .catch(() => Promise.resolve([]))
         .then(locations => {
           if (locations && locations.length) {
             agency.locations = locations;
