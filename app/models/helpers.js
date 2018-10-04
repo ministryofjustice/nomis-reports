@@ -130,6 +130,16 @@ helpers.formatOffenderDiaryDetail = (odd, o) =>
     not_for_release_alert_145f: formatAlert(o.notForRelease),
   });
 
+helpers.formatOffenderActivityDetail = (ad) =>
+  ({
+    activity_f152a: ad.description,
+    internal_location_desc_f152b: ad.livingUnit.description,
+    start_hours_f152c: moment(`${ad.eventDate}T${ad.startTime}`).hour(),
+    start_mins_f152d: moment(`${ad.eventDate}T${ad.startTime}`).minute(),
+    end_hours_f152e: moment(`${ad.eventDate}T${ad.endTime}`).hour(),
+    end_mins_f152f: moment(`${ad.eventDate}T${ad.endTime}`).minute(),
+  });
+
 
 
 
@@ -542,32 +552,16 @@ helpers.getReleaseDetails = o =>
       ord.bookingId === o.mainBooking.bookingId
     )));
 
-//TODO: does this have an active property?
 helpers.getOffenderSecurityCategory = o =>
   getFirst(withList(o.assessments)
     .filter(oa => (
       oa.bookingId === o.mainBooking.bookingId &&
-    //oa.calcSupLevelType === 'Y' &&
       oa.evaluationResultCode === 'APP' &&
       oa.assessStatus === 'A' &&
       oa.assessmentType &&
       oa.assessmentType.assessmentClass === 'TYPE' &&
       oa.assessmentType.assessmentCode === 'CATEGORY' &&
       oa.assessmentType.determineSupLevelFlag
-    )));
-
-//TODO: does this have an active property?
-helpers.getOffenderSecurityCategory2 = o =>
-  getFirst(withList(o.assessments)
-    .filter(oa => (
-    // oa.bookingId === o.mainBooking.bookingId &&
-      oa.calcSupLevelType === 'Y' &&
-      oa.evaluationResultCode === 'APP' &&
-      oa.assessStatus === 'A' &&
-      oa.assessmentType &&
-      oa.assessmentType.assessmentClass === 'TYPE' &&
-      oa.assessmentType.assessmentCode === 'CATEGORY'// &&
-    // oa.assessmentType.determineSupLevelFlag
     )));
 
 helpers.getIEPLevel = o =>
@@ -897,6 +891,13 @@ helpers.getImprisonmentStatusCategory = ois => {
   }
 };
 
+helpers.getRehabilitationDecisionProvider = o =>
+  getFirst(withList(o.rehabDecisions)
+    .map(rd => Object.assign({}, rd, {
+      activeProvider: (getFirst(withList(rd.providers)) || {}).provider
+    }))
+  );
+
 helpers.formatSentenceLength = o => {
   if (o.offenderImprisonmentStatus.bandCode === 1 ||
       !o.sentenceCalculationDates ||
@@ -980,7 +981,58 @@ helpers.getFutureDiaryDetails = o =>
   withList(o.diaryDetails)
     .filter(odd => moment(odd.movementDateTime || 0).diff(o.sysdate) >= 0);
 
+helpers.getActivityDetails = o => {
+  let out = withList(o.programmeProfiles)
+    .filter(opp => (
+      opp.bookingId === o.mainBooking.bookingId &&
+      opp.offenderProgramStatus === 'ALLOC' &&
+      (opp.suspended ? 'CANC' : 'SCH') !== 'DEL'
+    ))
+    .reduce((out, opp) => {
+      if (opp.courseActivity.active) {
+        opp.courseActivity.schedules
+          .forEach(s => {
+            if (!s.catchUpCourseScheduleId &&
+                withList(o.courseExclusions)
+                  .filter(ce => (
+                    ce.offenderProgramProfileId !== opp.programProfileId ||
+                    ce.courseActivity.courseActivityId !== opp.courseActivity.courseActivityId ||
+                    ce.excludeDay !== s.scheduleDay ||
+                    ce.slotCategoryCode !== s.slotCategoryCode
+                  ))
+                  .length === 0) {
+              out.push({
+                description: opp.courseActivity.description,
+                livingUnit: opp.courseActivity.livingUnit,
+                eventDate: s.scheduledDate,
+                startTime: s.startTime,
+                endTime: s.endTime,
+              });
+            }
+          });
+      }
 
+      return out;
+    }, []);
+/*
+  // We don't exclude attended schedules so no need to add them back
+  out = out.concat(
+      withList(o.courseAttendances)
+        .filter(ad => (
+          ad.bookingId === o.mainBooking.bookingId &&
+          ad.eventType === 'PRISON_ACT' &&
+          ad.eventStatus !== 'DEL'
+        ))
+        .map(ad => ({
+          description: ad.courseActivity.description,
+          livingUnit: ad.courseActivity.livingUnit,
+          eventDate: ad.eventDate,
+          startTime: ad.startTime,
+          endTime: ad.endTime,
+        })));
+*/
+  return out;
+};
 
 
 

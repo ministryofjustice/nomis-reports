@@ -32,6 +32,8 @@ function ReportsRepository(config, agent) {
     getOffenderAssessments: this.agent.get(`${root}/offenders/offenderId/:offenderId/assessments`),
     getOffenderCharges: this.agent.get(`${root}/offenders/offenderId/:offenderId/charges`),
     getOffenderContactPersons: this.agent.get(`${root}/offenders/offenderId/:offenderId/contactPersons`),
+    getOffenderCourseAttendances: this.agent.get(`${root}/offenders/offenderId/:offenderId/courseAttendances`),
+    getOffenderCourseExclusions: this.agent.get(`${root}/offenders/offenderId/:offenderId/courseExclusions`),
     getOffenderCourtEvents: this.agent.get(`${root}/offenders/offenderId/:offenderId/courtEvents`),
     getOffenderDiaryDetails: this.agent.get(`${root}/offenders/offenderId/:offenderId/diaryDetails`),
     getOffenderEmployments: this.agent.get(`${root}/offenders/offenderId/:offenderId/employments`),
@@ -131,6 +133,14 @@ ReportsRepository.prototype.getOffenderCharges = function (offenderId) {
 
 ReportsRepository.prototype.getOffenderContactPersons = function (offenderId) {
   return this.requests.getOffenderContactPersons({ offenderId }).then(helpers.handleResponse([]));
+};
+
+ReportsRepository.prototype.getOffenderCourseAttendances = function (offenderId) {
+  return this.requests.getOffenderCourseAttendances({ offenderId }).then(helpers.handleResponse([]));
+};
+
+ReportsRepository.prototype.getOffenderCourseExclusions = function (offenderId) {
+  return this.requests.getOffenderCourseExclusions({ offenderId }).then(helpers.handleResponse([]));
 };
 
 ReportsRepository.prototype.getOffenderCourtEvents = function (offenderId) {

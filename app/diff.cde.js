@@ -6,8 +6,8 @@ const pointer = require('json-pointer');
 
 const log = require('../server/log');
 
-const CDE_DATE = moment().subtract(1, 'days');
 const EXTRACT_DATE = moment();
+const CDE_DATE = EXTRACT_DATE.clone().subtract(1, 'days');
 
 const optionalNumber = (n, b) => {
   let out = parseInt(n, b);
@@ -176,7 +176,6 @@ const cdeColParser = {
 
   // ignore for now
   establishment_f2() { return ''; },
-  activity_details_f152() { return ''; },
 
   sysdate_f1(item) { return moment.utc(item, 'DD/MM/YYYY').add(22, 'hours'); },
   dob_f13(item) { return moment(item, 'DD/MM/YYYY'); },
@@ -206,6 +205,7 @@ const cdeColParser = {
   diary_details_f145(item) { return item.replace(/"/g, '').split('~'); },
   other_offences_f147(item) { return item.replace(/"/g, '').split('~'); },
   active_alerts_f148(item) { return item.replace(/"/g, '').split('~'); },
+  activity_details_f152(item) { return item.replace(/"/g, '').split('~'); },
 
   sentence_length_f64(item) { return optionalNumber(item, 10); },
   ['sentence.years_f28'](item) { return optionalNumber(item, 10); },
@@ -311,6 +311,12 @@ const processStream = (type) => (x) => {
   if (type === 'doc' && x.diary_details_f145) {
     x.diary_details_f145 = x.diary_details_f145.map(dd =>
       `"${dd.date_145a || ''}","${dd.time_145b || ''}","${dd.reason_code_145c || ''}","${dd.comment_text_145d || ''}","${dd.escort_type_145e || ''}","${dd.not_for_release_alert_145f || ''}"`
+    );
+  }
+
+  if (type === 'doc' && x.activity_details_f152) {
+    x.activity_details_f152 = x.activity_details_f152.map(ad =>
+      `"${ad.activity_f152a || ''}","${ad.internal_location_desc_f152b || ''}","${ad.start_hours_f152c || ''}","${ad.start_mins_f152d || ''}","${ad.end_hours_f152e || ''}","${ad.end_mins_f152f || ''}"`
     );
   }
 

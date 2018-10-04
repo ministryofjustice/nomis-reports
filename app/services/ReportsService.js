@@ -30,28 +30,34 @@ ReportsService.prototype.listOffenders = function (query, page, size) {
 
 ReportsService.prototype.getDetails = function (offenderId) {
   return this.getOffender(offenderId)
-    .then(offender => Promise.all([
-      describe('addresses', this.getOffenderAddresses(offenderId), []),
-      describe('alerts', this.getOffenderAlerts(offenderId), []),
-      describe('assessments', this.getOffenderAssessments(offenderId), []),
-      describe('charges', this.getOffenderCharges(offenderId), []),
-      describe('contactPersons', this.getOffenderContactPersons(offenderId), []),
-      describe('courtEvents', this.getOffenderCourtEvents(offenderId), []),
-      describe('diaryDetails', this.getOffenderDiaryDetails(offenderId), []),
-      describe('employments', this.getOffenderEmployments(offenderId), []),
-      describe('healthProblems', this.getOffenderHealthProblems(offenderId), []),
-      describe('ieps', this.getOffenderIEPs(offenderId), []),
-      describe('imprisonmentStatuses', this.getOffenderImprisonmentStatuses(offenderId), []),
-      describe('individualSchedules', this.getOffenderIndividualSchedules(offenderId), []),
-      describe('movements', this.getOffenderMovements(offenderId), []),
-      describe('physicals', this.getOffenderPhysicals(offenderId), []),
-      describe('programmeProfiles', this.getOffenderProgrammeProfiles(offenderId, offender.bookings[0].bookingId), []),
-      describe('rehabDecisions', this.getOffenderRehabDecisions(offenderId), []),
-      describe('releaseDetails', this.getOffenderReleaseDetails(offenderId), []),
-      describe('sentenceCalculations', this.getOffenderSentenceCalculations(offenderId), []),
-      describe('sentences', this.getOffenderSentences(offenderId), []),
-    ])
-    .then((data) => data.reduce((a, b) => Object.assign(a, b), offender)));
+    .then(offender => {
+      let bookingId = offender.bookings[0].bookingId;
+
+      return Promise.all([
+        describe('addresses', this.getOffenderAddresses(offenderId), []),
+        describe('alerts', this.getOffenderAlerts(offenderId), []),
+        describe('assessments', this.getOffenderAssessments(offenderId), []),
+        describe('charges', this.getOffenderCharges(offenderId), []),
+        describe('contactPersons', this.getOffenderContactPersons(offenderId), []),
+        describe('courseAttendances', this.getOffenderCourseAttendances(offenderId), []),
+        describe('courseExclusions', this.getOffenderCourseExclusions(offenderId), []),
+        describe('courtEvents', this.getOffenderCourtEvents(offenderId), []),
+        describe('diaryDetails', this.getOffenderDiaryDetails(offenderId), []),
+        describe('employments', this.getOffenderEmployments(offenderId), []),
+        describe('healthProblems', this.getOffenderHealthProblems(offenderId), []),
+        describe('ieps', this.getOffenderIEPs(offenderId), []),
+        describe('imprisonmentStatuses', this.getOffenderImprisonmentStatuses(offenderId), []),
+        describe('individualSchedules', this.getOffenderIndividualSchedules(offenderId), []),
+        describe('movements', this.getOffenderMovements(offenderId), []),
+        describe('physicals', this.getOffenderPhysicals(offenderId), []),
+        describe('programmeProfiles', this.getOffenderProgrammeProfiles(offenderId, bookingId), []),
+        describe('rehabDecisions', this.getOffenderRehabDecisions(offenderId), []),
+        describe('releaseDetails', this.getOffenderReleaseDetails(offenderId), []),
+        describe('sentenceCalculations', this.getOffenderSentenceCalculations(offenderId), []),
+        describe('sentences', this.getOffenderSentences(offenderId), []),
+      ])
+      .then((data) => data.reduce((a, b) => Object.assign(a, b), offender));
+    });
 };
 
 ReportsService.prototype.getDetailsByNomsId = function (nomsId) {
@@ -151,6 +157,14 @@ ReportsService.prototype.getOffenderCharges = function (offenderId) {
 
 ReportsService.prototype.getOffenderContactPersons = function (offenderId) {
   return this.agent.request('reports', 'getOffenderContactPersons', offenderId);
+};
+
+ReportsService.prototype.getOffenderCourseAttendances = function (offenderId) {
+  return this.agent.request('reports', 'getOffenderCourseAttendances', offenderId);
+};
+
+ReportsService.prototype.getOffenderCourseExclusions = function (offenderId) {
+  return this.agent.request('reports', 'getOffenderCourseExclusions', offenderId);
 };
 
 ReportsService.prototype.getOffenderCourtEvents = function (offenderId) {

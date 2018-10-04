@@ -78,7 +78,9 @@ const model = helpers.pipe([
   // programmeProfiles, individualSchedules
   ['offenderEmployed', helpers.isEmployed],                                     // programmeProfiles, individualSchedules
   // diaryDetails
-  ['futureDiaryDetails', helpers.getFutureDiaryDetails]                         // diaryDetails
+  ['futureDiaryDetails', helpers.getFutureDiaryDetails],                        // diaryDetails
+//['rehabilitationDecisionProvider', helpers.getRehabilitationDecisionProvider],// rehabDecisions
+  ['activityDetails', helpers.getActivityDetails],
 ]);
 
 const buildModel = module.exports.buildModel = sysdate => data => {
@@ -257,13 +259,7 @@ module.exports.build = sysdate => data => {
       name_f151: (o.mostRecentConviction.agencyLocation || {}).description,
     },
 
-// 152	Activity Details
-//     152a	Activity Description
-//     152b	Activity Location
-//     152c	Activity Start Hour
-//     152d	Activity Start Min
-//     152e	Activity End Hour
-//     152f	Activity End Min
+    activity_details_f152: o.activityDetails.map(helpers.formatOffenderActivityDetail),
 
     tused_f153: helpers.optionalDate((o.offenderSentenceCalculationDates || {}).tused),
   };

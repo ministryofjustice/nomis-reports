@@ -12,8 +12,7 @@ const model = helpers.pipe([
   // identifiers
   ['offenderIdentifiers', helpers.mapOffenderIdentifiers],                      // identifiers
   // assessments
-//['offenderSecurityCategory', helpers.getOffenderSecurityCategory],            // assessments
-  ['offenderSecurityCategory', helpers.getOffenderSecurityCategory2],           // assessments
+  ['offenderSecurityCategory', helpers.getOffenderSecurityCategory],            // assessments
   ['csraLevel', helpers.getCSRALevel],                                          // assessments
   // sentences
   ['firstSentenceAndCounts', helpers.getFirstSentenceAndCounts],                // sentences
@@ -79,6 +78,7 @@ const model = helpers.pipe([
 //['offenderEmployed', helpers.isEmployed],                                     // programmeProfiles, individualSchedules
   // diaryDetails
 //['futureDiaryDetails', helpers.getFutureDiaryDetails],                        // diaryDetails
+  ['rehabilitationDecisionProvider', helpers.getRehabilitationDecisionProvider],// rehabDecisions
 ]);
 
 module.exports.build = sysdate => data => {
@@ -264,12 +264,14 @@ module.exports.build = sysdate => data => {
     violent: (o.offenceGroups.violent ? 'Y' : 'N'),
     victim_offences: (o.offenceGroups.victim_offences ? 'Y' : 'N'),
 
-/*
+
 //rehab_decision_provider_q
-    rehab_decision_code: r.decision_code,
-    rehab_decision: r.decision,
-    rehab_provider_code: r.provider_code,
-    rehab_provider: r.provider,
-*/
+    rehab: {
+      decision_code: o.rehabilitationDecisionProvider.decision.code,
+      decision: o.rehabilitationDecisionProvider.decision.description,
+      provider_code: o.rehabilitationDecisionProvider.activeProvider.code,
+      provider: o.rehabilitationDecisionProvider.activeProvider.description,
+    }
+
   };
 };
