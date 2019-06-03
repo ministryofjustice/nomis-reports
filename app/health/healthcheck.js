@@ -29,7 +29,7 @@ module.exports = function healthcheck(config, log) {
   };
 
   const checks = [];
-  if (config.custody) checks.push(healthApiCheck(config.custody, log , 'cusody-api'));
+  if (config.custody) checks.push(healthApiCheck(config.custody, log , 'custody-api'));
 
   if (!checks.length) return new Promise(res => res(addAppInfo(response)));
 
