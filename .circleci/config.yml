@@ -19,6 +19,7 @@ commands:
             # confirm setup is ok
             kubectl config use-context circleci
             kubectl -n "${KUBE_ENV_NAMESPACE}" get deployments
+
   deploy_to_env:
     parameters:
       env:
@@ -30,7 +31,7 @@ commands:
       - deploy:
           name: Deploy to << parameters.env >>
           command: |
-            APP_VERSION=$(cat ~/app/app_version.txt)
+            APP_VERSION=$(egrep buildNumber ~/app/build-info.json  | awk -F"\"" '{print $4}')
             AWS_ACCESS_KEY_ID=${SM_AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${SM_AWS_SECRET_ACCESS_KEY} aws secretsmanager --region ${AWS_DEFAULT_REGION} get-secret-value --secret-id ${KUBE_ENV_NAMESPACE} | jq -r .SecretString | \
             helm upgrade nomis-reports helm_deploy/nomis-reports/. \
               --install --wait --force --reset-values --timeout 360 \
