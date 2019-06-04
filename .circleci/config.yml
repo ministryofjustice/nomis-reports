@@ -82,7 +82,7 @@ jobs:
         - assets/stylesheets
 
   build_docker:
-    executor: deployer
+    executor: builder
     working_directory: ~/app
     steps:
       - checkout
