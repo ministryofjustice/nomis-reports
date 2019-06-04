@@ -30,8 +30,8 @@ let config = {
   port: get('PORT', 3000),
 
   custody: {
-    authUrl: get('OAUTH_API_URL', 'http://localhost:8081/oauth', { requireInProduction: true }),
-    apiUrl: get('REPORT_API_URL', 'http://localhost:8080/api', { requireInProduction: true }),
+    authUrl: get('OAUTH_API_URL', 'http://localhost:9090/auth/oauth', { requireInProduction: true }),
+    apiUrl: get('REPORT_API_URL', 'http://localhost:8080/custodyapi/api', { requireInProduction: true }),
     timeout: {
       response: 50000,
       deadline: 55000
