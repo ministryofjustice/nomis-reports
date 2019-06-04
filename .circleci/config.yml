@@ -1,12 +1,57 @@
-defaults: &defaults
-  working_directory: ~/app
-  docker:
-  - image: circleci/node:10.15.3-browsers
+version: 2.1
+commands:
+  kubectl_setup:
+    description: "configures kubectl"
+    steps:
+      - run:
+          name: Setup kubectl
+          command: |
+            echo -n "${KUBE_ENV_CACERT}" | base64 -d > /tmp/cluster_ca.crt
+            kubectl config set-cluster "${KUBE_ENV_NAME}" \
+              --certificate-authority="/tmp/cluster_ca.crt" \
+              --server="https://api.${KUBE_ENV_NAME}"
+            kubectl config set-credentials circleci \
+              --token="${KUBE_ENV_TOKEN}"
+            kubectl config set-context circleci \
+              --cluster="${KUBE_ENV_NAME}" \
+              --user="circleci" \
+              --namespace="${KUBE_ENV_NAMESPACE}"
+            # confirm setup is ok
+            kubectl config use-context circleci
+            kubectl -n "${KUBE_ENV_NAMESPACE}" get deployments
+  deploy_to_env:
+    parameters:
+      env:
+        type: string
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/app
+      - deploy:
+          name: Deploy to << parameters.env >>
+          command: |
+            APP_VERSION=$(cat ~/app/app_version.txt)
+            AWS_ACCESS_KEY_ID=${SM_AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${SM_AWS_SECRET_ACCESS_KEY} aws secretsmanager --region ${AWS_DEFAULT_REGION} get-secret-value --secret-id ${KUBE_ENV_NAMESPACE} | jq -r .SecretString | \
+            helm upgrade nomis-reports helm_deploy/nomis-reports/. \
+              --install --wait --force --reset-values --timeout 360 \
+              --tiller-namespace=${KUBE_ENV_NAMESPACE} \
+              --namespace=${KUBE_ENV_NAMESPACE} \
+              --values ./helm_deploy/values-<< parameters.env >>.yaml \
+              --values - \
+              --set image.tag="${APP_VERSION}"
+executors:
+  deployer:
+    docker:
+      - image: ${CP_TOOLS_IMAGE}
+  builder:
+    docker:
+      - image: circleci/node:10.15.3-browsers
+    working_directory: ~/app
 
-version: 2
+
 jobs:
   build:
-    <<: *defaults
+    executor: builder
     steps:
     - checkout
     - run:
@@ -36,7 +81,8 @@ jobs:
         - assets/stylesheets
 
   build_docker:
-    <<: *defaults
+    executor: deployer
+    working_directory: ~/app
     steps:
       - checkout
       - attach_workspace:
@@ -63,6 +109,13 @@ jobs:
             docker push mojdigitalstudio/nomis-reports:$APP_VERSION
             docker push mojdigitalstudio/nomis-reports:latest
 
+  deploy_dev:
+    executor: deployer
+    steps:
+      - kubectl_setup
+      - deploy_to_env:
+          env: "dev"
+
 workflows:
   version: 2
   build-test-and-deploy:
@@ -77,3 +130,6 @@ workflows:
           filters:
             branches:
               only: master
+      - deploy_dev:
+          requires:
+            - build_docker

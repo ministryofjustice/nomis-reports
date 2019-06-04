@@ -21,3 +21,7 @@ npm-debug.log
 build/
 .cache
 .extracts/*
+
+
+*secrets*.yaml
+!secrets-example.yaml
