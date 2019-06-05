@@ -1,4 +1,4 @@
-FROM node:10.15.3
+FROM node:lts-alpine
 MAINTAINER HMPPS Digital Studio <info@digital.justice.gov.uk>
 ARG BUILD_NUMBER
 ARG GIT_REF
@@ -10,21 +10,22 @@ ENV REPORT_GRANT_TYPE ${REPORT_GRANT_TYPE:-client_credentials}
 ENV REPORT_USERNAME ${REPORT_USERNAME:-nomis-reports}
 ENV REPORT_PASSWORD ${REPORT_PASSWORD:-clientsecret}
 
-
-RUN apt-get update && \
-    addgroup --gid 2000 --system appgroup && \
-    adduser --uid 2000 --system appuser --gid 2000 && \
-    mkdir -p /app
-
-# Create app directory
+RUN apk add --no-cache --virtual .nodejs nodejs
+RUN apk add --no-cache --virtual git .gyp-deps python make gcc g++
+RUN mkdir /app
 WORKDIR /app
 ADD . .
 
-RUN npm install && \
-    npm run build && \
-    export BUILD_NUMBER=${BUILD_NUMBER} && \
-    export GIT_REF=${GIT_REF} && \
-    npm run record-build-info
+# Setup PATH to prioritize local npm bin ahead of system PATH.
+ENV PATH node_modules/.bin:$PATH
+RUN addgroup -g 2000 -S appgroup \
+  && adduser -u 2000 -S appuser -G appgroup
+
+RUN npm install \
+    && npm run build \
+    && export BUILD_NUMBER=${BUILD_NUMBER} \
+    && export GIT_REF=${GIT_REF} \
+    && npm run record-build-info
 
 ENV PORT=3000
 EXPOSE 3000
