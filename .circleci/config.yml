@@ -39,7 +39,7 @@ commands:
           command: |
             APP_VERSION=$(egrep buildNumber ~/app/build-info.json  | awk -F"\"" '{print $4}')
             AWS_ACCESS_KEY_ID=${SM_AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${SM_AWS_SECRET_ACCESS_KEY} aws secretsmanager --region ${AWS_DEFAULT_REGION} get-secret-value --secret-id ${KUBE_ENV_NAMESPACE} | jq -r .SecretString | \
-            helm upgrade nomis-reports helm_deploy/nomis-reports/. \
+            helm upgrade nomis-reports ~/git/helm_deploy/nomis-reports/. \
               --install --wait --force --reset-values --timeout 360 \
               --tiller-namespace=${KUBE_ENV_NAMESPACE} \
               --namespace=${KUBE_ENV_NAMESPACE} \
