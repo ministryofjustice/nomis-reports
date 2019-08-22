@@ -12,6 +12,9 @@ helm init --tiller-namespace nomis-reports-dev --service-account tiller --histor
 
 ### Setup Lets Encrypt cert
 
+Ensure the ceritificate defination exists in the cloud-platform-environments repo under the relavent namespaces folder
+
+e.g.
 ```
-kubectl -n nomis-reports-dev apply -f certificate-dev.yaml
+cloud-platform-environments/namespaces/live-1.cloud-platform.service.justice.gov.uk/[INSERT NAMESPACE NAME]/05-certificate.yaml
 ```
