@@ -12,7 +12,7 @@ helm init --tiller-namespace nomis-reports-dev --service-account tiller --histor
 
 ### Setup Lets Encrypt cert
 
-Ensure the ceritificate defination exists in the cloud-platform-environments repo under the relavent namespaces folder
+Ensure the certificate definition exists in the cloud-platform-environments repo under the relevant namespaces folder
 
 e.g.
 ```
