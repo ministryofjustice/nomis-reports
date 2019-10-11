@@ -11,12 +11,9 @@ image:
 
 ingress:
   enabled: true
-  annotations:
-    kubernetes.io/ingress.class: "nginx"
-    nginx.ingress.kubernetes.io/whitelist-source-range: "217.33.148.210/32,81.134.202.29/32,52.56.175.16/32,35.177.252.195/32"
-  hosts:
-    - host: nomis-reports-dev.service.justice.gov.uk
-      cert_secret: nomis-reports-cert
+  enable_whitelist: true
+  host: nomis-reports-dev.service.justice.gov.uk
+  cert_secret: nomis-reports-cert
   path: /
 
 env:
@@ -24,3 +21,10 @@ env:
   REPORT_API_URL: "https://gateway.t3.nomis-api.hmpps.dsd.io/custodyapi/api"
   OAUTH_API_URL: "https://gateway.t3.nomis-api.hmpps.dsd.io/auth/oauth"
 
+whitelist:
+  office: "217.33.148.210/32"
+  health-kick: "35.177.252.195/32"
+  mojvpn: "81.134.202.29/32"
+  cloudplatform-live1-1: "35.178.209.113/32"
+  cloudplatform-live1-2: "3.8.51.207/32"
+  cloudplatform-live1-3: "35.177.252.54/32"
