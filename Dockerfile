@@ -10,8 +10,11 @@ ENV REPORT_GRANT_TYPE ${REPORT_GRANT_TYPE:-client_credentials}
 ENV REPORT_USERNAME ${REPORT_USERNAME:-nomis-reports}
 ENV REPORT_PASSWORD ${REPORT_PASSWORD:-clientsecret}
 
-RUN apk add --no-cache --virtual .nodejs nodejs
-RUN apk add --no-cache --virtual git .gyp-deps python make gcc g++
+
+RUN apk update && \ 
+    apk add --no-cache --virtual .nodejs nodejs git && \ 
+    apk add --no-cache --virtual .gyp-deps python make gcc g++ && \
+    rm -rf /var/cache/apk/*
 RUN mkdir /app
 WORKDIR /app
 ADD . .
