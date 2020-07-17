@@ -19,7 +19,7 @@ ingress:
 env:
   REPORT_USERNAME: "nomis-reports"
   REPORT_API_URL: "https://gateway.t3.nomis-api.hmpps.dsd.io/custodyapi/api"
-  OAUTH_API_URL: "https://gateway.t3.nomis-api.hmpps.dsd.io/auth/oauth"
+  OAUTH_API_URL: "https://sign-in-dev.hmpps.service.justice.gov.uk/auth/oauth"
 
 whitelist:
   office: "217.33.148.210/32"
